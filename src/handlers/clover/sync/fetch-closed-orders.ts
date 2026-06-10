@@ -1,0 +1,56 @@
+import { z } from 'zod';
+import { registerHandler } from '../../registry';
+import { getSiteIntegrationConfig } from '../../../lib/credentials';
+import { createCloverClient, CloverConfigSchema } from '../client';
+import { supabase } from '../../../lib/supabase';
+import { logger } from '../../../lib/logger';
+import { buildOrdersUrl, getPageLimit } from './order-mapper';
+import { upsertOrdersFromClover } from './upsert-orders';
+
+const InputSchema = z.object({
+  schedule_id: z.string().uuid(),
+  cursor: z.string().nullable().optional(),
+});
+
+// Runs every 2min — fetches only PAID orders for today (UTC-4).
+// Ensures closed orders are finalized and reconciled even if missed by the open-orders handler.
+registerHandler('clover', 'fetch_closed_orders', async ({ stepInput, job }) => {
+  const input = InputSchema.parse(stepInput);
+
+  const { config } = await getSiteIntegrationConfig(job.site_id, 'clover');
+  const cloverConfig = CloverConfigSchema.parse(config);
+
+  if (cloverConfig.sync_orders !== true) {
+    await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
+    return { orders_fetched: 0, skipped_reason: 'sync_orders_disabled' };
+  }
+
+  const client = createCloverClient(cloverConfig, job.correlation_id);
+  const baseUrl = `${client.defaults.baseURL}`;
+  const limit = getPageLimit();
+  let offset = 0;
+  const allOrders: unknown[] = [];
+
+  while (true) {
+    const url = buildOrdersUrl(baseUrl, offset);
+    const response = await client.get<{ elements?: unknown[] }>(url);
+    const batch = (response.data.elements ?? []) as any[];
+    // Filter client-side: only reconcile PAID orders.
+    const paid = batch.filter((o) => o.paymentState === 'PAID');
+    allOrders.push(...paid);
+    if (batch.length < limit) break;
+    offset += limit;
+    await new Promise((r) => setTimeout(r, 150));
+  }
+
+  const { inserted, updated, skipped } = await upsertOrdersFromClover(job.site_id, allOrders);
+
+  logger.info(
+    { site_id: job.site_id, orders_fetched: allOrders.length, inserted, updated, skipped },
+    'clover fetch_closed_orders completed'
+  );
+
+  await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
+
+  return { orders_fetched: allOrders.length, inserted, updated, skipped };
+});

@@ -1,0 +1,57 @@
+version: '3.8'
+
+# Shared config block — override per service with `environment:`
+x-common: &common
+  build: .
+  image: mcm-job-engine:latest
+  restart: unless-stopped
+  env_file: .env
+  networks:
+    - app
+
+services:
+  worker-pos-injection:
+    <<: *common
+    container_name: worker-pos-injection
+    environment:
+      WORKER_QUEUE_NAME: pos_injection
+      WORKER_MAX_CONCURRENT_JOBS: "20"
+      WORKER_POLL_INTERVAL_MS: "1000"
+      RUN_SCHEDULER: "false"
+      RUN_ALERT_DISPATCHER: "false"
+
+  worker-pos-sync:
+    <<: *common
+    container_name: worker-pos-sync
+    environment:
+      WORKER_QUEUE_NAME: pos_sync
+      WORKER_MAX_CONCURRENT_JOBS: "30"
+      WORKER_POLL_INTERVAL_MS: "2000"
+      # Only this container runs the scheduler and alert dispatcher.
+      # If scaling to multiple replicas, the advisory lock ensures only one is active.
+      RUN_SCHEDULER: "true"
+      RUN_ALERT_DISPATCHER: "true"
+
+  worker-notifications:
+    <<: *common
+    container_name: worker-notifications
+    environment:
+      WORKER_QUEUE_NAME: notifications
+      WORKER_MAX_CONCURRENT_JOBS: "30"
+      WORKER_POLL_INTERVAL_MS: "2000"
+      RUN_SCHEDULER: "false"
+      RUN_ALERT_DISPATCHER: "false"
+
+  worker-webhooks:
+    <<: *common
+    container_name: worker-webhooks
+    environment:
+      WORKER_QUEUE_NAME: webhooks
+      WORKER_MAX_CONCURRENT_JOBS: "10"
+      WORKER_POLL_INTERVAL_MS: "5000"
+      RUN_SCHEDULER: "false"
+      RUN_ALERT_DISPATCHER: "false"
+
+networks:
+  app:
+    driver: bridge

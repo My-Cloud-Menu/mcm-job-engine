@@ -1,0 +1,226 @@
+const EXPAND =
+  'expand=employee,customers,orderType,serviceCharge,discounts,taxRates,' +
+  'lineItems,lineItems.taxRates,lineItems.modifications,lineItems.discounts,' +
+  'lineItems.modifierGroups,payments,payments.tender,payments.cardTransaction,' +
+  'refunds,refunds.payment,device,manualTransaction,displayInfo';
+
+const LIMIT = 100;
+// UTC-4 offset in minutes
+const TZ_OFFSET_MS = -4 * 60 * 60 * 1000;
+
+function getTodayWindow(): { startOfDayMs: number; endOfDayMs: number } {
+  const nowLocal = Date.now() + TZ_OFFSET_MS;
+  const startOfDayLocal = nowLocal - (nowLocal % (24 * 60 * 60 * 1000));
+  const startOfDayMs = startOfDayLocal - TZ_OFFSET_MS;
+  const endOfDayMs = startOfDayMs + 24 * 60 * 60 * 1000 - 1;
+  return { startOfDayMs, endOfDayMs };
+}
+
+export function buildOrdersUrl(
+  baseUrl: string,
+  offset: number,
+  paymentState?: 'PAID' | 'OPEN'
+): string {
+  const { startOfDayMs, endOfDayMs } = getTodayWindow();
+  let url =
+    `${baseUrl}/orders?${EXPAND}` +
+    `&filter=clientCreatedTime>=${startOfDayMs}` +
+    `&filter=clientCreatedTime<=${endOfDayMs}` +
+    `&orderBy=clientCreatedTime` +
+    `&limit=${LIMIT}` +
+    `&offset=${offset}`;
+  if (paymentState) {
+    url += `&filter=paymentState=${paymentState}`;
+  }
+  return url;
+}
+
+export function getPageLimit(): number {
+  return LIMIT;
+}
+
+const getTaxesBreakdownOfCloverOrder = (cloverOrder: any) => {
+  let baseStandardAmount = 0;
+  let standardTax = 0;
+  let baseReducedAmount = 0;
+  let reducedTax = 0;
+  let baseCityAmount = 0;
+  let cityTax = 0;
+
+  cloverOrder?.lineItems?.elements?.forEach((item: any) => {
+    (item?.taxRates?.elements || []).forEach((taxRate: any) => {
+      if (taxRate.name.toLowerCase().includes('reduced')) {
+        reducedTax += item.price * (taxRate.rate / 10_000_000);
+        baseReducedAmount += item.price;
+      } else if (taxRate.name.toLowerCase().includes('city')) {
+        cityTax += item.price * (taxRate.rate / 10_000_000);
+        baseCityAmount += item.price;
+      } else {
+        standardTax += item.price * (taxRate.rate / 10_000_000);
+        baseStandardAmount += item.price;
+      }
+    });
+  });
+
+  return [
+    {
+      id: 'taxline-0',
+      rate: '10.5',
+      label: 'Tax Estatal',
+      rate_id: '10001',
+      compound: false,
+      subtotal: baseStandardAmount / 100,
+      rate_code: 'estatal-tax',
+      tax_total: (standardTax / 100).toFixed(2),
+      additional_properties: {},
+    },
+    {
+      id: 'taxline-1',
+      rate: '6',
+      label: 'Tax Reducido',
+      rate_id: '10002',
+      compound: false,
+      subtotal: baseReducedAmount / 100,
+      rate_code: 'reduced-tax',
+      tax_total: (reducedTax / 100).toFixed(2),
+      additional_properties: {},
+    },
+    {
+      id: 'taxline-2',
+      rate: '1',
+      label: 'Tax Municipal',
+      rate_id: '10004',
+      compound: false,
+      subtotal: baseCityAmount / 100,
+      rate_code: 'municipal-tax',
+      tax_total: (cityTax / 100).toFixed(2),
+      additional_properties: {},
+    },
+  ];
+};
+
+export const convertCloverOrderToMCMOrder = (cloverOrder: any) => {
+  const lineItems =
+    cloverOrder.lineItems?.elements?.map((item: any, index: number) => {
+      let taxClass = 'standard';
+      if (
+        item.taxRates?.elements?.some((tax: any) =>
+          tax.name.toLowerCase().includes('reduced')
+        )
+      ) {
+        taxClass = 'reduced';
+      }
+
+      return {
+        id: `lineitem-${index}`,
+        sku: '',
+        tax: '0.00',
+        name: item.name || '',
+        paid: 0,
+        notes: item?.note || '',
+        price: (item.price / 100).toFixed(2),
+        total: (item.price / 100).toFixed(2),
+        quantity: 1,
+        tax_class: taxClass,
+        thumbnail: '',
+        total_tax: '0',
+        attributes: [],
+        product_id: item?.item?.id || '',
+        variation_id: '',
+        product_price: (item.price / 100).toFixed(2),
+        variation_name: '',
+        additional_properties: {},
+      };
+    }) || [];
+
+  let payment_status = 'not_fulfilled';
+  if (cloverOrder.paymentState === 'PAID') payment_status = 'fulfilled';
+  else if (cloverOrder.paymentState === 'PARTIALLY_PAID') payment_status = 'partially_fulfilled';
+
+  let order_status = 'new-order';
+  if (payment_status === 'fulfilled') order_status = 'check-closed';
+
+  const taxTotal = (cloverOrder?.taxRates?.elements || []).reduce(
+    (acc: number, tax: any) => acc + tax.amount,
+    0
+  );
+  const discountTotal = (cloverOrder?.discounts?.elements || []).reduce(
+    (acc: number, d: any) => acc + d.amount,
+    0
+  );
+  const paidTotal = (cloverOrder?.payments?.elements || []).reduce(
+    (acc: number, p: any) => acc + p.amount,
+    0
+  );
+
+  return {
+    id: 0,
+    site_id: 0,
+    clover_pos_id: cloverOrder.id,
+    cart_id: null,
+    trueupkey: '',
+    channel: 'pos',
+    experience: 'pu',
+    experience_reference: '',
+    payment_method: 'ecr-card',
+    status: order_status,
+    payment_status,
+    customer: {
+      id: '',
+      email: '',
+      phone: '',
+      last_name: '',
+      first_name: '',
+      additional_properties: {},
+    },
+    customer_notes: cloverOrder?.note || '',
+    employee: {
+      id: cloverOrder?.employee?.id || '',
+      email: '',
+      last_name: '',
+      first_name: cloverOrder?.employee?.name || '',
+    },
+    shipping_address: {
+      id: '',
+      city: '',
+      house: '',
+      phone: '',
+      street: '',
+      latitude: '',
+      postcode: '',
+      last_name: '',
+      longitude: '',
+      reference: '',
+      first_name: '',
+      additional_properties: {},
+    },
+    table: { id: '', label: '', revenue_center_id: '' },
+    location_id: null,
+    menu_id: null,
+    order_type: {
+      id: cloverOrder?.orderType?.id || '',
+      name: cloverOrder?.orderType?.label || '',
+    },
+    line_items: lineItems,
+    fee_lines: [],
+    tax_lines: getTaxesBreakdownOfCloverOrder(cloverOrder),
+    shipping_lines: [],
+    coupon_lines: [],
+    pickup_time: null,
+    currency: 'USD',
+    subtotal: (cloverOrder.total - taxTotal) / 100,
+    discount_total: discountTotal / 100,
+    shipping_total: 0,
+    fee_total: 0,
+    total_tax: taxTotal / 100,
+    total: cloverOrder.total / 100,
+    paid: paidTotal / 100,
+    tracking_link: null,
+    additional_properties: {},
+    coupon_feedback: { deliveryDiscount: 0, couponCodeApplied: '' },
+    date_created: new Date(cloverOrder.clientCreatedTime).toISOString(),
+    date_updated: new Date(cloverOrder.modifiedTime).toISOString(),
+    customer_id: '',
+    attachments: [],
+  };
+};
