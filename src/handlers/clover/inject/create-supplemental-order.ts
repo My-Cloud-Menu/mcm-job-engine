@@ -20,6 +20,10 @@ registerHandler('clover', 'create_supplemental_order', async ({ jobPayload, job,
   const externalRef = jobPayload['external_reference_id'] as string | undefined;
   const deltaSig = jobPayload['delta_signature'] as string | undefined;
   const orderId = jobPayload['order_id'];
+  const totalCents =
+    typeof jobPayload['order_total_cents'] === 'number'
+      ? (jobPayload['order_total_cents'] as number)
+      : undefined;
 
   if (!orderBody || typeof orderBody !== 'object') {
     throw new HandlerError('Supplemental injection payload missing `order_body`', 'MISSING_ORDER_BODY', false);
@@ -43,7 +47,7 @@ registerHandler('clover', 'create_supplemental_order', async ({ jobPayload, job,
     try {
       const existingId = await findCloverOrderIdByExternalRef(client, externalRef);
       if (existingId) {
-        await persistSupplementCloverId(job.site_id, orderId, deltaSig, existingId);
+        await persistSupplementCloverId(job.site_id, orderId, deltaSig, existingId, totalCents);
         return { clover_order_id: existingId, adopted: true };
       }
     } catch {
@@ -63,7 +67,7 @@ registerHandler('clover', 'create_supplemental_order', async ({ jobPayload, job,
         res.data
       );
     }
-    await persistSupplementCloverId(job.site_id, orderId, deltaSig, cloverOrderId);
+    await persistSupplementCloverId(job.site_id, orderId, deltaSig, cloverOrderId, totalCents);
     return { clover_order_id: cloverOrderId };
   } catch (err) {
     const he = err instanceof HandlerError ? err : mapCloverError(err, 'CLOVER_CREATE_SUPPLEMENTAL_FAILED');

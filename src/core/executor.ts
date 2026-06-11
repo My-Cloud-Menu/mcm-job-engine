@@ -188,7 +188,7 @@ async function executeStep(
     const nextRetryAt = willRetry
       ? classified.retryAfterSeconds != null
         ? new Date(Date.now() + classified.retryAfterSeconds * 1000)
-        : calculateBackoff(attemptNumber, job.queue_name)
+        : calculateBackoff(attemptNumber, job.queue_name, job.job_type)
       : null;
 
     await failStep(step, classified.message, nextRetryAt);

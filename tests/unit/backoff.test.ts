@@ -53,4 +53,23 @@ describe('calculateBackoff', () => {
     const notifAttempt5 = calculateBackoff(5, 'notifications');
     expect(webhookAttempt5!.getTime()).toBeGreaterThan(notifAttempt5!.getTime());
   });
+
+  it('payment_injection job_type retries every ~30s (overrides the pos_injection queue profile)', () => {
+    const now = Date.now();
+    // attempts 1..4 → ~30s each (±20% jitter → 24–36s), NOT the queue's 0/5/15s.
+    for (const n of [1, 2, 3, 4]) {
+      const d = calculateBackoff(n, 'pos_injection', 'payment_injection');
+      const s = (d!.getTime() - now) / 1000;
+      expect(s).toBeGreaterThanOrEqual(23);
+      expect(s).toBeLessThanOrEqual(37);
+    }
+  });
+
+  it('unknown job_type falls back to the queue profile', () => {
+    const now = Date.now();
+    // order_injection has no job_type profile → uses pos_injection[0] = 0s (immediate).
+    const d = calculateBackoff(1, 'pos_injection', 'order_injection');
+    const s = (d!.getTime() - now) / 1000;
+    expect(s).toBeLessThanOrEqual(2);
+  });
 });

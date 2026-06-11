@@ -288,32 +288,42 @@ export async function upsertCloverPayments(siteId: number, cloverPayments: unkno
       const tipInDollars = (p.tip / 100).toFixed(2);
       const now = new Date().toISOString();
 
+      // Fix 1 (concurrencia): UPSERT idempotente sobre el UNIQUE parcial
+      // payments(site_id,pos_id) WHERE pos_id IS NOT NULL (migración 016). Dos
+      // pulls concurrentes del MISMO pago Clover convergen en UNA fila (la 2ª
+      // colisiona → DO UPDATE → devuelve el MISMO id), así ambos forwards usan el
+      // mismo mcmPaymentId → `pos_pay:omnivore:{id}` deduplica → una sola
+      // inyección a Omnivore (sin doble cargo). Antes era `.insert()` plano →
+      // filas duplicadas bajo solape.
       const { data: mcmPayment, error: insErr } = await supabase
         .from('payments')
-        .insert({
-          site_id: siteId,
-          orders_ids: [order.id],
-          method: 'ecr-card',
-          // WS-1/F7 (auditoría 2026-06-09): no registrar como `completed` un pago que
-          // ya llega anulado desde Clover (antes se insertaba siempre `completed`).
-          status: p.voided ? 'voided' : 'completed',
-          total: totalInDollars,
-          tip: tipInDollars,
-          reference: p.cloverPaymentId,
-          source: p.cardType,
-          employee: {},
-          data: { cloverPayment: raw },
-          additional_properties: {},
-          date_created: now,
-          date_updated: now,
-          total_refunded: (p.totalRefunded / 100).toFixed(2),
-          pos_id: p.cloverPaymentId,
-        })
+        .upsert(
+          {
+            site_id: siteId,
+            orders_ids: [order.id],
+            method: 'ecr-card',
+            // WS-1/F7 (auditoría 2026-06-09): no registrar como `completed` un pago que
+            // ya llega anulado desde Clover (antes se insertaba siempre `completed`).
+            status: p.voided ? 'voided' : 'completed',
+            total: totalInDollars,
+            tip: tipInDollars,
+            reference: p.cloverPaymentId,
+            source: p.cardType,
+            employee: {},
+            data: { cloverPayment: raw },
+            additional_properties: {},
+            date_created: now,
+            date_updated: now,
+            total_refunded: (p.totalRefunded / 100).toFixed(2),
+            pos_id: p.cloverPaymentId,
+          },
+          { onConflict: 'site_id,pos_id' }
+        )
         .select('id')
         .single();
 
       if (insErr) {
-        logger.error({ insErr, site_id: siteId, clover_payment_id: p.cloverPaymentId }, 'clover pull: payment insert failed');
+        logger.error({ insErr, site_id: siteId, clover_payment_id: p.cloverPaymentId }, 'clover pull: payment upsert failed');
         skipped++;
         continue;
       }

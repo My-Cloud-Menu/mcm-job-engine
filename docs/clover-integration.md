@@ -199,3 +199,25 @@ eso `buildItemNote` (clover-helper) deja los modifiers en el **note** de la lín
 surcharge (ej. "Up Charge Tacos: Banderita (+$4.00)"), y el `price` de la línea queda **inclusivo**
 (el total cuadra). El sync Omnivore→MCM (Parte A) sí captura los modifiers en `attributes` +
 `omnivoreParams`, así que ahora aparecen en el note de Clover por primera vez.
+
+## 13. Hardening de concurrencia (2026-06-10)
+
+Auditoría: si corren 2 jobs de sync del mismo tipo a la vez, ¿hay duplicados? Reporte completo en
+`audits/2026-06-10/concurrency-audit.md`. Veredicto: las ÓRDENES ya eran a prueba de duplicados
+(UNIQUE `(site_id,omnivore_pos_id)` y `(site_id,clover_pos_id)` + upsert); el hueco era PAGOS y el
+manifest suplementario. Fixes:
+- **Migración 016 (Fix 1, crítico):** UNIQUE parcial `payments(site_id,pos_id) WHERE pos_id IS NOT NULL`;
+  `upsert-payments.ts` pasa de `.insert()` a `.upsert(onConflict:'site_id,pos_id')`. Dos pulls
+  concurrentes del mismo pago Clover convergen en UNA fila → una sola inyección a Omnivore (sin doble
+  cargo). Garantía DE FONDO, cubre todos los caminos (scheduler / "Probar ahora" / solape). **Prod:**
+  dedup-check + `CREATE UNIQUE INDEX CONCURRENTLY`.
+- **Migración 017 (Fix 2 + Fix 4):** `claim_due_schedules` **y** `trigger_sync_now` no encolan un sync
+  si ya hay un job activo del mismo `(site,integration,sync_type)` en pending/running/retrying
+  (serialización/eficiencia; "Probar ahora" devuelve el job activo). `complete_sync_schedule` avanza
+  `last_cursor` monótono para cursores numéricos.
+- **Migración 018 (Fix 3):** RPC `claim_clover_supplement` (bookkeeping del delta del suplemento bajo
+  `FOR UPDATE`) + `set_clover_supplement_clover_id` (persiste clover id atómico). `handlePaidPrimaryDelta`
+  delega en la RPC: dos reconcile concurrentes se serializan → reconcile-2 recomputa contra el billed
+  ya actualizado → sin doble-bill ni corrupción del manifest. La key de línea es `name||note`.
+- Salvaguardas intactas: `claim_next_job` SKIP LOCKED, idempotency de `enqueue_job`, leader-election
+  (`RUN_SCHEDULER` solo en `pos_sync`), guard `orderHasAppliedPayment`.

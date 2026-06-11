@@ -27,6 +27,11 @@ vi.mock('../../src/lib/supabase', () => ({
       },
       select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: h.cloverState }) }) }) }),
     }),
+    // The paid-primary path calls claim_clover_supplement; default = no delta.
+    rpc: async (fn: string) => ({
+      data: fn === 'claim_clover_supplement' ? { has_delta: false, has_removal: false } : null,
+      error: null,
+    }),
   },
 }));
 

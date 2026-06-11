@@ -1,5 +1,6 @@
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
+import { HandlerError } from '../../../core/types';
 import { enqueueCloverSupplementalInjection } from '../../../enqueue/helpers';
 import { persistCloverHash, persistInjectionError } from './shared';
 
@@ -168,28 +169,32 @@ export async function writeManifest(
   }
 }
 
-/** Persist a supplement's Clover order id into its manifest entry (by delta_signature). */
+/**
+ * Persist a supplement's Clover order id into its manifest entry (by
+ * delta_signature) ATÓMICAMENTE (RPC `set_clover_supplement_clover_id` bajo
+ * `FOR UPDATE`) — no read-modify-write en JS, así no se pierde frente a un append
+ * concurrente de otro reconcile.
+ */
 export async function persistSupplementCloverId(
   siteId: number,
   orderId: unknown,
   deltaSig: string,
-  cloverOrderId: string
+  cloverOrderId: string,
+  totalCents?: number
 ): Promise<void> {
-  const manifest = await readManifest(siteId, orderId);
-  manifest.supplements = manifest.supplements || [];
-  const entry = manifest.supplements.find((s) => s.delta_signature === deltaSig);
-  if (entry) {
-    entry.clover_order_id = cloverOrderId;
-  } else {
-    manifest.supplements.push({
-      external_reference_id: buildSupplementalExternalRef(siteId, orderId, deltaSig),
-      clover_order_id: cloverOrderId,
-      delta_signature: deltaSig,
-      delta_keys: {},
-      total_cents: 0,
-    });
+  const { error } = await supabase.rpc('set_clover_supplement_clover_id', {
+    p_site_id: siteId,
+    p_order_id: orderId,
+    p_delta_signature: deltaSig,
+    p_clover_order_id: cloverOrderId,
+    p_total_cents: totalCents ?? null,
+  });
+  if (error) {
+    logger.error(
+      { error, site_id: siteId, order_id: orderId, delta_signature: deltaSig },
+      'clover supplemental: failed to persist supplement clover id'
+    );
   }
-  await writeManifest(siteId, orderId, manifest);
 }
 
 /**
@@ -209,23 +214,40 @@ export async function handlePaidPrimaryDelta(params: {
 }): Promise<Record<string, unknown>> {
   const { siteId, orderId, cloverOrderId, frozenLineItems, desiredHash, currentCloverLineItems } = params;
 
-  const manifest = await readManifest(siteId, orderId);
+  // Bookkeeping del delta ATÓMICO (RPC `claim_clover_supplement` bajo FOR UPDATE):
+  // computa delta = current − billed (primary + supplements YA creados) y appendea
+  // la entrada. Dos reconcile concurrentes se serializan → reconcile-2 recomputa
+  // contra el billed actualizado por reconcile-1 → sin solapamiento ni corrupción.
+  const currentKeys = multisetFromLines(frozenLineItems);
+  const seedBilled = multisetFromLines(currentCloverLineItems);
 
-  // Seed primary.billed_keys for legacy orders (paid before this feature): the
-  // Clover primary's CURRENT line items ARE what's already billed.
-  if (!manifest.primary?.billed_keys) {
-    manifest.primary = {
-      clover_order_id: cloverOrderId,
-      billed_keys: multisetFromLines(currentCloverLineItems),
-    };
+  const { data, error } = await supabase.rpc('claim_clover_supplement', {
+    p_site_id: siteId,
+    p_order_id: orderId,
+    p_current_keys: currentKeys,
+    p_seed_billed_keys: seedBilled,
+    p_primary_clover_order_id: cloverOrderId,
+  });
+
+  if (error) {
+    logger.error({ error, site_id: siteId, order_id: orderId }, 'clover supplemental: claim RPC failed');
+    throw new HandlerError(
+      `claim_clover_supplement failed: ${error.message}`,
+      'CLOVER_SUPPLEMENT_CLAIM_FAILED',
+      true
+    );
   }
 
-  const billed = mergedBilledKeys(manifest);
-  const delta = computeDelta(frozenLineItems, billed);
+  const res = (data ?? {}) as {
+    has_delta?: boolean;
+    has_removal?: boolean;
+    delta_keys?: Record<string, number>;
+    delta_signature?: string;
+    external_reference_id?: string;
+  };
 
-  // Net removal (items removed after the primary was paid) → refund territory on
-  // a locked order → VISIBLE needs-review, deferred (not silently lost).
-  if (delta.hasRemoval && delta.deltaLines.length === 0) {
+  // Remoción post-pago (delta negativo) → refund sobre orden bloqueada → VISIBLE, diferido.
+  if (res.has_removal && !res.has_delta) {
     await persistInjectionError(siteId, orderId, {
       code: 'CLOVER_SUPPLEMENTAL_NEGATIVE_DELTA',
       message:
@@ -235,37 +257,36 @@ export async function handlePaidPrimaryDelta(params: {
     return { needs_review: 'negative_delta' };
   }
 
-  // No new items → nothing to bill; persist the primary hash so the recurring
-  // push stops re-triggering this state.
-  if (delta.deltaLines.length === 0) {
+  // Sin ítems nuevos → nada que facturar; persistir el hash del primario.
+  if (!res.has_delta) {
     if (desiredHash) await persistCloverHash(siteId, orderId, desiredHash);
     return { skipped: 'no_delta_paid' };
   }
 
-  // New items → record the supplement entry (idempotent on delta signature) and
-  // enqueue the supplemental order job.
-  const sig = deltaSignature(delta.deltaKeys);
-  const externalRef = buildSupplementalExternalRef(siteId, orderId, sig);
-
-  manifest.supplements = manifest.supplements || [];
-  if (!manifest.supplements.find((s) => s.delta_signature === sig)) {
-    manifest.supplements.push({
-      external_reference_id: externalRef,
-      clover_order_id: null,
-      delta_signature: sig,
-      delta_keys: delta.deltaKeys,
-      total_cents: delta.totalCents,
-    });
+  // Construir los line_items del suplemento desde los delta_keys que devolvió la
+  // RPC (subconjunto del array congelado, respetando counts) + total.
+  const deltaKeys = res.delta_keys ?? {};
+  const remaining: Record<string, number> = { ...deltaKeys };
+  const deltaLines: any[] = [];
+  for (const li of frozenLineItems) {
+    const k = lineKey(li);
+    if (remaining[k] > 0) {
+      deltaLines.push(li);
+      remaining[k]--;
+    }
   }
-  await writeManifest(siteId, orderId, manifest);
+  const totalCents = deltaLines.reduce(
+    (a, li) => a + (li.price || 0) + (li.taxRates || []).reduce((x: number, t: any) => x + (t.taxAmount || 0), 0),
+    0
+  );
 
   const jobId = await enqueueCloverSupplementalInjection({
     siteId,
     orderId: orderId as string | number,
-    externalReferenceId: externalRef,
-    deltaSignature: sig,
-    lineItems: delta.deltaLines,
-    totalCents: delta.totalCents,
+    externalReferenceId: res.external_reference_id!,
+    deltaSignature: res.delta_signature!,
+    lineItems: deltaLines,
+    totalCents,
     correlationId: params.correlationId,
   });
 
@@ -274,8 +295,8 @@ export async function handlePaidPrimaryDelta(params: {
   if (desiredHash) await persistCloverHash(siteId, orderId, desiredHash);
 
   logger.info(
-    { site_id: siteId, order_id: orderId, supplemental_job: jobId, delta_items: delta.deltaLines.length },
-    'clover reconcile: primary paid → enqueued supplemental order for the added items'
+    { site_id: siteId, order_id: orderId, supplemental_job: jobId, delta_items: deltaLines.length },
+    'clover reconcile: primary paid → enqueued supplemental order (atomic delta)'
   );
-  return { supplemental_enqueued: jobId, delta_items: delta.deltaLines.length };
+  return { supplemental_enqueued: jobId, delta_items: deltaLines.length };
 }

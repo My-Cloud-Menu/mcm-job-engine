@@ -3,6 +3,9 @@ import './omnivore/inject/add-items';
 import './omnivore/inject/create-payment';
 import './omnivore/inject/payment';
 import './omnivore/sync/fetch-recent-orders';
+import './omnivore/sync/fetch-tables';
+import './omnivore/sync/fetch-products';
+import './omnivore/sync/fetch-employees';
 
 import './clover/inject/create-order';
 import './clover/inject/create-supplemental-order';

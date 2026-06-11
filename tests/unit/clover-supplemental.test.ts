@@ -1,7 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => ({
-  manifest: null as any, // additional_properties.clover_supplemental
+  manifest: null as any, // additional_properties.clover_supplemental (readManifest, adopt path)
+  rpcResult: null as any, // claim_clover_supplement result
+  rpcCalls: [] as any[],
   apUpdates: [] as any[],
   enqueued: [] as any[],
   get: vi.fn(),
@@ -35,6 +37,11 @@ vi.mock('../../src/lib/supabase', () => ({
         return { eq: () => ({ eq: async () => ({ error: null }) }) };
       },
     }),
+    rpc: (fn: string, args: any) => {
+      h.rpcCalls.push({ fn, args });
+      const data = fn === 'claim_clover_supplement' ? h.rpcResult : null;
+      return Promise.resolve({ data, error: null });
+    },
   },
 }));
 vi.mock('../../src/handlers/clover/client', () => ({
@@ -63,6 +70,8 @@ const fries = { name: 'Fries', note: '', price: 500, taxRates: [{ taxAmount: 50 
 
 beforeEach(() => {
   h.manifest = null;
+  h.rpcResult = null;
+  h.rpcCalls.length = 0;
   h.apUpdates.length = 0;
   h.enqueued.length = 0;
   h.get.mockReset();
@@ -71,6 +80,7 @@ beforeEach(() => {
   (enqueueCloverSupplementalInjection as any).mockClear();
 });
 
+// ── Pure delta logic (mirror of the atomic RPC; still used as building blocks) ──
 describe('supplemental delta (pure)', () => {
   it('lineKey ignores price (absorber-independent), uses name+note', () => {
     expect(lineKey({ name: 'Burger', note: 'no onion', price: 999 })).toBe('Burger||no onion');
@@ -78,11 +88,10 @@ describe('supplemental delta (pure)', () => {
   });
 
   it('append-only delta = the new items, with correct total', () => {
-    const billed = multisetFromLines([burger]);
-    const d = computeDelta([burger, fries], billed);
+    const d = computeDelta([burger, fries], multisetFromLines([burger]));
     expect(d.hasRemoval).toBe(false);
     expect(d.deltaLines).toEqual([fries]);
-    expect(d.totalCents).toBe(550); // 500 + 50 tax
+    expect(d.totalCents).toBe(550);
   });
 
   it('no delta when current == billed', () => {
@@ -118,9 +127,16 @@ describe('supplemental delta (pure)', () => {
   });
 });
 
-describe('handlePaidPrimaryDelta', () => {
-  it('new items on a paid primary → enqueues a supplemental (manifest seeded from Clover)', async () => {
-    // Legacy order (no manifest): seed billed from the current Clover line items.
+// ── handlePaidPrimaryDelta now delegates bookkeeping to the atomic RPC ──
+describe('handlePaidPrimaryDelta (atomic RPC)', () => {
+  it('passes current + seed keys to claim_clover_supplement and enqueues the returned delta', async () => {
+    h.rpcResult = {
+      has_delta: true,
+      has_removal: false,
+      delta_keys: { 'Fries||': 1 },
+      delta_signature: 'SIG',
+      external_reference_id: 'msABC',
+    };
     const out = await handlePaidPrimaryDelta({
       siteId: 25,
       orderId: 5,
@@ -129,15 +145,31 @@ describe('handlePaidPrimaryDelta', () => {
       desiredHash: 'H2',
       currentCloverLineItems: [{ name: 'Burger', note: '' }],
     });
+
+    // RPC got the right inputs (current = both, seed = clover primary lines)
+    const call = h.rpcCalls.find((c) => c.fn === 'claim_clover_supplement');
+    expect(call.args).toMatchObject({
+      p_site_id: 25,
+      p_order_id: 5,
+      p_current_keys: { 'Burger||': 1, 'Fries||': 1 },
+      p_seed_billed_keys: { 'Burger||': 1 },
+      p_primary_clover_order_id: 'CLOVER-1',
+    });
+    // Built line_items from the returned delta_keys (only Fries) + total
     expect(out.supplemental_enqueued).toBe('supp-job-1');
     expect(out.delta_items).toBe(1);
-    expect(h.enqueued[0]).toMatchObject({ siteId: 25, orderId: 5, totalCents: 550, lineItems: [fries] });
-    // persisted the manifest (supplement entry) AND the primary hash
-    expect(h.apUpdates.some((u) => u.additional_properties?.clover_supplemental)).toBe(true);
-    expect(h.apUpdates.some((u) => u.clover_line_items_hash === 'H2')).toBe(true);
+    expect(h.enqueued[0]).toMatchObject({
+      siteId: 25,
+      orderId: 5,
+      externalReferenceId: 'msABC',
+      deltaSignature: 'SIG',
+      totalCents: 550,
+      lineItems: [fries],
+    });
   });
 
-  it('no new items → no_delta_paid, no enqueue', async () => {
+  it('no delta → no_delta_paid, no enqueue', async () => {
+    h.rpcResult = { has_delta: false, has_removal: false };
     const out = await handlePaidPrimaryDelta({
       siteId: 25,
       orderId: 5,
@@ -150,7 +182,8 @@ describe('handlePaidPrimaryDelta', () => {
     expect(enqueueCloverSupplementalInjection).not.toHaveBeenCalled();
   });
 
-  it('removed item → needs_review negative_delta, no enqueue', async () => {
+  it('removal → needs_review negative_delta + visible error, no enqueue', async () => {
+    h.rpcResult = { has_delta: false, has_removal: true };
     const out = await handlePaidPrimaryDelta({
       siteId: 25,
       orderId: 5,
@@ -161,6 +194,8 @@ describe('handlePaidPrimaryDelta', () => {
     });
     expect(out).toMatchObject({ needs_review: 'negative_delta' });
     expect(enqueueCloverSupplementalInjection).not.toHaveBeenCalled();
+    // surfaced a visible pos_injection_error
+    expect(h.apUpdates.some((u) => u.pos_injection_error)).toBe(true);
   });
 });
 
@@ -183,19 +218,27 @@ describe('create_supplemental_order handler', () => {
     expect(h.post).not.toHaveBeenCalled();
   });
 
-  it('creates the supplemental order and persists its id into the manifest', async () => {
+  it('creates the supplemental order and persists its id via the atomic RPC', async () => {
     h.manifest = { supplements: [{ delta_signature: 'SIG1', clover_order_id: null }] };
     h.get.mockResolvedValue({ data: { elements: [] } }); // no externalRef match
     h.post.mockResolvedValue({ data: { id: 'SUPP-NEW' } });
     const out = await handler({
       stepInput: {},
-      jobPayload: { order_id: 5, order_body: orderBody, external_reference_id: 'ms123', delta_signature: 'SIG1' },
+      jobPayload: {
+        order_id: 5,
+        order_body: orderBody,
+        external_reference_id: 'ms123',
+        delta_signature: 'SIG1',
+        order_total_cents: 550,
+      },
       context: {},
       job,
       step,
     });
     expect(out).toMatchObject({ clover_order_id: 'SUPP-NEW' });
     expect(h.post).toHaveBeenCalledWith('/orders', orderBody);
-    expect(h.apUpdates.some((u) => JSON.stringify(u).includes('SUPP-NEW'))).toBe(true);
+    // persisted via the atomic RPC (not a JS read-modify-write)
+    const call = h.rpcCalls.find((c) => c.fn === 'set_clover_supplement_clover_id');
+    expect(call.args).toMatchObject({ p_clover_order_id: 'SUPP-NEW', p_delta_signature: 'SIG1', p_total_cents: 550 });
   });
 });

@@ -60,9 +60,14 @@ vi.mock('../../src/lib/supabase', () => {
           h.updates.push({ table, patch });
           return writeChain();
         },
-        upsert: (row: any) => {
-          h.upserts.push({ table, row });
-          return Promise.resolve({ error: null });
+        upsert: (row: any, opts: any) => {
+          h.upserts.push({ table, row, opts });
+          // payments: `.upsert(...).select('id').single()`; clover_payment_map: `await upsert(...)`.
+          const result = { data: table === 'payments' ? { id: h.newPaymentId } : null, error: null };
+          return {
+            select: () => ({ single: async () => result }),
+            then: (res: any) => res({ error: null }),
+          };
         },
       }),
     },
@@ -112,8 +117,10 @@ describe('upsertCloverPayments', () => {
     h.completedPayments = [{ total: '20.00' }]; // el pago recién insertado cubre el total
     const r = await upsertCloverPayments(25, [cloverPayment()]);
     expect(r.created).toBe(1);
-    const ins = h.inserts.find((i) => i.table === 'payments');
+    // Fix 1: el pago ahora se UPSERTEA (onConflict site_id,pos_id) en vez de insert plano.
+    const ins = h.upserts.find((i) => i.table === 'payments');
     expect(ins.row).toMatchObject({ pos_id: 'CP1', reference: 'CP1', total: '20.00', orders_ids: [123] });
+    expect(ins.opts).toMatchObject({ onConflict: 'site_id,pos_id' });
     // Cubre el total → fulfilled + check-closed
     expect(h.updates.find((u) => u.table === 'orders')?.patch).toMatchObject({
       payment_status: 'fulfilled',
@@ -172,7 +179,7 @@ describe('upsertCloverPayments', () => {
     h.injected = { id: 55 };
     const r = await upsertCloverPayments(25, [cloverPayment({ externalPaymentId: 'Invoice #: 7' })]);
     expect(r.created).toBe(0);
-    expect(h.inserts.find((i) => i.table === 'payments')).toBeUndefined();
+    expect(h.upserts.find((i) => i.table === 'payments')).toBeUndefined();
     expect(h.upserts.find((u) => u.table === 'clover_payment_map')?.row).toMatchObject({ clover_payment_id: 'CP1', mcm_payment_id: 55 });
   });
 
