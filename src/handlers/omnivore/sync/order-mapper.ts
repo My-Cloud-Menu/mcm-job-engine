@@ -7,10 +7,11 @@ const PAGE_LIMIT = 100;
 
 // Field projection — ported verbatim from omnivore-helper.ts:getOmnivoreOrders.
 const FIELDS =
-  'id,name,opened_at,closed_at,' +
+  'id,name,open,opened_at,closed_at,' +
   'totals(due,paid,items,discounts,service_charges,tax,total),' +
-  'employee(id,first_name,last_name),order_type(id,name),revenue_center(id),' +
-  'table(id,name),items(name,comment,price,quantity,' +
+  'employee(id,first_name,last_name),order_type(id,name),revenue_center(id,name),' +
+  // `id,sent,sent_at` por ítem: llave de correlación del merge bidireccional (Fase 7).
+  'table(id,name),items(id,sent,sent_at,name,comment,price,quantity,' +
   'modifiers(id,name,price,quantity,comment,menu_modifier(id,pos_id),modifier_group(id,pos_id,name)),' +
   'menu_item(id,menu_categories(id)))';
 
@@ -185,7 +186,11 @@ function mapOmnivoreItemModifiers(
   return { attributes, omnivoreParams };
 }
 
-export function convertOmnivoreOrderToMCMOrder(omnivoreOrder: any, config: any) {
+export function convertOmnivoreOrderToMCMOrder(
+  omnivoreOrder: any,
+  config: any,
+  omnivoreIdToProductId?: Map<string, number>,
+) {
   const standardCategories: string[] = config?.standardProductsCategories || [];
 
   const lineItems =
@@ -196,6 +201,14 @@ export function convertOmnivoreOrderToMCMOrder(omnivoreOrder: any, config: any) 
       const taxClass = isStandardProduct ? 'standard' : 'reduced';
 
       const mappedModifiers = mapOmnivoreItemModifiers(item, taxClass);
+
+      // Resolver el product_id REAL de MCM vía omnivoreId (los productos lo guardan en
+      // additional_properties.omnivoreId). Si no mapea, conservar el id crudo + unmapped:true
+      // (el OrderCalculator lo tratará como ítem externo verbatim → no tira).
+      const omniMenuItemId = item._embedded?.menu_item?.id != null ? String(item._embedded.menu_item.id) : '';
+      const mappedProductId = omnivoreIdToProductId?.get(omniMenuItemId);
+      const productId = mappedProductId ?? parseInt(omniMenuItemId || '0');
+      const isSent = !!item.sent;
 
       return {
         id: `lineitem-${index}`,
@@ -211,25 +224,53 @@ export function convertOmnivoreOrderToMCMOrder(omnivoreOrder: any, config: any) 
         thumbnail: '',
         total_tax: '0',
         attributes: mappedModifiers.attributes,
-        product_id: parseInt(item._embedded?.menu_item?.id || '0'),
+        product_id: productId,
         variation_id: '',
         product_price: (item.price / 100).toFixed(2),
         variation_name: '',
-        additional_properties: mappedModifiers.omnivoreParams.length
-          ? { omnivoreParams: mappedModifiers.omnivoreParams }
-          : {},
+        // Estado POS (el ítem rung en el terminal puede venir ya enviado a cocina).
+        status: isSent ? 'sent' : 'new',
+        ...(item.sent_at ? { sent_at: new Date(item.sent_at * 1000).toISOString() } : {}),
+        additional_properties: {
+          ...(mappedModifiers.omnivoreParams.length
+            ? { omnivoreParams: mappedModifiers.omnivoreParams }
+            : {}),
+          // Correlación del merge + marca de origen externo (tolerancia del calculator).
+          omnivore: {
+            item_id: item.id != null ? String(item.id) : undefined,
+            origin: 'pos',
+            sent: isSent,
+            ...(mappedProductId == null ? { unmapped: true } : {}),
+          },
+        },
       };
     }) || [];
 
+  // `open` (top-level boolean del ticket): un ticket ABIERTO con due==0 NO está pagado
+  // (está vacío, o sus ítems aún no totalizan). Solo un ticket CERRADO con due==0 es
+  // "cobrado/comped". Sin este guard, una mesa abierta vacía se marcaba check-closed/
+  // fulfilled y el inbound la cerraba (rompía fire/void posteriores). Tickets viejos sin
+  // el campo `open` (undefined) caen al comportamiento legacy (tratados como cerrados).
+  const isOpen = omnivoreOrder.open === true;
   let payment_status = 'not_fulfilled';
-  if (omnivoreOrder.totals.due == 0) {
+  if (omnivoreOrder.totals.paid > 0) {
+    payment_status = omnivoreOrder.totals.due == 0 ? 'fulfilled' : 'partially_fulfilled';
+  } else if (!isOpen && omnivoreOrder.totals.due == 0) {
     payment_status = 'fulfilled';
-  } else if (omnivoreOrder.totals.paid > 0) {
-    payment_status = 'partially_fulfilled';
   }
 
+  // Status de la orden sincronizada:
+  //  - pagada/cerrada en Omnivore (payment_status='fulfilled') → check-closed (prioridad).
+  //  - abierta CON al menos un ítem ya fireado en el POS (item.sent) → in-kitchen.
+  //    Espeja la regla del propio sistema (send-to-kitchen.ts: new-order→in-kitchen cuando
+  //    hay ítems 'sent'). El mapper ya estampa li.status='sent' por cada item.sent de Omnivore.
+  //  - abierta SIN ítems fireados → new-order (un ticket abierto vacío/sin enviar no está "en cocina").
   let order_status = 'new-order';
-  if (payment_status == 'fulfilled') order_status = 'check-closed';
+  if (payment_status == 'fulfilled') {
+    order_status = 'check-closed';
+  } else if (lineItems.some((li: any) => li.status === 'sent')) {
+    order_status = 'in-kitchen';
+  }
 
   let experience = 'pu';
   if (omnivoreOrder?._embedded?.table?.id) experience = 'qe';
@@ -282,6 +323,7 @@ export function convertOmnivoreOrderToMCMOrder(omnivoreOrder: any, config: any) 
       id: omnivoreOrder?._embedded?.table?.id || '',
       label: table_name,
       revenue_center_id: omnivoreOrder?._embedded?.revenue_center?.id || '',
+      revenue_center_name: omnivoreOrder?._embedded?.revenue_center?.name || '',
     },
     location_id: null,
     order_type: {

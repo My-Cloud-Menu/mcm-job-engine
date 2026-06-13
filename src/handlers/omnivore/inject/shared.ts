@@ -148,6 +148,49 @@ export async function persistPaymentIssue(
 }
 
 /**
+ * Reconcilia `orders.issues` tras aplicar OK un pago a Omnivore.
+ *
+ * `orders.issues` es un slot único y una orden puede tener VARIOS pagos-tarjeta
+ * (cada uno con su job `payment_injection`, todos con `reference_id = order_id`).
+ * Solo limpiamos el flag cuando ESTE éxito deja a TODOS los pagos de la orden
+ * aplicados: contamos los hermanos `payment_injection` (omnivore) de la orden que
+ * NO estén `completed`, excluyendo el job actual (que está `running` y a punto de
+ * completar). Si queda alguno en dead-letter/curso, NO limpiamos — el flag sigue
+ * reflejando una sincronización pendiente y se limpiará cuando complete el último.
+ */
+export async function reconcileOrderIssues(
+  siteId: number,
+  orderId: unknown,
+  currentJobId: string
+): Promise<void> {
+  if (orderId === undefined || orderId === null) return;
+  const { data: pending, error } = await supabase
+    .from('integration_jobs')
+    .select('id')
+    .eq('site_id', siteId)
+    .eq('integration', 'omnivore')
+    .eq('job_type', 'payment_injection')
+    .eq('reference_id', String(orderId))
+    .neq('status', 'completed')
+    .neq('id', currentJobId);
+  if (error) {
+    logger.error({ error, site_id: siteId, order_id: orderId }, 'omnivore: failed to scan sibling payment jobs');
+    return;
+  }
+  if ((pending?.length ?? 0) > 0) return; // aún hay pagos sin aplicar → conservar el flag
+
+  const { error: updErr } = await supabase
+    .from('orders')
+    .update({ issues: null })
+    .eq('id', orderId)
+    .eq('site_id', siteId)
+    .not('issues', 'is', null);
+  if (updErr) {
+    logger.error({ error: updErr, site_id: siteId, order_id: orderId }, 'omnivore: failed to clear order issues');
+  }
+}
+
+/**
  * Whether a failed step (given its classified error) will terminate the job
  * (dead-letter) rather than retry. Mirrors the executor's `willRetry` logic so
  * a handler can persist the terminal error before throwing.

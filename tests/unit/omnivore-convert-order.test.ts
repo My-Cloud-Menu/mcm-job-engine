@@ -17,6 +17,9 @@ function sampleTicket(overrides: Record<string, any> = {}) {
       table: { id: 'T1', name: 'Table 1' },
       items: [
         {
+          id: '900',
+          sent: true,
+          sent_at: 1_700_000_500,
           name: 'Burger',
           comment: 'no onions',
           price: 1000,
@@ -153,9 +156,59 @@ describe('convertOmnivoreOrderToMCMOrder', () => {
     ]);
   });
 
-  it('leaves attributes empty + additional_properties {} when the item has no modifiers', () => {
+  it('leaves attributes empty + stamps the omnivore correlation block when the item has no modifiers', () => {
     const o = convertOmnivoreOrderToMCMOrder(sampleTicket(), config);
     expect(o.line_items[0].attributes).toEqual([]);
-    expect(o.line_items[0].additional_properties).toEqual({});
+    // El mapper estampa siempre el bloque de correlación bidireccional (Fase 7).
+    expect(o.line_items[0].additional_properties).toEqual({
+      omnivore: { item_id: '900', origin: 'pos', sent: true, unmapped: true },
+    });
+  });
+
+  it('ticket ABIERTO vacío (open:true, due=0, paid=0) → not_fulfilled / new-order (NO check-closed)', () => {
+    const t = sampleTicket();
+    (t as any).open = true;
+    (t._embedded as any).items = [];
+    t.totals = { due: 0, paid: 0, items: 0, discounts: 0, service_charges: 0, tax: 0, total: 0 };
+    const o = convertOmnivoreOrderToMCMOrder(t, config);
+    expect(o.payment_status).toBe('not_fulfilled');
+    expect(o.status).toBe('new-order');
+  });
+
+  it('ticket ABIERTO con ítems sin pagar (open:true, due>0) → not_fulfilled / new-order', () => {
+    const t = sampleTicket();
+    (t as any).open = true;
+    t.totals = { due: 2000, paid: 0, items: 2000, discounts: 0, service_charges: 0, tax: 0, total: 2000 };
+    const o = convertOmnivoreOrderToMCMOrder(t, config);
+    expect(o.payment_status).toBe('not_fulfilled');
+    expect(o.status).toBe('new-order');
+  });
+
+  it('ticket CERRADO comped (open:false, due=0, paid=0) → fulfilled / check-closed', () => {
+    const t = sampleTicket();
+    (t as any).open = false;
+    t.totals = { due: 0, paid: 0, items: 2000, discounts: 2000, service_charges: 0, tax: 0, total: 0 };
+    const o = convertOmnivoreOrderToMCMOrder(t, config);
+    expect(o.payment_status).toBe('fulfilled');
+    expect(o.status).toBe('check-closed');
+  });
+
+  it('ticket ABIERTO pagado en su totalidad (open:true, due=0, paid>0) → fulfilled', () => {
+    const t = sampleTicket();
+    (t as any).open = true;
+    t.totals = { due: 0, paid: 2500, items: 2000, discounts: 0, service_charges: 300, tax: 200, total: 2500 };
+    const o = convertOmnivoreOrderToMCMOrder(t, config);
+    expect(o.payment_status).toBe('fulfilled'); // el dinero entró → fulfilled aunque siga abierto
+  });
+
+  it('deriva status/sent_at del flag `sent` y resuelve product_id vía el mapa omnivoreId', () => {
+    const map = new Map<string, number>([['208', 5555]]);
+    const o = convertOmnivoreOrderToMCMOrder(sampleTicket(), config, map);
+    const li = o.line_items[0];
+    expect(li.status).toBe('sent');
+    expect(typeof li.sent_at).toBe('string'); // unix→ISO
+    expect(li.product_id).toBe(5555); // resuelto por omnivoreId, no parseInt('208')
+    expect(li.additional_properties.omnivore.item_id).toBe('900');
+    expect(li.additional_properties.omnivore.unmapped).toBeUndefined(); // sí mapeó
   });
 });

@@ -4,7 +4,7 @@ import { createOmnivoreClient, OmnivoreConfigSchema } from '../client';
 import { HandlerError } from '../../../core/types';
 import { supabase } from '../../../lib/supabase';
 import { mapOmnivoreError, assertNoOmnivoreErrors } from '../error-map';
-import { idempotencyId, persistPaymentIssue, willTerminate } from './shared';
+import { idempotencyId, persistPaymentIssue, reconcileOrderIssues, willTerminate } from './shared';
 
 /**
  * Standalone payment injection (replaces the legacy `sendPaymentToOmnivore`).
@@ -105,6 +105,8 @@ registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step 
   if (paymentId != null) {
     const applied = await readOmnivoreApplied(job.site_id, paymentId, posIdField);
     if (applied) {
+      // Ya aplicado: sana el flag de la orden si todos sus pagos están sincronizados.
+      await reconcileOrderIssues(job.site_id, orderId, job.id);
       return { skipped: 'already_applied', omnivore_payment_id: applied };
     }
   }
@@ -119,6 +121,8 @@ registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step 
     if (paymentId != null && omnivorePaymentId) {
       await writeOmnivoreApplied(job.site_id, paymentId, posIdField, omnivorePaymentId);
     }
+    // Inyección OK: sana el flag de la orden si todos sus pagos están sincronizados.
+    await reconcileOrderIssues(job.site_id, orderId, job.id);
     return { omnivore_payment_id: omnivorePaymentId };
   } catch (err) {
     const he = err instanceof HandlerError ? err : mapOmnivoreError(err, 'OMNIVORE_PAYMENT_FAILED');

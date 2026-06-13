@@ -28,6 +28,10 @@ registerHandler('omnivore', 'fetch_recent_orders', async ({ stepInput, job }) =>
   const omnivoreConfig = OmnivoreConfigSchema.parse(config);
   const client = createOmnivoreClient(omnivoreConfig, job.correlation_id);
 
+  // Timestamp del SNAPSHOT (antes del fetch) — guard de frescura del merge managed:
+  // si un fire/void/open outbound ocurre DESPUÉS de esto, el merge salta esa orden.
+  const fetchStartIso = new Date().toISOString();
+
   let orders: any[];
   try {
     // WS-5/F17 (auditoría 2026-06-09): ventana rodante 36h (opened_at) + TODOS los
@@ -46,7 +50,7 @@ registerHandler('omnivore', 'fetch_recent_orders', async ({ stepInput, job }) =>
     throw mapOmnivoreError(err, 'OMNIVORE_SYNC_FETCH_FAILED');
   }
 
-  const { inserted, updated, skipped } = await upsertOmnivoreOrders(job.site_id, orders, config);
+  const { inserted, updated, skipped } = await upsertOmnivoreOrders(job.site_id, orders, config, fetchStartIso);
 
   logger.info(
     { site_id: job.site_id, orders_fetched: orders.length, inserted, updated, skipped },

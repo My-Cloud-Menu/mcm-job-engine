@@ -1,6 +1,7 @@
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
 import { convertOmnivoreOrderToMCMOrder } from './order-mapper';
+import { mergeManagedOrderLineItems } from './merge-managed-order';
 
 interface UpsertResult {
   inserted: number;
@@ -148,17 +149,34 @@ function verifyOrderHasRelevantChanges(order1: any, order2: any): boolean {
 export async function upsertOmnivoreOrders(
   siteId: number,
   omnivoreOrders: unknown[],
-  config: any
+  config: any,
+  fetchStartIso?: string | null,
 ): Promise<UpsertResult> {
   let inserted = 0;
   let updated = 0;
   let skipped = 0;
 
+  // Mapa omnivoreId → product_id (MCM) para resolver los ítems POS-originados al
+  // product real (evita el throw del OrderCalculator y deja editar órdenes mixtas).
+  const omnivoreIdToProductId = new Map<string, number>();
+  {
+    const { data: prods } = await supabase
+      .from('products')
+      .select('id, additional_properties')
+      .eq('site_id', siteId);
+    for (const p of prods ?? []) {
+      const oid = (p as any)?.additional_properties?.omnivoreId;
+      if (oid != null) omnivoreIdToProductId.set(String(oid), Number((p as any).id));
+    }
+  }
+
+  const tableServiceEnabled = (config as any)?.omnivoreTableServiceEnabled === true;
+
   for (const raw of omnivoreOrders) {
     // Per-order guard: a single malformed ticket must not fail the whole batch.
     let omnivorePosId = '(unknown)';
     try {
-      const order = convertOmnivoreOrderToMCMOrder(raw as any, config);
+      const order = convertOmnivoreOrderToMCMOrder(raw as any, config, omnivoreIdToProductId);
       omnivorePosId = order.pos_id as string;
 
       const { data: existing, error: lookupError } = await supabase
@@ -183,15 +201,137 @@ export async function upsertOmnivoreOrders(
         order.site_id = existing.site_id;
 
         // GUARD anti-doble-cobro: si la orden ya tiene un pago aplicado en MCM,
-        // preservamos sus campos de pago para que el sync NUNCA la reabra/des-pague
-        // (Omnivore la reporta abierta si la inyección del pago falló). Line items
-        // y totales sí pueden seguir sincronizando.
+        // preservamos sus campos de pago para que el sync NUNCA la reabra/des-pague.
         if (await orderHasAppliedPayment(existing.site_id, existing.id)) {
           order.status = existing.status;
           order.payment_status = existing.payment_status;
           order.paid = existing.paid;
         }
 
+        const isManaged = (existing as any).additional_properties?.omnivore_managed === true;
+
+        if (isManaged) {
+          // ── MERGE bidireccional a nivel de ítem (no overwrite). Totales desde Omnivore. ──
+          // Freshness guard: si un fire/void/open outbound ocurrió DESPUÉS del snapshot de
+          // este pull, su sync es más nuevo → saltamos (no regresar total ni anular un ítem
+          // recién fireado). El próximo ciclo (60s) toma el ticket fresco.
+          const syncedAt = (existing as any).additional_properties?.omnivore_synced_at as string | undefined;
+          if (fetchStartIso && syncedAt && syncedAt > fetchStartIso) {
+            skipped++;
+            continue;
+          }
+
+          const mergedLineItems = mergeManagedOrderLineItems(
+            (existing as any).line_items,
+            (order as any).line_items,
+          );
+          const mergedAp = {
+            ...((existing as any).additional_properties ?? {}),
+            omnivore_managed: true,
+            omnivore_synced_at: new Date().toISOString(),
+          };
+
+          // Totales: Omnivore es autoritativo SOLO cuando el ticket ya tiene ítems fireados.
+          // Si el ticket está vacío (todos los ítems siguen sin firear en MCM), no hay nada
+          // que Omnivore "mande" → MCM conserva su total calculado CON tax (no pisar a 0).
+          // Una vez hay ítems en Omnivore: total = Omnivore (fireado, incl. su tax) + preview
+          // de los no-firados (su subtotal), idéntico a send-to-kitchen/void-line-item.
+          const omnivoreFiredItems = Array.isArray((order as any).line_items)
+            ? (order as any).line_items
+            : [];
+          const omnivoreHasItems = omnivoreFiredItems.length > 0;
+          const unfiredItems = (mergedLineItems as any[])
+            .filter((li) => li.status !== 'sent' && li.status !== 'voided');
+          const unfiredPreview = unfiredItems.reduce((sum, li) => sum + Number(li.total ?? 0), 0);
+          // F3 (fluctuación de total): incluir el tax de los ítems NO-firados en el total
+          // mostrado. Sin esto el total bajaba/subía entre add-products-to-order (que calcula
+          // CON tax) y el sync (que lo dejaba sin tax). Ahora el merge muestra
+          // total = Omnivore(fireado, incl. su tax) + preview no-firado (subtotal + su tax).
+          const unfiredTaxPreview = unfiredItems.reduce((sum, li) => sum + Number(li.total_tax ?? 0), 0);
+
+          // status/payment: mientras el ticket siga ABIERTO en el POS, el ciclo de vida lo
+          // maneja MCM (el motor O&P) → preservamos lo existente (no regresar a new-order ni
+          // forzar check-closed). Solo cuando Omnivore reporta el check CERRADO/PAGADO
+          // (payment_status='fulfilled') adoptamos el cierre.
+          const posClosed = order.payment_status === 'fulfilled';
+
+          const totalsPayload: Record<string, unknown> = omnivoreHasItems
+            ? {
+                subtotal: Number(order.subtotal) + unfiredPreview,
+                total: Number(order.total) + unfiredPreview + unfiredTaxPreview,
+                total_tax: Number(order.total_tax) + unfiredTaxPreview,
+                tax_lines: order.tax_lines,
+                fee_lines: order.fee_lines,
+                fee_total: order.fee_total,
+                discount_total: order.discount_total,
+              }
+            : {
+                subtotal: existing.subtotal,
+                total: existing.total,
+                total_tax: existing.total_tax,
+                tax_lines: existing.tax_lines,
+                fee_lines: existing.fee_lines,
+                fee_total: existing.fee_total,
+                discount_total: existing.discount_total,
+              };
+
+          const updatePayload: Record<string, unknown> = {
+            line_items: mergedLineItems,
+            ...totalsPayload,
+            paid: posClosed ? order.paid : existing.paid,
+            payment_status: posClosed ? order.payment_status : existing.payment_status,
+            status: posClosed ? order.status : existing.status,
+            additional_properties: mergedAp,
+            date_updated: new Date().toISOString(),
+          };
+
+          // F4 (anti-churn ROBUSTO): saltar el UPDATE solo si NADA material cambió. Comparamos
+          // el contenido COMPLETO de line_items (no solo el total → detecta un cambio de ítem
+          // con el mismo monto: nombre, qty, modifier, status, oid, etc.) + todos los totales +
+          // paid/payment_status/status. Excluye date_updated y omnivore_synced_at (bookkeeping).
+          // Ante CUALQUIER diferencia, escribimos (sesga a actualizar = seguro).
+          // Comparar a nivel de CENTAVOS: el DB guarda los totales redondeados (2 dec) y el
+          // recomputado es float full-precision → un `===` crudo nunca coincide (churn perpetuo).
+          const numEq = (a: unknown, b: unknown) =>
+            Math.round(Number(a ?? 0) * 100) === Math.round(Number(b ?? 0) * 100);
+          const jsonEq = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+          const unchanged =
+            jsonEq(mergedLineItems, (existing as any).line_items) &&
+            numEq(updatePayload.subtotal, existing.subtotal) &&
+            numEq(updatePayload.total, existing.total) &&
+            numEq(updatePayload.total_tax, existing.total_tax) &&
+            numEq(updatePayload.fee_total, existing.fee_total) &&
+            numEq(updatePayload.discount_total, existing.discount_total) &&
+            numEq(updatePayload.paid, (existing as any).paid) &&
+            updatePayload.payment_status === existing.payment_status &&
+            updatePayload.status === existing.status &&
+            jsonEq(updatePayload.tax_lines, (existing as any).tax_lines) &&
+            jsonEq(updatePayload.fee_lines, (existing as any).fee_lines);
+          if (unchanged) { skipped++; continue; }
+
+          // CAS en date_updated: si el mesero editó desde el snapshot, no pisamos.
+          const { data: casRows, error: updErr } = await supabase
+            .from('orders')
+            .update(updatePayload)
+            .eq('id', existing.id)
+            .eq('site_id', existing.site_id)
+            .eq('date_updated', (existing as any).date_updated)
+            .select('id');
+
+          if (updErr) {
+            logger.error({ error: updErr, site_id: siteId, omnivore_pos_id: omnivorePosId }, 'omnivore merge: update failed');
+            skipped++;
+          } else if (!casRows || casRows.length === 0) {
+            // Conflicto CAS (el mesero escribió): se reintegra en el próximo ciclo.
+            skipped++;
+          } else {
+            updated++;
+            await recordExternalOmnivorePaymentIfNeeded(siteId, existing.id, order);
+          }
+          continue;
+        }
+
+        // ── No-managed (POS-originada pura / legacy): overwrite de orden como hoy ──
         if (
           existing?.channel?.toLowerCase() === 'pos' &&
           verifyOrderHasRelevantChanges(existing, order)
@@ -215,6 +355,15 @@ export async function upsertOmnivoreOrders(
         const randomNumberId = Math.floor(Math.random() * 10_000_000_000_000_000);
         order.site_id = siteId;
         order.id = randomNumberId;
+
+        // POS-originada nueva: si el site tiene table-service y es dine-in/tab, marcarla
+        // `omnivore_managed` → futuros pulls la mergean y el mesero la edita desde O&P.
+        if (tableServiceEnabled && (order.experience === 'qe' || order.experience === 'tab')) {
+          (order as any).additional_properties = {
+            ...((order as any).additional_properties ?? {}),
+            omnivore_managed: true,
+          };
+        }
 
         const { error: upsertError } = await supabase.from('orders').upsert(
           {
