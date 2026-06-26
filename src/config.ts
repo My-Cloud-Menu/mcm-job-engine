@@ -57,6 +57,15 @@ export const config = {
     enabled: optional('RESEND_API_KEY', '') !== '',
   },
 
+  // Printing (cola 'printing'): el handler dispatch_qz delega el push al gateway WS del print-service;
+  // dispatch_star postea al REST de Star. Creds de Star por sitio (printers.config) con fallback a env.
+  printing: {
+    serviceUrl: optional('PRINT_SERVICE_URL', 'http://localhost:3020'),
+    internalToken: optional('PRINT_SERVICE_INTERNAL_TOKEN', ''),
+    starApiUrl: optional('STAR_PRINT_API_URL', 'https://starprint.mymcm.app/api/jobs'),
+    starApiKey: optional('STAR_PRINT_API_KEY', ''),
+  },
+
   logLevel: optional('LOG_LEVEL', 'info'),
 };
 

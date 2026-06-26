@@ -1,0 +1,16 @@
+{
+  "N": 50,
+  "completed": 50,
+  "dead": 0,
+  "enqueue_ms": 3555,
+  "wall_s": "73.6",
+  "throughput_per_s": "0.68",
+  "p50_ms": 46246,
+  "p95_ms": 70179,
+  "max_ms": 71711,
+  "distinct_tickets": 50,
+  "dup_tickets": 0,
+  "paid_ok": 0,
+  "dead_letter_delta": 0,
+  "queue_depth_after": 0
+}

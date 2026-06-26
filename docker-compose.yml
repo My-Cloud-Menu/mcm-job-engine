@@ -52,6 +52,19 @@ services:
       RUN_SCHEDULER: "false"
       RUN_ALERT_DISPATCHER: "false"
 
+  # Push de impresión QZ (vía gateway WS del print-service) y Star (REST). Epson es pull
+  # (lo sirve mcm-print-service) + reaper pg_cron → no consume de esta cola.
+  worker-printing:
+    <<: *common
+    container_name: worker-printing
+    environment:
+      WORKER_QUEUE_NAME: printing
+      WORKER_MAX_CONCURRENT_JOBS: "20"
+      WORKER_POLL_INTERVAL_MS: "2000"
+      RUN_SCHEDULER: "false"
+      RUN_ALERT_DISPATCHER: "false"
+      # PRINT_SERVICE_URL / PRINT_SERVICE_INTERNAL_TOKEN / STAR_PRINT_* van en .env
+
 networks:
   app:
     driver: bridge

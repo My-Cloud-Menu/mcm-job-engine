@@ -6,6 +6,7 @@ import { mapOmnivoreError, assertNoOmnivoreErrors } from '../error-map';
 import {
   idempotencyId,
   findOpenTicketIdByName,
+  findOpenTicketIdByNameScan,
   persistOmnivoreTicketId,
   persistInjectionError,
   willTerminate,
@@ -47,14 +48,25 @@ registerHandler('omnivore', 'create_order', async ({ jobPayload, job, step }) =>
   // Header-independent dedup: only when the ticket name encodes the order id.
   const nameIsOrderUnique = !!(ticketName && orderId != null && ticketName.includes(String(orderId)));
   if (nameIsOrderUnique && ticketName) {
+    let existingId: string | null = null;
     try {
-      const existingId = await findOpenTicketIdByName(client, ticketName);
-      if (existingId) {
-        await persistOmnivoreTicketId(job.site_id, orderId, existingId);
-        return { omnivore_ticket_id: existingId, adopted: true };
-      }
+      existingId = await findOpenTicketIdByName(client, ticketName);
     } catch {
-      // Lookup is best-effort; fall through to create (Idempotency-Id still applies).
+      // Lookup is best-effort; fall through.
+    }
+    // Aloha RECHAZA eq(name) (findOpenTicketIdByName → null). En un REINTENTO (un intento previo
+    // pudo crear el ticket y morir antes de persistir pos_id), escaneamos tickets abiertos y
+    // matcheamos en memoria → cierra el duplicado de create_order en Aloha (header muerto).
+    if (!existingId && step.attempt_count > 0) {
+      try {
+        existingId = await findOpenTicketIdByNameScan(client, ticketName);
+      } catch {
+        // best-effort; fall through to create (Idempotency-Id still applies on POS que lo honran).
+      }
+    }
+    if (existingId) {
+      await persistOmnivoreTicketId(job.site_id, orderId, existingId);
+      return { omnivore_ticket_id: existingId, adopted: true };
     }
   }
 

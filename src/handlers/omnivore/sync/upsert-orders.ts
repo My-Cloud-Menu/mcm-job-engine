@@ -170,6 +170,31 @@ export async function upsertOmnivoreOrders(
     }
   }
 
+  // Mapa external_id (id de mesa del POS) → floor_element MCM. Linkea las órdenes sincronizadas
+  // al floor (table_id + table.id = UUID del floor_element) para que sean consistentes con las
+  // creadas por MCM → /details (2º cheque), agrupación de cheques y transfer funcionan sin
+  // depender del fallback. No-op si la mesa no está importada al floor (mapa sin esa entrada).
+  const tableFloorByExternalId = new Map<string, { id: string; label: string; revenue_center_id: string }>();
+  {
+    const { data: tables } = await supabase
+      .from('floor_elements')
+      .select('id, external_id, table_name, table_number, revenue_center_id')
+      .eq('site_id', siteId)
+      .eq('type', 'table');
+    for (const fe of tables ?? []) {
+      if ((fe as any).external_id == null) continue;
+      const ext = String((fe as any).external_id);
+      // Si hubiera duplicados (planes archivados), conservamos el primero de forma determinística.
+      if (!tableFloorByExternalId.has(ext)) {
+        tableFloorByExternalId.set(ext, {
+          id: String((fe as any).id),
+          label: (fe as any).table_name ?? (fe as any).table_number ?? ext,
+          revenue_center_id: (fe as any).revenue_center_id ?? '',
+        });
+      }
+    }
+  }
+
   const tableServiceEnabled = (config as any)?.omnivoreTableServiceEnabled === true;
 
   for (const raw of omnivoreOrders) {
@@ -178,6 +203,23 @@ export async function upsertOmnivoreOrders(
     try {
       const order = convertOmnivoreOrderToMCMOrder(raw as any, config, omnivoreIdToProductId);
       omnivorePosId = order.pos_id as string;
+
+      // Linkeo al floor_element MCM por external_id (= id de mesa de Omnivore). Deja table_id +
+      // table.id con el UUID del floor_element (consistente con órdenes MCM-creadas). El objeto
+      // `order` ya corregido cubre el INSERT y el path no-managed (que escribe `order` completo);
+      // para el path managed se aplica explícitamente más abajo. No-op si la mesa no está en el floor.
+      const floorEl = (order as any)?.table?.id
+        ? tableFloorByExternalId.get(String((order as any).table.id))
+        : undefined;
+      if (floorEl) {
+        (order as any).table_id = floorEl.id;
+        (order as any).table = {
+          ...((order as any).table ?? {}),
+          id: floorEl.id,
+          label: (order as any).table?.label || floorEl.label,
+          revenue_center_id: (order as any).table?.revenue_center_id || floorEl.revenue_center_id,
+        };
+      }
 
       const { data: existing, error: lookupError } = await supabase
         .from('orders')
@@ -208,7 +250,17 @@ export async function upsertOmnivoreOrders(
           order.paid = existing.paid;
         }
 
-        const isManaged = (existing as any).additional_properties?.omnivore_managed === true;
+        // Una orden usa el MERGE no-destructivo si tiene el flag `omnivore_managed`, O si es una
+        // orden de table-service editable en O&P (dine-in `qe` / `tab`) en un site con table-service.
+        // Esto último es defensa de fondo: aunque a la orden le falte el flag (insertada por código/
+        // binario viejo, o sin backfill), NUNCA cae al overwrite destructivo que borra estado
+        // local-only (ítems sin enviar + asiento). No depende de que el flag esté persistido: se
+        // reevalúa en cada pull. Los sites SIN table-service quedan idénticos a hoy.
+        const isManaged =
+          (existing as any).additional_properties?.omnivore_managed === true ||
+          (tableServiceEnabled &&
+            (existing as any).channel?.toLowerCase() === 'pos' &&
+            ((existing as any).experience === 'qe' || (existing as any).experience === 'tab'));
 
         if (isManaged) {
           // ── MERGE bidireccional a nivel de ítem (no overwrite). Totales desde Omnivore. ──
@@ -275,9 +327,20 @@ export async function upsertOmnivoreOrders(
                 discount_total: existing.discount_total,
               };
 
+          // Linkeo de floor (cura órdenes sincronizadas): si la mesa resolvió a un floor_element
+          // y la orden aún no lo tiene en table_id / table.id, lo seteamos. `order.table` ya viene
+          // corregido arriba. Solo agregamos las claves que difieren (para no forzar churn ni
+          // tocar órdenes ya linkeadas / sin floor_element).
+          const floorPatch: Record<string, unknown> = {};
+          if (floorEl) {
+            if (String((existing as any).table_id ?? '') !== floorEl.id) floorPatch.table_id = floorEl.id;
+            if (String((existing as any).table?.id ?? '') !== floorEl.id) floorPatch.table = (order as any).table;
+          }
+
           const updatePayload: Record<string, unknown> = {
             line_items: mergedLineItems,
             ...totalsPayload,
+            ...floorPatch,
             paid: posClosed ? order.paid : existing.paid,
             payment_status: posClosed ? order.payment_status : existing.payment_status,
             status: posClosed ? order.status : existing.status,
@@ -306,7 +369,8 @@ export async function upsertOmnivoreOrders(
             updatePayload.payment_status === existing.payment_status &&
             updatePayload.status === existing.status &&
             jsonEq(updatePayload.tax_lines, (existing as any).tax_lines) &&
-            jsonEq(updatePayload.fee_lines, (existing as any).fee_lines);
+            jsonEq(updatePayload.fee_lines, (existing as any).fee_lines) &&
+            Object.keys(floorPatch).length === 0;
           if (unchanged) { skipped++; continue; }
 
           // CAS en date_updated: si el mesero editó desde el snapshot, no pisamos.
@@ -331,27 +395,108 @@ export async function upsertOmnivoreOrders(
           continue;
         }
 
-        // ── No-managed (POS-originada pura / legacy): overwrite de orden como hoy ──
-        if (
-          existing?.channel?.toLowerCase() === 'pos' &&
-          verifyOrderHasRelevantChanges(existing, order)
-        ) {
-          const { error: updateError } = await supabase
-            .from('orders')
-            .update(order)
-            .eq('id', existing.id)
-            .eq('site_id', existing.site_id);
-          if (updateError) {
-            logger.error({ error: updateError, site_id: siteId, omnivore_pos_id: omnivorePosId }, 'omnivore upsert: update failed');
-            skipped++;
+        // ── No-managed (POS pura / sin table-service / pickup): Omnivore autoritativo de
+        // totales/estado, COMO HOY. Defensa en profundidad SOLO en sites con table-service:
+        // merge de line_items por `omnivore.item_id` para NUNCA destruir estado local-only
+        // (unsent/seat) si una orden se coló sin el flag (p.ej. pickup, que no es qe/tab).
+        // Los sites SIN table-service quedan IDÉNTICOS a hoy (cero cambio de comportamiento).
+        if (existing?.channel?.toLowerCase() === 'pos') {
+          if (tableServiceEnabled) {
+            (order as any).line_items = mergeManagedOrderLineItems(
+              (existing as any).line_items,
+              (order as any).line_items,
+            );
+          }
+          // Tras el merge, escribir solo si algo material cambió (evita churn: si el único "cambio"
+          // era el ítem local que el merge ya preservó, el order resultante == existing → skip).
+          if (verifyOrderHasRelevantChanges(existing, order)) {
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update(order)
+              .eq('id', existing.id)
+              .eq('site_id', existing.site_id);
+            if (updateError) {
+              logger.error({ error: updateError, site_id: siteId, omnivore_pos_id: omnivorePosId }, 'omnivore upsert: update failed');
+              skipped++;
+            } else {
+              updated++;
+              await recordExternalOmnivorePaymentIfNeeded(siteId, existing.id, order);
+            }
           } else {
-            updated++;
-            await recordExternalOmnivorePaymentIfNeeded(siteId, existing.id, order);
+            skipped++;
           }
         } else {
           skipped++;
         }
       } else {
+        // ── Carrera create (inbound vs outbound) ────────────────────────────────
+        // Si este ticket lo creó MCM (open-table-order/open-tab) pero su orden aún NO tiene
+        // omnivore_pos_id (ventana entre crear el ticket y `patchManagedOrder`), ADOPTAR esa
+        // orden en vez de insertar una 2ª (que chocaría con el UNIQUE y dejaría 2 órdenes).
+        // Determinista y Aloha-safe (sin eq(name)): el nombre del ticket es `MCM {order.id}`
+        // (dine-in) o el nombre del tab (experience_reference). El nombre viaja en
+        // `order.customer.first_name` (lo setea convertOmnivoreOrderToMCMOrder).
+        const ticketName = String((order as any)?.customer?.first_name ?? '').trim();
+        const mcmIdMatch = ticketName.match(/^MCM\s+(\d+)$/);
+        let linkCand: { id: number; additional_properties: any } | null = null;
+        if (mcmIdMatch) {
+          const { data } = await supabase
+            .from('orders')
+            .select('id, additional_properties')
+            .eq('site_id', siteId)
+            .eq('id', Number(mcmIdMatch[1]))
+            .is('omnivore_pos_id', null)
+            .is('closed_at', null)
+            .maybeSingle();
+          linkCand = (data as any) ?? null;
+        } else if (tableServiceEnabled && ticketName) {
+          // Tab: linkear por nombre de cuenta (sin mesa).
+          const { data } = await supabase
+            .from('orders')
+            .select('id, additional_properties')
+            .eq('site_id', siteId)
+            .eq('experience', 'tab')
+            .eq('experience_reference', ticketName)
+            .is('table_id', null)
+            .is('omnivore_pos_id', null)
+            .is('closed_at', null)
+            .order('date_created', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          linkCand = (data as any) ?? null;
+        }
+
+        if (linkCand?.id != null) {
+          const mergedAp = {
+            ...((linkCand.additional_properties ?? {}) as Record<string, unknown>),
+            omnivore_managed: true,
+          };
+          // CAS `is(omnivore_pos_id, null)`: solo linkear si SIGUE sin link (si el outbound
+          // ganó la carrera y ya seteó pos_id, no pisamos — ya está bien linkeada).
+          const { data: linked, error: linkErr } = await supabase
+            .from('orders')
+            .update({
+              omnivore_pos_id: omnivorePosId,
+              global_pos_id: `${siteId}-${omnivorePosId}`,
+              additional_properties: mergedAp,
+            })
+            .eq('id', linkCand.id)
+            .eq('site_id', siteId)
+            .is('omnivore_pos_id', null)
+            .select('id');
+          if (linkErr) {
+            logger.error({ error: linkErr, site_id: siteId, omnivore_pos_id: omnivorePosId }, 'omnivore link-by-name: update failed');
+            skipped++;
+          } else if (linked && linked.length > 0) {
+            logger.info({ site_id: siteId, order_id: linkCand.id, omnivore_pos_id: omnivorePosId }, 'omnivore link-by-name: adopted MCM order (no duplicate)');
+            updated++;
+          } else {
+            // El outbound linkeó concurrentemente → ya correcto, sin insertar.
+            skipped++;
+          }
+          continue; // NO insertar: la orden quedó (o ya estaba) linkeada.
+        }
+
         const randomNumberId = Math.floor(Math.random() * 10_000_000_000_000_000);
         order.site_id = siteId;
         order.id = randomNumberId;

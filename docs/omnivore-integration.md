@@ -61,6 +61,16 @@ son idénticos; solo cambian los límites de request.
 - El `name` no es único por orden en el site `414341196` (`MCM-{firstName}`); ahí
   se omite el guard por nombre y se confía en `Idempotency-Id`.
 
+> **⚠️ Aloha: el header `Idempotency-Id` está MUERTO (probado en vivo 2026-06-13).**
+> En Aloha (`pos_type=aloha`) el header se ignora en silencio y `eq(name)` da `bad_query`
+> → `findOpenTicketIdByName` no funciona. Por eso `create_order` añade un fallback:
+> en un **reintento** (`step.attempt_count > 0`) usa `findOpenTicketIdByNameScan`
+> (lista tickets abiertos y matchea el nombre `MCM {order_id}` en memoria) para adoptar
+> el ticket de un intento previo en vez de crear un duplicado. `add_items` (`getTicketItemCount`)
+> y `create_payment` (`due==0`) ya eran seguros en Aloha. Detalle completo + el flujo síncrono
+> de mesa (open-table/open-tab/fire/void) en
+> `mcm-edge-functions/_docs/omnivore-idempotency-hardening.md`.
+
 **Pago por monto, no `full:true`:** el paso 3 envía `amount` = monto cobrado en
 centavos **excluyendo** el tip (`amount = order.total − tip`; el `tip` va aparte).
 Decisión de producto: registrar el monto real cobrado en Omnivore en lugar de

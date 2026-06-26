@@ -4,6 +4,9 @@ const BACKOFF_PROFILES: Record<string, number[]> = {
   // Por job_type: la inyección de pago reintenta espaciada ~30s (decisión del
   // usuario) — más largo que el perfil rápido de la cola, para no martillar el POS.
   payment_injection: [30, 30, 30, 30],
+  // Delivery dispatch (Uber Direct): reintenta rápido al inicio (el courier debe llegar a tiempo),
+  // luego espacia. 5 intentos → ~15 min de cobertura antes de dead-letter + alerta.
+  delivery_dispatch: [10, 30, 60, 180, 600],
   // Por cola:
   pos_injection:  [0, 5, 15, 45, 120, 300],
   pos_sync:       [10, 30, 60, 180],

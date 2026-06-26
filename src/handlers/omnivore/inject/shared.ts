@@ -37,6 +37,25 @@ export async function findOpenTicketIdByName(
   return res.data?._embedded?.tickets?.[0]?.id ?? null;
 }
 
+/**
+ * Fallback Aloha-safe del adopt-by-name: algunos POS (Aloha, probado en vivo) RECHAZAN
+ * `where=eq(name,...)` con `bad_query` → `findOpenTicketIdByName` siempre devuelve null ahí.
+ * Este scan trae los tickets ABIERTOS y matchea el nombre EXACTO en memoria. Más caro (lista),
+ * por eso el caller lo usa solo en REINTENTOS (cuando un intento previo pudo crear el ticket).
+ */
+export async function findOpenTicketIdByNameScan(
+  client: AxiosInstance,
+  name: string,
+  limit = 100
+): Promise<string | null> {
+  const res = await client.get<{ _embedded?: { tickets?: Array<{ id: string; name?: string }> } }>('/tickets', {
+    params: { where: 'eq(open,true)', fields: 'id,name', limit },
+  });
+  const tickets = res.data?._embedded?.tickets ?? [];
+  const match = tickets.find((t) => String(t?.name ?? '') === name);
+  return match?.id != null ? String(match.id) : null;
+}
+
 /** Number of items currently on a ticket — used to make `add_items` idempotent. */
 export async function getTicketItemCount(client: AxiosInstance, ticketId: string): Promise<number> {
   const res = await client.get<{ _embedded?: { items?: unknown[] } }>(`/tickets/${ticketId}`, {

@@ -252,6 +252,45 @@ export async function enqueueEmail(params: {
   return data as string;
 }
 
+// ── enqueueDeliveryDispatch ──────────────────────────────────
+
+/**
+ * Enqueues a 1-step delivery dispatch job (cola `order_actions`). El handler `delivery.dispatch`
+ * invoca la edge fn `delivery-create` (idempotente). El producer real es la edge fn
+ * `order-notification-status-change-trigger` (al pasar a in-kitchen) y la edge fn `delivery-dispatch`
+ * (POS / "Llamar Uber") vía la RPC `enqueue_job` directamente — este helper documenta el contrato y
+ * sirve para enqueue desde Node si hiciera falta. Returns the job ID (o null si fue deduplicado).
+ */
+export async function enqueueDeliveryDispatch(params: {
+  siteId: number;
+  orderId: string | number;
+  test?: boolean;
+  /** Fuerza un job nuevo (re-dispatch manual): evita el dedup por orden. */
+  force?: boolean;
+  correlationId?: string;
+}): Promise<string | null> {
+  const base = `delivery_dispatch:${params.siteId}:${params.orderId}`;
+  const idempotencyKey = params.force ? `${base}:${randomUUID()}` : base;
+
+  const { data, error } = await supabase.rpc('enqueue_job', {
+    p_site_id: params.siteId,
+    p_queue_name: 'order_actions',
+    p_job_type: 'delivery_dispatch',
+    p_integration: 'delivery',
+    p_idempotency_key: idempotencyKey,
+    p_payload: { site_id: params.siteId, order_id: params.orderId, test: params.test ?? false },
+    p_total_steps: 1,
+    p_steps: [{ step_name: 'dispatch', max_attempts: 5, idempotency_key: `${idempotencyKey}:dispatch` }],
+    p_priority: 7,
+    p_reference_type: 'order',
+    p_reference_id: String(params.orderId),
+    p_correlation_id: params.correlationId ?? null,
+  });
+
+  if (error) throw new HandlerError(`enqueue_job failed: ${error.message}`, 'ENQUEUE_FAILED', false);
+  return (data as string) ?? null; // null = deduplicado (ya encolado)
+}
+
 // ── ensureSyncSchedule ───────────────────────────────────────
 
 /**
