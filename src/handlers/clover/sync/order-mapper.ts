@@ -99,7 +99,9 @@ const getTaxesBreakdownOfCloverOrder = (cloverOrder: any) => {
   ];
 };
 
-export const convertCloverOrderToMCMOrder = (cloverOrder: any) => {
+// `productMap` (cloverItemId → MCM product id) lets pulled line items resolve to the synced
+// MCM product so the POS can act on them (edit/repeat/86); absent → falls back to the Clover id.
+export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<string, number>) => {
   const lineItems =
     cloverOrder.lineItems?.elements?.map((item: any, index: number) => {
       let taxClass = 'standard';
@@ -110,6 +112,18 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any) => {
       ) {
         taxClass = 'reduced';
       }
+
+      // Clover line-item modifications → MCM attributes (what the POS ItemRow renders) +
+      // additional_properties.modifiers (canonical). Previously hardcoded [] → modifiers were
+      // silently dropped on pulled orders (kitchen ticket/receipt inaccurate).
+      const mods = (item?.modifications?.elements ?? []).map((m: any) => ({
+        id: m?.modifier?.id ?? m?.id ?? '',
+        label: m?.name ?? '',
+        value: m?.name ?? '',
+        price: (Number(m?.amount ?? 0) / 100),
+      }));
+      const cloverItemId = item?.item?.id ? String(item.item.id) : '';
+      const mcmProductId = cloverItemId && productMap ? productMap.get(cloverItemId) : undefined;
 
       return {
         id: `lineitem-${index}`,
@@ -124,12 +138,12 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any) => {
         tax_class: taxClass,
         thumbnail: '',
         total_tax: '0',
-        attributes: [],
-        product_id: item?.item?.id || '',
+        attributes: mods,
+        product_id: mcmProductId != null ? String(mcmProductId) : cloverItemId,
         variation_id: '',
         product_price: (item.price / 100).toFixed(2),
         variation_name: '',
-        additional_properties: {},
+        additional_properties: { modifiers: mods, clover: { line_item_id: item?.id ?? null, clover_item_id: cloverItemId } },
       };
     }) || [];
 

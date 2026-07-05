@@ -1,0 +1,19 @@
+{
+  "started": "2026-07-02T16:33:24.877Z",
+  "site_a": 99990001,
+  "n": 4,
+  "outbound": {
+    "created": 4,
+    "with_line_items": 4,
+    "total_cent_exact": 4
+  },
+  "idempotency": {
+    "first_clover_id": "BCQNZZ7PZH49C",
+    "adopted": true,
+    "same_clover_id": true
+  },
+  "cleanup": {
+    "clover_orders_deleted": 4
+  },
+  "finished": "2026-07-02T16:33:32.432Z"
+}

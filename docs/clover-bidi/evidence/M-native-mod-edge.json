@@ -1,0 +1,55 @@
+{
+  "picked_modifiers": [
+    "Crossiant",
+    "Bagel",
+    "Salsa"
+  ],
+  "S1_multi_modifier": {
+    "per_line": [
+      {
+        "name": "Heavenly White",
+        "mods": [
+          "Crossiant",
+          "Bagel"
+        ]
+      }
+    ],
+    "ok": true
+  },
+  "S2_mixed_correlation": {
+    "per_line": [
+      {
+        "name": "Heavenly White",
+        "mods": [
+          "Crossiant"
+        ]
+      },
+      {
+        "name": "Tea",
+        "mods": []
+      },
+      {
+        "name": "Grilled Chicken Salad",
+        "mods": [
+          "Bagel",
+          "Salsa"
+        ]
+      }
+    ],
+    "ok": true
+  },
+  "S3_invalid_modifier": {
+    "order_created": true,
+    "per_line": [
+      {
+        "name": "Heavenly White",
+        "mods": [
+          "Crossiant"
+        ]
+      }
+    ],
+    "valid_attached": true,
+    "no_crash": true
+  },
+  "ALL_OK": true
+}

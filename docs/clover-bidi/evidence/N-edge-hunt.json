@@ -1,0 +1,36 @@
+{
+  "E1_over_100_items": {
+    "sent": 120,
+    "landed": 120,
+    "error": null,
+    "ok": true
+  },
+  "E2_duplicate_items_mods": {
+    "per": [
+      {
+        "name": "Veggie Panini",
+        "mods": [
+          "Crossiant"
+        ]
+      },
+      {
+        "name": "Veggie Panini",
+        "mods": [
+          "Bagel"
+        ]
+      }
+    ],
+    "ok": true
+  },
+  "E3_zero_price": {
+    "landed": 1,
+    "error": null,
+    "ok": true
+  },
+  "E4_empty": {
+    "landed": 0,
+    "error": null,
+    "ok": true
+  },
+  "ALL_OK": true
+}

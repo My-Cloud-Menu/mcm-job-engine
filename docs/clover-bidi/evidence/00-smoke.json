@@ -1,0 +1,134 @@
+{
+  "step": "fase0-smoke",
+  "ts": "2026-07-02T05:15:21.540Z",
+  "site_with_creds": 25512412,
+  "config_present": {
+    "apiKey": "<redacted>",
+    "apiKey_len": "<redacted>",
+    "merchantId": "7ES0TRRRYJCY1",
+    "apiUrl": "https://sandbox.dev.clover.com",
+    "active": true
+  },
+  "host_gate": [
+    {
+      "base": "https://sandbox.dev.clover.com",
+      "status": 200,
+      "ok": true,
+      "err": null,
+      "name": "MCM Restaurant Test"
+    },
+    {
+      "base": "https://apisandbox.dev.clover.com",
+      "status": 200,
+      "ok": true,
+      "err": null,
+      "name": "MCM Restaurant Test"
+    }
+  ],
+  "valid_base": "https://sandbox.dev.clover.com",
+  "merchant": {
+    "id": "7ES0TRRRYJCY1",
+    "name": "MCM Restaurant Test"
+  },
+  "tenders": {
+    "status": 200,
+    "count": 15,
+    "elements": [
+      {
+        "id": "QV0654SVQF9RW",
+        "label": "Cash",
+        "labelKey": "com.clover.tender.cash",
+        "enabled": true
+      },
+      {
+        "id": "BX9GRVH6Q6HXW",
+        "label": "Credit Card",
+        "labelKey": "com.clover.tender.credit_card",
+        "enabled": true
+      },
+      {
+        "id": "SNFV72DT4FGYT",
+        "label": "Check",
+        "labelKey": "com.clover.tender.check",
+        "enabled": true
+      },
+      {
+        "id": "H8EDKEVXEPC7R",
+        "label": "External Gift Card",
+        "labelKey": "com.clover.tender.external_gift_card",
+        "enabled": false
+      },
+      {
+        "id": "EKBSE2W25CAX6",
+        "label": "LevelUp",
+        "labelKey": "com.clover.tender.level_up",
+        "enabled": false
+      },
+      {
+        "id": "83BVTM1R6W0GT",
+        "label": "External Payment",
+        "labelKey": "com.clover.tender.external_payment",
+        "enabled": false
+      },
+      {
+        "id": "XE6EF3FN5ME1M",
+        "label": "External PIN Debit",
+        "labelKey": "com.clover.tender.external_pin_debit",
+        "enabled": false
+      },
+      {
+        "id": "P111W186KJV0J",
+        "label": "Debit Card",
+        "labelKey": "com.clover.tender.debit_card",
+        "enabled": true
+      },
+      {
+        "id": "VZ6WS2KMZ9E0M",
+        "label": "Eat24 Clover Integration",
+        "labelKey": "com.clover.tender.eat24_clover_integration",
+        "enabled": true
+      },
+      {
+        "id": "NHR2955HCQA1C",
+        "label": "Clover Eat24 Integration",
+        "labelKey": "com.clover.tender.clover_eat24_integration",
+        "enabled": true
+      },
+      {
+        "id": "97GVCN9RPNK62",
+        "label": "Eat24 Integration",
+        "labelKey": "com.clover.tender.eat24_integration",
+        "enabled": true
+      },
+      {
+        "id": "J94VBXM1ZH3KY",
+        "label": "TapMango Wallet",
+        "labelKey": "com.clover.tender.tapmango_wallet",
+        "enabled": true
+      },
+      {
+        "id": "5S7D7SW69EQET",
+        "label": "MyTab",
+        "labelKey": "com.clover.tender.mytab",
+        "enabled": true
+      },
+      {
+        "id": "GXJE4DNFGRZXR",
+        "label": "Kosher24",
+        "labelKey": "com.clover.tender.kosher24",
+        "enabled": true
+      },
+      {
+        "id": "4QPPVE0NFNBN4",
+        "label": "MCM",
+        "enabled": true
+      }
+    ]
+  },
+  "items": {
+    "status": 200,
+    "sample_count": 1
+  },
+  "creds_written_to": "/tmp/claude-1000/-home-carlossantos-Documents-Proyectos-MCM/7588c7c9-a8a8-4318-8181-e34f11fefbda/scratchpad/clover-sandbox.env (scratchpad, outside git)",
+  "result": "OK"
+}

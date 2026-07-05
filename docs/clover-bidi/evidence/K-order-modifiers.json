@@ -1,0 +1,39 @@
+{
+  "picked": {
+    "item": {
+      "id": "N8F5XEW2K4R64",
+      "name": "Veggie Panini"
+    },
+    "modifier": {
+      "id": "XW7YWJRPTPRMJ",
+      "name": "Crossiant"
+    }
+  },
+  "result": {
+    "line_item_name": "Veggie Panini",
+    "attributes": [
+      {
+        "id": "XW7YWJRPTPRMJ",
+        "label": "Crossiant",
+        "price": 0.5,
+        "value": "Crossiant"
+      }
+    ],
+    "modifier_rendered": true,
+    "additional_properties_modifiers": [
+      {
+        "id": "XW7YWJRPTPRMJ",
+        "label": "Crossiant",
+        "price": 0.5,
+        "value": "Crossiant"
+      }
+    ],
+    "product_id": "10117",
+    "expected_mcm_product_id": "10117",
+    "product_id_resolved_to_mcm": true,
+    "clover_correlation": {
+      "line_item_id": "FC7ACGJR5TP08",
+      "clover_item_id": "N8F5XEW2K4R64"
+    }
+  }
+}

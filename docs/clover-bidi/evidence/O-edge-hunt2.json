@@ -1,0 +1,21 @@
+{
+  "E5_chunk_boundary_mods": {
+    "total_lines": 105,
+    "line0": [
+      "Crossiant"
+    ],
+    "line60": [
+      "Bagel"
+    ],
+    "line104": [
+      "Salsa"
+    ],
+    "ok": true
+  },
+  "E6_special_chars": {
+    "sent": "Café «Niño» \"quote\" 🌮 & <b> 50%",
+    "got": "Café «Niño» \"quote\" ? & <b> 50%",
+    "ok": false
+  },
+  "ALL_OK": false
+}

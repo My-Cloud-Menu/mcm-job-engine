@@ -1,0 +1,14 @@
+{
+  "picked": {
+    "item": "Veggie Panini",
+    "modifier": "Crossiant"
+  },
+  "after_first_reconcile": [
+    "Crossiant"
+  ],
+  "modifier_attached": true,
+  "after_second_reconcile": [
+    "Crossiant"
+  ],
+  "idempotent_no_accumulation": true
+}

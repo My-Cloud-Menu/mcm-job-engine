@@ -1,0 +1,25 @@
+{
+  "started": "2026-07-02T06:11:14.509Z",
+  "concurrent_pulls": [
+    "ok",
+    "ok",
+    "ok",
+    "ok"
+  ],
+  "rows_per_order": {
+    "2VE1Q2BBNJ1EP": 1,
+    "QDA2NS8B6QBFE": 1,
+    "FKMAK66F63HVY": 1
+  },
+  "no_duplicates": true,
+  "update_path": {
+    "new_total_cents": 1055,
+    "mcm_total_after": 10.55,
+    "cent_match": true,
+    "still_single_row": true
+  },
+  "cleanup": {
+    "clover_deleted": 3
+  },
+  "finished": "2026-07-02T06:11:27.615Z"
+}

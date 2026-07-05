@@ -15,6 +15,10 @@ import './clover/sync/fetch-open-orders';
 import './clover/sync/fetch-closed-orders';
 import './clover/sync/fetch-payments';
 import './clover/sync/push-orders';
+// clover-bidi (ADDITIVE): catalog inbound sync — gated per-tenant, default OFF.
+import './clover/sync/fetch-products';
+import './clover/sync/fetch-employees';
+import './clover/sync/fetch-item-stock';
 
 import './twilio/send-sms';
 import './sendgrid/send-email';

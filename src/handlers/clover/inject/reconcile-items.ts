@@ -54,7 +54,9 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
   }
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
-  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id);
+  const parsedConfig = CloverConfigSchema.parse(config);
+  const client = createCloverClient(parsedConfig, job.correlation_id);
+  const nativeModifiers = (parsedConfig as any).cloverNativeModifiers === true;
 
   try {
     // Short-circuit: already synced to this desired state. The order-level
@@ -98,25 +100,83 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
         await client.delete(`/orders/${cloverOrderId}/line_items/${li.id}`);
       } catch (e) {
         logger.warn({ e, site_id: job.site_id, line_item: li.id }, 'clover reconcile: delete line item failed');
+        // With native modifiers on, a SURVIVING old line would duplicate items+modifications on
+        // the recreate. Fail (retryable) so the whole reconcile retries cleanly instead of
+        // accumulating duplicates. (Legacy non-native path keeps the tolerant swallow.)
+        if (nativeModifiers) {
+          throw new HandlerError('clover reconcile: delete line item failed (native modifiers on)', 'CLOVER_DELETE_LINE_ITEM_FAILED', true);
+        }
       }
     }
 
     if (lineItems.length > 0) {
-      const res = await client.post<{ elements?: unknown[]; errors?: unknown[] }>(
-        `/orders/${cloverOrderId}/bulk_line_items`,
-        { items: lineItems }
-      );
-      // Clover may return HTTP 200 with an inline `errors` array; treat that as a failure
-      // so items don't silently go missing.
-      const inlineErrors = (res.data as { errors?: unknown[] } | undefined)?.errors;
-      if (Array.isArray(inlineErrors) && inlineErrors.length > 0) {
-        throw new HandlerError(
-          `Clover bulk_line_items returned ${inlineErrors.length} inline error(s)`,
-          'CLOVER_BULK_LINE_ITEMS_ERRORS',
-          false,
-          res.status,
-          res.data
-        );
+      // `modifiers` is our own per-line field (applied natively below), not a Clover
+      // bulk_line_items field — strip it so the bulk payload stays clean. No-op for the
+      // production edge payload (which has no `modifiers` field).
+      const bulkItems = (lineItems as any[]).map((li) => { const { modifiers, ...rest } = li; return rest; });
+      // Clover caps bulk_line_items at 100 line items PER REQUEST (a 120-item POST 400s with
+      // "maximum ... is 100" and creates NOTHING). Chunk so a large order (big party / catering,
+      // up to the 2500/order cap) doesn't fail. bulk returns EITHER a bare array OR {elements:[...]}.
+      const BULK_MAX = 100;
+      const created: Array<{ id: string; name?: string; price?: number }> = [];
+      for (let off = 0; off < bulkItems.length; off += BULK_MAX) {
+        const chunk = bulkItems.slice(off, off + BULK_MAX);
+        const res = await client.post<any>(`/orders/${cloverOrderId}/bulk_line_items`, { items: chunk });
+        const rd: any = res.data;
+        const chunkCreated: Array<{ id: string; name?: string; price?: number }> = Array.isArray(rd) ? rd : (rd?.elements ?? []);
+        // Clover may return HTTP 200 with an inline `errors` array; treat that as a failure
+        // so items don't silently go missing.
+        const inlineErrors = Array.isArray(rd) ? undefined : rd?.errors;
+        if (Array.isArray(inlineErrors) && inlineErrors.length > 0) {
+          throw new HandlerError(
+            `Clover bulk_line_items returned ${inlineErrors.length} inline error(s)`,
+            'CLOVER_BULK_LINE_ITEMS_ERRORS',
+            false,
+            res.status,
+            res.data
+          );
+        }
+        created.push(...chunkCreated);
+      }
+
+      // ADDITIVE, flag-gated (cloverNativeModifiers): attach catalog modifiers to each created
+      // line item via POST /line_items/{id}/modifications. Idempotent BY CONSTRUCTION: reconcile
+      // DELETE+RECREATEs the whole line-item set every run, so modifications never accumulate
+      // across retries (a retry deletes the line items — and their modifications — then re-posts).
+      // Each `lineItems[i].modifiers` = [{ modifier: { id }, name, amount }]. Correlate the created
+      // line items to the source lines by (name, price) — NOT by index: the bulk_line_items response
+      // order is NOT guaranteed to match the input order. Best-effort per modifier (failure logged).
+      if (nativeModifiers) {
+        let applied = 0;
+        let failed = 0;
+        let hadRetryableFailure = false;
+        const pool = created.map((c) => ({ id: c.id, name: c.name, price: c.price, used: false }));
+        for (const li of lineItems as Array<Record<string, any>>) {
+          const mods = li?.modifiers as Array<Record<string, unknown>> | undefined;
+          if (!Array.isArray(mods) || mods.length === 0) continue;
+          const match = pool.find((p) => !p.used && String(p.name) === String(li.name) && Number(p.price) === Number(li.price));
+          if (!match) { failed += mods.length; logger.warn({ site_id: job.site_id, clover_order_id: cloverOrderId, name: li.name }, 'clover reconcile: no created line matched for modifiers'); continue; }
+          match.used = true;
+          for (const m of mods) {
+            try {
+              await client.post(`/orders/${cloverOrderId}/line_items/${match.id}/modifications`, m);
+              applied += 1;
+            } catch (e) {
+              failed += 1;
+              const he = e instanceof HandlerError ? e : mapCloverError(e, 'CLOVER_MODIFICATION_FAILED');
+              if (he.retryable) hadRetryableFailure = true;
+              logger.warn({ e, site_id: job.site_id, clover_order_id: cloverOrderId, line_item: match.id, retryable: he.retryable }, 'clover reconcile: modification post failed');
+            }
+          }
+        }
+        if (applied || failed) logger.info({ site_id: job.site_id, clover_order_id: cloverOrderId, modifications_applied: applied, modifications_failed: failed }, 'clover native modifiers applied');
+        // A TRANSIENT modification failure must NOT be persisted as fully synced (persistCloverHash
+        // below), else the hash short-circuit would never re-attempt it (permanent silent drop).
+        // Throw retryable so the whole reconcile re-runs (DELETE+RECREATE + re-apply). Permanent
+        // failures (e.g. 400 invalid catalog modifier) are left best-effort (a retry can't fix them).
+        if (hadRetryableFailure) {
+          throw new HandlerError('clover reconcile: native modification failed (retryable)', 'CLOVER_MODIFICATION_RETRY', true);
+        }
       }
     }
 

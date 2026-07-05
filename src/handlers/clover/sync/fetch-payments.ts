@@ -52,6 +52,11 @@ registerHandler('clover', 'fetch_payments', async ({ stepInput, job }) => {
   if (oldestDeferred !== null && Date.now() - oldestDeferred < DEFER_PROTECT_MS) {
     advanced = Math.min(advanced, oldestDeferred - 1);
   }
+  // clover-bidi (ADDITIVE, G7): never advance the monotonic cursor past now()+skew — a corrupt
+  // far-future modifiedTime in the feed would otherwise poison the watermark and permanently
+  // skip real rows behind it. Purely defensive (clamps only absurd future timestamps).
+  const SKEW_MS = 5 * 60 * 1000;
+  advanced = Math.min(advanced, Date.now() + SKEW_MS);
   const newCursor = String(Math.max(0, advanced));
 
   logger.info(

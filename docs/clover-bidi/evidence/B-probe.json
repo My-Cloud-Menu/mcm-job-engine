@@ -1,0 +1,391 @@
+{
+  "employees": {
+    "status": 200,
+    "count": 1,
+    "with_unhashedPin": 0,
+    "roles": [
+      "ADMIN"
+    ],
+    "sample": [
+      {
+        "id": "1Q9BN5ZC7CB7Y",
+        "name": "Carlos Santos",
+        "role": "ADMIN",
+        "hasUnhashedPin": false
+      }
+    ]
+  },
+  "categories": {
+    "status": 200,
+    "count": 20,
+    "sample": [
+      {
+        "id": "XXFDRE7G3CBR6",
+        "name": "Soup"
+      },
+      {
+        "id": "0DQS42GG8PC96",
+        "name": "Quesadillas"
+      },
+      {
+        "id": "9VBKB6KDVSSPW",
+        "name": "Wraps"
+      }
+    ]
+  },
+  "items": {
+    "status": 200,
+    "sample_count": 5,
+    "sample": [
+      {
+        "id": "EZ5YXXV44M2C8",
+        "name": "Water",
+        "price": 0,
+        "available": true,
+        "hasItemStock": true,
+        "itemStock": {
+          "quantity": 0,
+          "stockCount": 0
+        },
+        "categories": [
+          "SDHZ3PCKAMNSY"
+        ],
+        "modifierGroups": []
+      },
+      {
+        "id": "N8F5XEW2K4R64",
+        "name": "Veggie Panini",
+        "price": 430,
+        "available": true,
+        "hasItemStock": true,
+        "itemStock": {
+          "quantity": 0,
+          "stockCount": 0
+        },
+        "categories": [
+          "6DHMKRXNPWFC6"
+        ],
+        "modifierGroups": [
+          "HJVPSY1B1R7JY"
+        ]
+      },
+      {
+        "id": "H4FZFFRVYY5CP",
+        "name": "Veggie Wrap",
+        "price": 550,
+        "available": true,
+        "hasItemStock": true,
+        "itemStock": {
+          "quantity": 0,
+          "stockCount": 0
+        },
+        "categories": [
+          "9VBKB6KDVSSPW"
+        ],
+        "modifierGroups": []
+      }
+    ],
+    "total_first_page": 114
+  },
+  "modifier_groups": {
+    "status": 200,
+    "count": 10,
+    "sample": [
+      {
+        "id": "FB7Y99N0RJ3AY",
+        "name": "Breakfast ",
+        "modifiers": [
+          {
+            "id": "XW7YWJRPTPRMJ",
+            "name": "Crossiant",
+            "price": 50
+          },
+          {
+            "id": "851A9P1CYTSDR",
+            "name": "Bagel",
+            "price": 100
+          },
+          {
+            "id": "ZVTCEEF72Y4ZM",
+            "name": "Salsa",
+            "price": 25
+          },
+          {
+            "id": "RNE2J1G9JE0D8",
+            "name": "Sour Cream",
+            "price": 25
+          }
+        ]
+      },
+      {
+        "id": "HT0XD51EFDWSA",
+        "name": "Crepes topping modifier",
+        "modifiers": [
+          {
+            "id": "8XN0AQP3CCB88",
+            "name": "homemade triple berry jam",
+            "price": 0
+          },
+          {
+            "id": "VPJM9VTCEGVS8",
+            "name": "cinnamon & sugar",
+            "price": 0
+          },
+          {
+            "id": "ZE1V4RGKFFPD0",
+            "name": "powered sugar",
+            "price": 0
+          },
+          {
+            "id": "HDN9M8X3EXS1R",
+            "name": "peanut butter",
+            "price": 0
+          },
+          {
+            "id": "0F0HYT2M7KX06",
+            "name": "nutella",
+            "price": 0
+          },
+          {
+            "id": "SH9S7DFY9YTCE",
+            "name": "honey",
+            "price": 0
+          },
+          {
+            "id": "V9HKZF7279XWG",
+            "name": "maple syrup",
+            "price": 0
+          },
+          {
+            "id": "X5N7J2SV50DBJ",
+            "name": "sweet creme",
+            "price": 0
+          },
+          {
+            "id": "RTR2KT5F97NPR",
+            "name": "lemon",
+            "price": 0
+          },
+          {
+            "id": "T951SYWQ8D9KY",
+            "name": "bacon",
+            "price": 0
+          },
+          {
+            "id": "SZ55X7KDHFSSM",
+            "name": "ham",
+            "price": 0
+          },
+          {
+            "id": "Y7EN6VHS5717Y",
+            "name": "assorted cheese",
+            "price": 0
+          },
+          {
+            "id": "D3BS65VKTRYNR",
+            "name": "egg",
+            "price": 0
+          },
+          {
+            "id": "1J9J81H7Q4JJR",
+            "name": "bell pepper",
+            "price": 0
+          },
+          {
+            "id": "XF0CAN6Z9EC32",
+            "name": "tomato",
+            "price": 0
+          },
+          {
+            "id": "MRQ2D9ZEA2JN2",
+            "name": "onion",
+            "price": 0
+          },
+          {
+            "id": "5QRT40C97Q75E",
+            "name": "spinach",
+            "price": 0
+          },
+          {
+            "id": "EZ93W02CW9SG8",
+            "name": "avocado",
+            "price": 0
+          },
+          {
+            "id": "0S2CKB6EKWKSR",
+            "name": "strawberries",
+            "price": 0
+          },
+          {
+            "id": "QTZ81T8387628",
+            "name": "seasonal berries",
+            "price": 0
+          },
+          {
+            "id": "E3KYZE4VHCJ90",
+            "name": "bananas",
+            "price": 0
+          },
+          {
+            "id": "193D7AGYPT1EC",
+            "name": "mango",
+            "price": 0
+          },
+          {
+            "id": "FCE5HZ55CZXV4",
+            "name": "apples",
+            "price": 0
+          },
+          {
+            "id": "W72J548M6EXSW",
+            "name": "chocalate",
+            "price": 0
+          },
+          {
+            "id": "S10VGBJZ5N11J",
+            "name": "strawberry slices",
+            "price": 0
+          },
+          {
+            "id": "KR4AC2XNG8GBT",
+            "name": "caramel",
+            "price": 0
+          },
+          {
+            "id": "YRVWE45DY7RNY",
+            "name": "cinnamon",
+            "price": 0
+          },
+          {
+            "id": "TMECZRV43N5Q4",
+            "name": "butter",
+            "price": 0
+          },
+          {
+            "id": "Q0YKJT02KRFN8",
+            "name": "cheese",
+            "price": 0
+          },
+          {
+            "id": "VP70ZJDKG691A",
+            "name": "cheddar cheese",
+            "price": 0
+          }
+        ]
+      },
+      {
+        "id": "HJVPSY1B1R7JY",
+        "name": "Egg meal modifiers",
+        "modifiers": [
+          {
+            "id": "JDQ2GN8T6FM30",
+            "name": "Meal",
+            "price": 200
+          },
+          {
+            "id": "4ZK9GD1RXQQ4A",
+            "name": "Egg Whites",
+            "price": 25
+          },
+          {
+            "id": "DF4GY5YGAK3QY",
+            "name": "Crossiant",
+            "price": 25
+          },
+          {
+            "id": "7DWF0QP2SKVHE",
+            "name": "Bagel",
+            "price": 50
+          }
+        ]
+      }
+    ]
+  },
+  "item_stocks": {
+    "status": 200,
+    "count": 100,
+    "sample": [
+      {
+        "item": "EZ5YXXV44M2C8",
+        "quantity": 0,
+        "stockCount": 0
+      },
+      {
+        "item": "N8F5XEW2K4R64",
+        "quantity": 0,
+        "stockCount": 0
+      },
+      {
+        "item": "H4FZFFRVYY5CP",
+        "quantity": 0,
+        "stockCount": 0
+      }
+    ]
+  },
+  "order_types": {
+    "status": 200,
+    "count": 1,
+    "sample": [
+      {
+        "id": "E409NQ4X4RQ0T",
+        "label": "MCM"
+      }
+    ]
+  },
+  "orders_probe": {
+    "status": 200,
+    "count": 3,
+    "sample": [
+      {
+        "id": "Z8KZES41VNQ3R",
+        "state": "Open",
+        "hasEmployee": false,
+        "keys": [
+          "href",
+          "id",
+          "currency",
+          "externalReferenceId",
+          "paymentState",
+          "title",
+          "note",
+          "orderType",
+          "taxRemoved",
+          "isVat",
+          "state",
+          "manualTransaction",
+          "groupLineItems",
+          "testMode",
+          "createdTime",
+          "clientCreatedTime",
+          "modifiedTime",
+          "lineItems"
+        ]
+      },
+      {
+        "id": "1BH1NJC5Y7T8J",
+        "state": "Open",
+        "hasEmployee": false,
+        "keys": [
+          "href",
+          "id",
+          "currency",
+          "externalReferenceId",
+          "paymentState",
+          "title",
+          "note",
+          "orderType",
+          "taxRemoved",
+          "isVat",
+          "state",
+          "manualTransaction",
+          "groupLineItems",
+          "testMode",
+          "createdTime",
+          "clientCreatedTime",
+          "modifiedTime",
+          "lineItems"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "picked": {
+    "item": {
+      "id": "N8F5XEW2K4R64",
+      "name": "Veggie Panini"
+    },
+    "modifier": {
+      "id": "XW7YWJRPTPRMJ",
+      "name": "Crossiant",
+      "price": 50
+    }
+  },
+  "line_item_create_status": 200,
+  "line_item_id": "E4044YXN7X4D0",
+  "modification_1_status": 200,
+  "modification_2_status": 200,
+  "modifications_after_double_post": 2,
+  "clover_dedups_modifications": false,
+  "cleanup_delete_status": 200,
+  "conclusion": "native /modifications FEASIBLE; Clover dedups=false → MCM-side idempotency REQUIRED (P1.6)"
+}

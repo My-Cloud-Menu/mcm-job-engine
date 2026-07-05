@@ -40,6 +40,7 @@ export const OMNIVORE_BUSINESS_SLUGS = new Set<string>([
   'table_unavailable',
   'tips_not_allowed',
   'param_not_supported',
+  'required_modifiers_missing',
 ]);
 
 /**

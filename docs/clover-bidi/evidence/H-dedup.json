@@ -1,0 +1,47 @@
+{
+  "started": "2026-07-02T16:27:32.802Z",
+  "S1_outbound_then_inbound": {
+    "clover_id": "XTMDV9EH7ZGZR",
+    "rows_found": 1,
+    "same_row_id": true,
+    "clover_pos_id_set": true,
+    "no_duplicate": true
+  },
+  "S2_concurrency": {
+    "parallel_pulls": 8,
+    "fulfilled": 8,
+    "rows_per_order": {
+      "W93B9Y1JQK5RJ": 1,
+      "14D2W8D0H36KM": 1,
+      "W0MD04FGJWF9C": 1,
+      "X5SZGH9KXFEDY": 1,
+      "E54KKJAY0AM7M": 1
+    },
+    "no_duplicates": true
+  },
+  "S3_repeated_pulls": {
+    "counts_after_each_pull": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "always_one": true
+  },
+  "S4_payment_concurrency": {
+    "payments": 3,
+    "map_rows_per_payment": {
+      "E1FADYA6XXYER": 1,
+      "NK8QH81D8MKAT": 1,
+      "M2CSTSFF2VM3A": 1
+    },
+    "no_duplicate_map_rows": true
+  },
+  "cleanup": {
+    "clover_deleted": 7
+  },
+  "ALL_DEDUP_OK": true,
+  "finished": "2026-07-02T16:29:16.917Z"
+}

@@ -8,11 +8,12 @@ import { idempotencyId, getTicketTotals, persistInjectionError, willTerminate } 
 /**
  * Step 3 of 3 — apply the payment(s) to the ticket.
  *
- * `jobPayload.payments` is the exact payment array the legacy All-In-One nested
- * under `payments` — for the create flow that is a single 3rd-party payment
- * with `full: true` (pays the whole balance and, with auto_close, closes the
- * ticket). Posting it to the standalone `POST /tickets/:id/payments` is
- * functionally identical.
+ * `jobPayload.payments` is the exact payment array the edge builder froze
+ * (`getPaymentStructureForCreateOmnivoreTicket`) — for the create flow that is a
+ * single 3rd-party payment with `amount` (= order total minus tip, in cents) plus
+ * `tip` (in cents). It deliberately does NOT use `full: true` (mutually exclusive
+ * with `amount`); the ticket closes via `auto_close` once `amount` covers the due.
+ * Posting it to the standalone `POST /tickets/:id/payments` is functionally identical.
  *
  * Idempotency (header-independent): if the ticket balance is already 0, or it
  * already carries at least as many payments as we intend to post, a prior

@@ -133,6 +133,19 @@ describe('clover reconcile_items handler', () => {
     expect(h.orderUpdates.find((u) => u.clover_line_items_hash === 'H2')).toBeTruthy();
   });
 
+  it('CHUNKS bulk_line_items into <=100 per request (Clover caps a single request at 100)', async () => {
+    h.cloverState = { clover_ticket_id: 'CLOVER-1', clover_line_items_hash: 'H1' };
+    h.get.mockResolvedValue({ data: { lineItems: { elements: [] }, payments: { elements: [] } } });
+    h.del.mockResolvedValue({});
+    h.post.mockResolvedValue({ data: [] }); // bulk returns a bare array
+    const big = Array.from({ length: 150 }, (_, i) => ({ name: `X${i}`, price: 100 }));
+    await run(big);
+    const bulkCalls = h.post.mock.calls.filter((c: any) => String(c[0]).endsWith('/bulk_line_items'));
+    expect(bulkCalls.length).toBe(2); // 100 + 50, not one 150-item POST (which Clover 400s)
+    expect((bulkCalls[0][1] as any).items.length).toBe(100);
+    expect((bulkCalls[1][1] as any).items.length).toBe(50);
+  });
+
   // Fix total $0.00: Clover no computa order.total al agregar items vía bulk_line_items.
   // Tras el bulk add, asentamos el total congelado por el edge (Σ price+taxAmount).
   it('sets order.total via POST /orders/{id} AFTER the bulk add when order_total_cents is present', async () => {

@@ -1,0 +1,129 @@
+{
+  "started": "2026-07-02T16:29:25.009Z",
+  "order_found": true,
+  "render_checks": {
+    "channel_is_pos": true,
+    "status_present": true,
+    "payment_status_present": true,
+    "totals_numeric": true,
+    "line_items_array": true,
+    "clover_id_surfaced": true,
+    "tax_lines_present": true,
+    "experience_present": true,
+    "date_fields": true
+  },
+  "line_item_shape": {
+    "has_id": true,
+    "has_name": true,
+    "price_numeric": true,
+    "has_quantity": true,
+    "has_total": true,
+    "product_id_value": "",
+    "has_additional_properties": true,
+    "has_modifiers_key": true,
+    "has_attributes": true
+  },
+  "column_presence": {
+    "id": {
+      "present": true,
+      "value_type": "number"
+    },
+    "site_id": {
+      "present": true,
+      "value_type": "number"
+    },
+    "status": {
+      "present": true,
+      "value_type": "string"
+    },
+    "payment_status": {
+      "present": true,
+      "value_type": "string"
+    },
+    "line_items": {
+      "present": true,
+      "value_type": "array"
+    },
+    "total": {
+      "present": true,
+      "value_type": "number"
+    },
+    "subtotal": {
+      "present": true,
+      "value_type": "number"
+    },
+    "discount_total": {
+      "present": true,
+      "value_type": "number"
+    },
+    "fee_total": {
+      "present": true,
+      "value_type": "number"
+    },
+    "total_tax": {
+      "present": true,
+      "value_type": "number"
+    },
+    "paid": {
+      "present": true,
+      "value_type": "number"
+    },
+    "customer": {
+      "present": true,
+      "value_type": "object"
+    },
+    "experience": {
+      "present": true,
+      "value_type": "string"
+    },
+    "experience_reference": {
+      "present": true,
+      "value_type": "string"
+    },
+    "date_created": {
+      "present": true,
+      "value_type": "string"
+    },
+    "date_updated": {
+      "present": true,
+      "value_type": "string"
+    },
+    "employee": {
+      "present": true,
+      "value_type": "object"
+    },
+    "table": {
+      "present": true,
+      "value_type": "object"
+    },
+    "table_id": {
+      "present": false,
+      "value_type": "object"
+    },
+    "check_number": {
+      "present": true,
+      "value_type": "number"
+    },
+    "tax_lines": {
+      "present": true,
+      "value_type": "array"
+    },
+    "fee_lines": {
+      "present": true,
+      "value_type": "array"
+    },
+    "channel": {
+      "present": true,
+      "value_type": "string"
+    },
+    "clover_pos_id": {
+      "present": true,
+      "value_type": "string"
+    },
+    "clover_ticket_id": {
+      "present": true,
+      "value_type": "string"
+    }
+  },
+  "finished": "2026-07-02T16:29:35.055Z"
+}

@@ -113,6 +113,19 @@ export async function upsertOrdersFromClover(
   let skipped = 0;
   let maxModifiedTime = 0;
 
+  // Build cloverItemId → MCM product id once so pulled line items resolve to synced products
+  // (enables edit/repeat/86 in the POS). Best-effort; absent map → line items keep the Clover id.
+  const productMap = new Map<string, number>();
+  {
+    const { data: prodRows } = await supabase
+      .from('products').select('id, additional_properties').eq('site_id', siteId);
+    for (const p of prodRows ?? []) {
+      const apRaw = (p as any).additional_properties;
+      const ap = typeof apRaw === 'string' ? (() => { try { return JSON.parse(apRaw); } catch { return {}; } })() : (apRaw || {});
+      if (ap.cloverId) productMap.set(String(ap.cloverId), Number((p as any).id));
+    }
+  }
+
   for (const raw of cloverOrders) {
     const cloverOrder = raw as any;
 
@@ -120,7 +133,7 @@ export async function upsertOrdersFromClover(
       maxModifiedTime = cloverOrder.modifiedTime;
     }
 
-    const order = convertCloverOrderToMCMOrder(cloverOrder);
+    const order = convertCloverOrderToMCMOrder(cloverOrder, productMap);
     const cloverPosId = order.clover_pos_id as string;
     // WS-12/F30: id de Clover alfanumérico; saltar uno malformado evita romper el `.or()`.
     if (!cloverPosId || !/^[A-Za-z0-9_-]+$/.test(cloverPosId)) {
