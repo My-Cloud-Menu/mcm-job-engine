@@ -26,7 +26,8 @@ import './sendgrid/send-email';
 // F2-B · cierre automático (push): el scheduler enqueue auto_settle_dispatch por site cada ~10 min.
 import './auto-settle/dispatch';
 
-// Order actions · delivery dispatch (cola order_actions): disparado al aceptar la orden (in-kitchen).
+// Order actions · delivery dispatch (cola order_actions): disparado cuando la orden pasa a ready-for-pickup
+// (el prep-timer pg_cron mueve in-kitchen → ready-for-pickup; ahí encola order-notification-status-change-trigger).
 import './delivery/dispatch';
 
 // Printing (cola printing): push de impresión QZ (vía gateway WS) y Star (REST). Epson es pull

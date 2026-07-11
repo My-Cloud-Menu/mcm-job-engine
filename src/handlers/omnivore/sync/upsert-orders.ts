@@ -292,8 +292,34 @@ export async function upsertOmnivoreOrders(
             ? (order as any).line_items
             : [];
           const omnivoreHasItems = omnivoreFiredItems.length > 0;
+          // FIX doble conteo (2026-07-10): `order.total` de Omnivore YA incluye TODOS los ítems del
+          // ticket (fireados Y no-fireados — Omnivore cuenta todo lo que está en el ticket). Por eso
+          // los no-fireados que YA están en el ticket (tienen su omnivore.item_id en
+          // `order.line_items`) NO deben re-sumarse en `unfiredPreview`: si no, se cuentan dos veces
+          // → total al doble (verificado en vivo, orden managed con ítems rung-en-terminal sin firear).
+          // Solo se suman al preview los no-fireados que NO están en el ticket (ítems agregados en
+          // O&P, aún no enviados a Omnivore) — para que el total no fluctúe antes de firear.
+          const omnivoreTicketItemIds = new Set<string>();
+          for (const m of omnivoreFiredItems) {
+            const o = (m as any)?.additional_properties?.omnivore;
+            if (o?.item_id != null) omnivoreTicketItemIds.add(String(o.item_id));
+            if (Array.isArray(o?.item_ids)) for (const x of o.item_ids) if (x != null) omnivoreTicketItemIds.add(String(x));
+          }
+          const lineOmniIds = (li: any): string[] => {
+            const o = li?.additional_properties?.omnivore;
+            if (!o) return [];
+            const ids: string[] = [];
+            if (Array.isArray(o.item_ids)) for (const x of o.item_ids) if (x != null) ids.push(String(x));
+            if (o.item_id != null) { const s = String(o.item_id); if (!ids.includes(s)) ids.push(s); }
+            return ids;
+          };
           const unfiredItems = (mergedLineItems as any[])
-            .filter((li) => li.status !== 'sent' && li.status !== 'voided');
+            .filter(
+              (li) =>
+                li.status !== 'sent' &&
+                li.status !== 'voided' &&
+                !lineOmniIds(li).some((id) => omnivoreTicketItemIds.has(id)),
+            );
           const unfiredPreview = unfiredItems.reduce((sum, li) => sum + Number(li.total ?? 0), 0);
           // F3 (fluctuación de total): incluir el tax de los ítems NO-firados en el total
           // mostrado. Sin esto el total bajaba/subía entre add-products-to-order (que calcula
