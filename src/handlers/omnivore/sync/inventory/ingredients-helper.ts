@@ -4,6 +4,7 @@ import type { OmnivoreIngredient, OmnivoreProduct, StockStatus } from './types';
 import { fetchOmnivoreModifiers, fetchOmnivoreModifierGroups, fetchOmnivoreOosModifiers } from './menu-fetch';
 import { readAllBySite } from './supabase-read';
 import type { Changes } from './products-helper';
+import type { SyncConflict } from './types';
 
 // Ported from legacy ingredients-sync-helper.ts (Supabase path). isSupabase/ORM
 // dropped, .limit() reads → full pagination, additional_properties merged on update.
@@ -60,8 +61,9 @@ export async function getOmnivoreIngredientGroupToImport(
   client: AxiosInstance,
   siteId: number,
   omnivoreProducts: OmnivoreProduct[]
-): Promise<OmnivoreGroupParsed[]> {
+): Promise<{ groups: OmnivoreGroupParsed[]; conflicts: SyncConflict[] }> {
   const parsed: OmnivoreGroupParsed[] = [];
+  const conflicts: SyncConflict[] = [];
   const groups = await fetchOmnivoreModifierGroups(client);
 
   const semiParsed: OmnivoreGroupParsed[] = groups.map((g) => ({
@@ -123,7 +125,7 @@ export async function getOmnivoreIngredientGroupToImport(
     (ing._embedded.option_sets || []).forEach((os: any) => linkGroup(os, 'ingredient', ing.id, true))
   );
 
-  return parsed;
+  return { groups: parsed, conflicts };
 }
 
 export async function getIngredientsChangesToSyncOmnivore(
@@ -219,6 +221,18 @@ export async function getIngredientsGroupsChangesToSyncOmnivore(
 ): Promise<Changes> {
   const changes: Changes = { create: [], update: [], delete: [] };
   const mcmGroups = await readAllBySite('ingredients_groups', siteId);
+  // M3: para PRESERVAR las refs NATIVAS (producto/ingrediente sin omnivoreId, adjuntado a mano al grupo) durante
+  // el prune set-based, necesitamos distinguir refs managed (Omnivore) de nativas.
+  const [mcmProductsForNative, mcmIngredientsForNative] = await Promise.all([
+    readAllBySite('products', siteId),
+    readAllBySite('ingredients', siteId),
+  ]);
+  const nativeProductIds = new Set(
+    mcmProductsForNative.filter((p: any) => !p.additional_properties?.omnivoreId).map((p: any) => String(p.id)),
+  );
+  const nativeIngredientIds = new Set(
+    mcmIngredientsForNative.filter((i: any) => !i.additional_properties?.omnivoreId).map((i: any) => String(i.id)),
+  );
 
   groupsToImport.forEach((group) => {
     const found = mcmGroups.find(
@@ -231,27 +245,42 @@ export async function getIngredientsGroupsChangesToSyncOmnivore(
     if (!found) {
       changes.create.push(group);
     } else {
-      const hasProductsRef = group.products_included.every((id: any) =>
-        (found.products_included || []).map(String).includes(String(id))
-      );
-      const mcmIngIds = (found.ingredients || []).map((i: any) => i.id);
-      const hasIngredientsRef =
-        group.ingredients.length === (found.ingredients?.length || 0) &&
-        group.ingredients.every((i: any) => mcmIngIds.includes(i.id));
+      // F6/F5-A · AUTORITATIVO set-based (prune, NO union): el import trae el conjunto COMPLETO de refs
+      // para (omnivoreId,min,max); reemplazamos en vez de unir → remueve refs muertas y adjunta el
+      // modificador nuevo (found.ingredients antes nunca se reescribía → el modificador nuevo se perdía).
+      // Seguro por orden en sync-ingredients.ts: products se sincronizan ANTES; ingredients se escriben
+      // y re-leen fresh antes de este mapeo → sin prune transitorio de refs válidas.
+      const sameSet = (a: any[], b: any[]) => {
+        const A = new Set((a || []).map(String));
+        const B = new Set((b || []).map(String));
+        return A.size === B.size && [...A].every((x) => B.has(x));
+      };
+      // M3: TARGET = set Omnivore-autoritativo (group) UNIÓN las refs NATIVAS que el operador adjuntó a mano al
+      // grupo existente (found, sin omnivoreId). Así prunamos solo lo Omnivore-managed ausente y NO borramos las
+      // refs nativas.
+      const nativeProds = (found.products_included || []).map(String).filter((id: string) => nativeProductIds.has(id));
+      const nativeIncl = (found.ingredients_included || []).map(String).filter((id: string) => nativeIngredientIds.has(id));
+      const foundIngredients: any[] = found.ingredients || [];
+      const nativeIngs = foundIngredients.filter((i: any) => nativeIngredientIds.has(String(i.id)));
 
-      if (!hasProductsRef || !hasIngredientsRef) {
-        const newProducts = Array.from(new Set([
-          ...((found.products_included || []).map(String)),
-          ...group.products_included.map(String),
-        ]));
-        const newIngredients = Array.from(new Set([
-          ...(found.ingredients_included || []),
-          ...group.ingredients_included,
-        ]));
+      const groupIngredients: any[] = group.ingredients || [];
+      const targetProducts = [...new Set([...(group.products_included || []).map(String), ...nativeProds])];
+      const targetIncluded = [...new Set([...(group.ingredients_included || []).map(String), ...nativeIncl])];
+      const targetIngredients = [
+        ...groupIngredients,
+        ...nativeIngs.filter((n: any) => !groupIngredients.some((g: any) => String(g.id) === String(n.id))),
+      ];
+
+      const productsDiffer = !sameSet(found.products_included, targetProducts);
+      const includedDiffer = !sameSet(found.ingredients_included, targetIncluded);
+      const ingredientsDiffer = !sameSet(foundIngredients.map((i: any) => i.id), targetIngredients.map((i: any) => i.id));
+
+      if (productsDiffer || includedDiffer || ingredientsDiffer) {
         changes.update.push({
           ...found,
-          products_included: newProducts,
-          ingredients_included: newIngredients,
+          ingredients: targetIngredients,
+          products_included: targetProducts,
+          ingredients_included: targetIncluded,
           date_updated: undefined,
         });
       }

@@ -28,9 +28,13 @@ function toCents(value: string | number | null | undefined): number {
   return Math.round(Number(value) * 100);
 }
 
+// N15: espejo del edge — métodos del onlinestore pay-at-table (disjunto de terminal).
+const ONLINE_PAYTABLE_METHODS = ['stripe', 'ath-movil', 'evertec'];
+
 export function buildOmnivorePaymentBody(
   payment: PaymentLike,
-  credentials: Record<string, any>
+  credentials: Record<string, any>,
+  isOmnivoreManaged: boolean = false
 ): Record<string, unknown> {
   const TENDERTYPEID = credentials.defaultTenderId;
   const CASH_TENDER_ID = credentials.tenderIdCash;
@@ -57,6 +61,16 @@ export function buildOmnivorePaymentBody(
   if (payment.method === 'ecr-cash') {
     payload.tip = 0;
     payload.tender_type = CASH_TENDER_ID;
+  }
+
+  // N15: orden omnivore_managed pagada online vía pay-at-table → tenderIdMcmPay (espejo del edge).
+  if (
+    isOmnivoreManaged &&
+    payment.method != null &&
+    ONLINE_PAYTABLE_METHODS.includes(payment.method) &&
+    credentials.tenderIdMcmPay
+  ) {
+    payload.tender_type = credentials.tenderIdMcmPay;
   }
 
   return payload;

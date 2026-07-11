@@ -6,13 +6,21 @@ const PR_TZ_OFFSET_MS = -4 * 60 * 60 * 1000;
 const PAGE_LIMIT = 100;
 
 // Field projection — ported verbatim from omnivore-helper.ts:getOmnivoreOrders.
+// N2: proyección recursiva de modificadores anidados (menú real anida a 4; 5 = holgura; API acepta 5-deep).
+// ESPEJO byte-idéntico (string producido) de omnivore-helper.ts OMNIVORE_ORDER_FIELDS.
+const OMNIVORE_MODIFIER_LEAF =
+  'id,name,price,quantity,comment,menu_modifier(id,pos_id),modifier_group(id,pos_id,name)';
+const nestOmnivoreModifiers = (depth: number): string =>
+  depth <= 1
+    ? `modifiers(${OMNIVORE_MODIFIER_LEAF})`
+    : `modifiers(${OMNIVORE_MODIFIER_LEAF},${nestOmnivoreModifiers(depth - 1)})`;
 const FIELDS =
   'id,name,open,opened_at,closed_at,' +
   'totals(due,paid,items,discounts,service_charges,tax,total),' +
   'employee(id,first_name,last_name),order_type(id,name),revenue_center(id,name),' +
   // `id,sent,sent_at` por ítem: llave de correlación del merge bidireccional (Fase 7).
   'table(id,name),items(id,sent,sent_at,name,comment,price,quantity,' +
-  'modifiers(id,name,price,quantity,comment,menu_modifier(id,pos_id),modifier_group(id,pos_id,name)),' +
+  `${nestOmnivoreModifiers(5)},` +
   'menu_item(id,menu_categories(id)))';
 
 // WS-5/F17 (auditoría 2026-06-09): ventana RODANTE de 36h sobre `opened_at` (antes
@@ -52,6 +60,7 @@ export async function fetchOmnivoreOrders(
   // follow the absolute `_links.next.href` (axios uses absolute URLs as-is).
   let nextUrl: string | null = null;
   let firstParams: Record<string, unknown> | null = { limit: PAGE_LIMIT, where, fields: FIELDS };
+  let pages = 0;
 
   do {
     const res: { data: any } = nextUrl
@@ -63,7 +72,7 @@ export async function fetchOmnivoreOrders(
     if (Array.isArray(tickets)) items.push(...tickets);
 
     nextUrl = res.data?._links?.next?.href ?? null;
-  } while (nextUrl);
+  } while (nextUrl && ++pages < 200); // MAX_PAGES: backstop contra un _links.next malformado/cíclico
 
   return items;
 }

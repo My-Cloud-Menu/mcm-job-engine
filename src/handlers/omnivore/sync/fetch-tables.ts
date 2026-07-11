@@ -33,9 +33,18 @@ registerHandler('omnivore', 'fetch_tables', async ({ stepInput, jobPayload, job 
   let tables;
   let revenueCenters;
   try {
+    // F24: solo el fetch de MESAS es fatal (un list parcial de mesas NO debe llegar al reconcile que archivaría
+    // mesas ausentes — atomicidad intencional). Los revenue-centers son COSMÉTICOS (el RPC hace COALESCE a '[]'
+    // y cae al nombre embebido en cada mesa / 'Omnivore') → un blip de /revenue_centers NO debe abortar el sync.
     [tables, revenueCenters] = await Promise.all([
       fetchOmnivoreTables(client),
-      fetchOmnivoreRevenueCenters(client),
+      fetchOmnivoreRevenueCenters(client).catch((err) => {
+        logger.warn(
+          { site_id: job.site_id, err: String((err as any)?.message ?? err) },
+          'omnivore revenue_centers fetch failed; falling back to [] (table sync continues)'
+        );
+        return [];
+      }),
     ]);
   } catch (err) {
     throw mapOmnivoreError(err, 'OMNIVORE_FETCH_TABLES_FAILED');

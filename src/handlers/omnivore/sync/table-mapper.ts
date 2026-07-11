@@ -98,6 +98,7 @@ async function fetchHalList(
   const items: any[] = [];
   let nextUrl: string | null = null;
   let firstParams: Record<string, unknown> | null = { limit };
+  let pages = 0;
 
   do {
     const res: { data: any } = nextUrl
@@ -109,7 +110,7 @@ async function fetchHalList(
     if (Array.isArray(page)) items.push(...page);
 
     nextUrl = res.data?._links?.next?.href ?? null;
-  } while (nextUrl);
+  } while (nextUrl && ++pages < 200); // MAX_PAGES: backstop contra un _links.next malformado/cíclico
 
   return items;
 }

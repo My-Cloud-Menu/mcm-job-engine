@@ -111,6 +111,33 @@ registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step 
     }
   }
 
+  // Reconcile-before-repost (idempotencia REAL — el header Idempotency-Id está MUERTO en Aloha). Solo en RETRY
+  // (attempt_count > 0): un intento previo pudo haber POSTeado el pago con éxito y perdido el ACK (error de red =
+  // retryable) → el marker no se escribió → re-POSTear duplicaría el tender en el ticket. Antes de re-postear,
+  // buscamos si este pago MCM YA está en el ticket (match por comment único "Invoice #: <invoice|reference>" +
+  // amount, ambos del body congelado que Omnivore devuelve tal cual). Si el GET de reconciliación falla, NO
+  // POSTeamos (throw retryable) — nunca arriesgamos doble-tender.
+  if (paymentId != null && step.attempt_count > 0) {
+    let existing: any[] = [];
+    try {
+      const recon = await client.get<{ _embedded?: { payments?: any[] } }>(`/tickets/${ticketId}/payments`);
+      existing = recon.data?._embedded?.payments ?? [];
+    } catch (reconErr) {
+      throw mapOmnivoreError(reconErr, 'OMNIVORE_PAYMENT_RECONCILE_FAILED');
+    }
+    const targetComment = (paymentBody as { comment?: string }).comment;
+    const targetAmount = (paymentBody as { amount?: number }).amount;
+    const already = existing.find(
+      (p: any) => !!targetComment && p?.comment === targetComment && Number(p?.amount) === Number(targetAmount),
+    );
+    if (already) {
+      const omniId = already.id != null ? String(already.id) : 'reconciled';
+      await writeOmnivoreApplied(job.site_id, paymentId, posIdField, omniId);
+      await reconcileOrderIssues(job.site_id, orderId, job.id);
+      return { skipped: 'reconciled_lost_ack', omnivore_payment_id: omniId };
+    }
+  }
+
   try {
     const res = await client.post<{ id: string }>(`/tickets/${ticketId}/payments`, paymentBody, {
       headers: { 'Idempotency-Id': idempotencyId(step, job, 'payment_injection') },

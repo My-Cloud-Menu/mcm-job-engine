@@ -29,13 +29,14 @@ async function fetchMenuList<T>(
 ): Promise<T[]> {
   const items: T[] = [];
   let nextUrl: string | null = null;
+  let pages = 0;
   do {
     const res: { data: any } = nextUrl ? await client.get(nextUrl) : await client.get(path);
     const page = res.data?._embedded?.[embeddedKey];
     if (Array.isArray(page)) items.push(...page);
     nextUrl = res.data?._links?.next?.href ?? null;
     if (nextUrl) await sleep(PAGE_DELAY_MS);
-  } while (nextUrl);
+  } while (nextUrl && ++pages < 200); // MAX_PAGES: backstop contra un _links.next malformado/cíclico
   return items;
 }
 

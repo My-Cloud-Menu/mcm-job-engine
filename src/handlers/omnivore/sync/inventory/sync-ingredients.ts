@@ -1,5 +1,5 @@
 import { AxiosInstance } from 'axios';
-import type { OmnivoreProduct } from './types';
+import type { OmnivoreProduct, SyncConflict } from './types';
 import {
   getOmnivoreIngredientGroupToImport,
   getOmnivoreIngredientsToImport,
@@ -12,6 +12,7 @@ import { batchIngredients, batchIngredientsGroup } from './ingredients-write';
 export interface SyncIngredientsResult {
   ingredients: { created: number; updated: number };
   groups: { created: number; updated: number };
+  conflicts: SyncConflict[];
 }
 
 /**
@@ -27,7 +28,7 @@ export async function syncOmnivoreIngredientsAndGroupsV2(params: {
   only_include_prices_and_stock_changes?: boolean;
 }): Promise<SyncIngredientsResult> {
   // 1. Groups to import (parsed from modifier_groups + products/ingredients option_sets)
-  const groupsToImport = await getOmnivoreIngredientGroupToImport(
+  const { groups: groupsToImport, conflicts } = await getOmnivoreIngredientGroupToImport(
     params.client, params.site_id, params.omnivoreProducts
   );
 
@@ -64,5 +65,6 @@ export async function syncOmnivoreIngredientsAndGroupsV2(params: {
   return {
     ingredients: { created: ingredientsChanges.create.length, updated: ingredientsChanges.update.length },
     groups: { created: groupsChanges.create.length, updated: groupsChanges.update.length },
+    conflicts,
   };
 }

@@ -1,12 +1,14 @@
 import Decimal from 'decimal.js';
 import { AxiosInstance } from 'axios';
-import type { OmnivoreCategory, OmnivoreProduct, Status, StockStatus } from './types';
+import type { OmnivoreCategory, OmnivoreProduct, Status, StockStatus, SyncConflict } from './types';
 import {
   fetchOmnivoreMenuCategories,
   fetchOmnivoreMenuItems,
   fetchOmnivoreOosItems,
 } from './menu-fetch';
 import { readAllBySite } from './supabase-read';
+import { logger } from '../../../../lib/logger';
+import { omniArchiveIsSafe } from '../archive-guard';
 
 // Ported from legacy.mcm.api/src/utilities/helpers/products-sync-helper.ts (Supabase
 // path), dropping the isSupabase flag + legacy ORM, fixing the .limit() reads (full
@@ -35,17 +37,28 @@ export async function getOmnivoreProductsToImport(client: AxiosInstance): Promis
   return products;
 }
 
-/** Only the Omnivore categories actually referenced by the imported products. */
+/**
+ * Only the Omnivore categories actually referenced by the imported products.
+ * N8: skipCategoryTypes filtra por _embedded.menu_category_type.id (p.ej. 'sales','retail').
+ * Default [] = importar TODO (sin filtro) — un filtro activo por defecto rompería.
+ * NOTA (alcance): filtra el REGISTRO de categoría, no el producto. Un producto que también está en una categoría
+ * de tipo NO-skipeado (p.ej. 'ALL'/'general' compartida) SIGUE importándose. Filtrar productos por tipo de
+ * categoría es un follow-up (requiere decisión de producto).
+ */
 export async function getOmnivoreCategoriesToImport(
   client: AxiosInstance,
-  omnivoreProducts: OmnivoreProduct[]
+  omnivoreProducts: OmnivoreProduct[],
+  skipCategoryTypes: string[] = []
 ): Promise<OmnivoreCategory[]> {
   const referenced = new Set<string>();
   omnivoreProducts.forEach((p) =>
     p._embedded.menu_categories.forEach((c: any) => referenced.add(c.id))
   );
+  const skip = new Set(skipCategoryTypes);
   const categories = await fetchOmnivoreMenuCategories(client);
-  return categories.filter((c) => referenced.has(c.id));
+  return categories.filter(
+    (c) => referenced.has(c.id) && (skip.size === 0 || !skip.has(c._embedded?.menu_category_type?.id ?? ''))
+  );
 }
 
 export async function getCategoriesChangesToSyncOmnivore(
@@ -64,7 +77,12 @@ export async function getCategoriesChangesToSyncOmnivore(
       changes.create.push({
         name: cat.name,
         status: defaultStatus,
-        additional_properties: { omnivoreId: cat.id, posId: cat.pos_id },
+        additional_properties: {
+          omnivoreId: cat.id,
+          posId: cat.pos_id,
+          omnivoreLevel: cat.level ?? 0, // N8: jerarquía
+          omnivoreCategoryType: cat._embedded?.menu_category_type?.id ?? null, // N8: tipo (general/sales/retail)
+        },
       });
     }
   });
@@ -75,7 +93,7 @@ export async function getProductsChangesToSyncOmnivore(
   siteId: number,
   omnivoreProductsToImport: OmnivoreProduct[],
   defaultStatus: Status,
-  priceLevelPreferences: Record<string, string>
+  allowArchive = false, // F7: soft-archive de productos ausentes del POS (config-gated + empty-guard en el caller)
 ): Promise<Changes> {
   const changes: Changes = { create: [], update: [], delete: [] };
   const [currentProducts, currentCategories] = await Promise.all([
@@ -90,18 +108,10 @@ export async function getProductsChangesToSyncOmnivore(
       (p: any) => product.id == p.additional_properties?.omnivoreId
     );
 
-    let productPrice = centsToDollars(product.price_per_unit);
-    let priceLevelUsed = '';
-
-    // Preferred price level (per-site config); only if the product has ≥2 levels.
-    const preferred = priceLevelPreferences[product.id];
-    if (preferred && product._embedded.price_levels.length >= 2) {
-      const lvl = product._embedded.price_levels.find((pl: any) => pl.id == preferred);
-      if (lvl) {
-        productPrice = centsToDollars(lvl.price_per_unit);
-        priceLevelUsed = lvl.id;
-      }
-    }
+    // F9: priceLevelPreferences (dead config — siempre {} en prod) removido. Superseded por el picker
+    // product_price_levels que getPriceLevelsChangesToSyncOmnivore ya respeta. productPrice = default POS.
+    const productPrice = centsToDollars(product.price_per_unit);
+    const priceLevelUsed = '';
 
     const stockStatus: StockStatus = product.in_stock === false ? 'outofstock' : 'instock';
 
@@ -123,7 +133,9 @@ export async function getProductsChangesToSyncOmnivore(
           posId: product.pos_id,
           omnivoreIsOpen: product.open,
           omnivoreOpenName: product.open_name,
+          omnivoreName: product.name, // F8: snapshot del nombre POS para detectar rename
           omnivoreProductType: product._embedded.price_levels.length > 1 ? 'variable' : 'simple',
+          omnivoreBarcodes: Array.isArray(product.barcodes) ? product.barcodes : [], // N8: barcodes (array) del POS
         },
       });
     } else {
@@ -136,11 +148,22 @@ export async function getProductsChangesToSyncOmnivore(
       const mcmPriceIsValidLevel = validLevelCents.includes(roundCents(mcmProduct.price));
       const priceShouldUpdate = !mcmPriceIsValidLevel && roundCents(mcmProduct.price) !== roundCents(productPrice);
       const stockDifferent = mcmProduct.stock_status != stockStatus;
+      // F8: adoptar el rename del POS SOLO si MCM no overrideó el nombre (additional_properties.nameOverridden).
+      const nameOverridden = !!mcmProduct.additional_properties?.nameOverridden;
+      // M2 seed-only: si el producto managed NO tiene snapshot omnivoreName todavía (1er sync tras F8), NO
+      // consideramos que "cambió" el nombre → evita (a) update+trigger masivo de todos los productos y (b) adoptar/
+      // pisar un rename manual. El snapshot se siembra perezosamente en el próximo update de stock/precio
+      // (additional_properties abajo ya escribe omnivoreName: product.name). Solo detectamos cambios REALES cuando
+      // ya hay un snapshot previo contra el cual comparar.
+      const omnivoreNameChanged =
+        mcmProduct.additional_properties?.omnivoreName != null &&
+        mcmProduct.additional_properties.omnivoreName !== product.name;
+      const adoptName = !nameOverridden && omnivoreNameChanged;
 
-      if (stockDifferent || priceShouldUpdate) {
+      if (stockDifferent || priceShouldUpdate || omnivoreNameChanged) {
         changes.update.push({
           id: mcmProduct.id,
-          name: mcmProduct.name,
+          name: adoptName ? product.name : mcmProduct.name,
           stock_status: stockStatus,
           ...(priceShouldUpdate ? { price: productPrice } : {}),
           // Merge (don't replace) additional_properties so posId/omnivoreIsOpen/etc. survive.
@@ -148,21 +171,58 @@ export async function getProductsChangesToSyncOmnivore(
             ...(mcmProduct.additional_properties || {}),
             omnivoreId: product.id,
             omnivorePriceLevelUsed: priceLevelUsed,
+            omnivoreName: product.name, // F8: refrescar el snapshot del nombre POS
+            // N8/D3: refrescar barcodes OPORTUNISTAMENTE (cuando el update ya dispara por stock/precio/nombre);
+            // no se añade `barcodesDiffer` como trigger nuevo para evitar el update-storm del 1er sync (como M2).
+            // Preserva los barcodes existentes si el POS no los envía en este fetch.
+            omnivoreBarcodes: Array.isArray(product.barcodes)
+              ? product.barcodes
+              : (mcmProduct.additional_properties?.omnivoreBarcodes ?? []),
           },
         });
       }
     }
   });
 
-  // Additive: no product deletes (matches legacy).
+  // F7 · Product soft-archive (config-gated allowArchive + empty-guard en el caller). Un producto managed cuyo
+  // omnivoreId ya NO está en el fetch crudo completo de /menu/items → status='draft' + archived (lo esconde el
+  // reader menus-service). SEGURO: importedIds sale del fetch crudo completo (sin falso-huérfano, a diferencia
+  // del ingredient-archive que quedó diferido). No toca productos nativos MCM (sin omnivoreId).
+  if (allowArchive) {
+    const importedIds = new Set(omnivoreProductsToImport.map((p) => String(p.id)));
+    // Gap2 · guard de fetch degradado: si el /menu/items encogió > cap sobre los productos managed actuales,
+    // es sospechoso (fetch parcial / cap de paginación) → NO archivar (evita esconder ~todo el menú, que además
+    // no se auto-cura). managedCount===0 → no hay nada que archivar (no-op, sin warn).
+    const managedCount = currentProducts.filter((p: any) => p.additional_properties?.omnivoreId).length;
+    if (managedCount > 0 && !omniArchiveIsSafe(importedIds.size, managedCount)) {
+      logger.warn(
+        { site_id: siteId, fetched: importedIds.size, managed: managedCount },
+        'omnivore product soft-archive SKIPPED: fetch parcial/degradado sospechoso (shrink > cap)'
+      );
+    } else {
+      currentProducts.forEach((p: any) => {
+        const oid = p.additional_properties?.omnivoreId;
+        if (!oid || importedIds.has(String(oid))) return;
+        if (p.status === 'draft' || p.additional_properties?.archived) return;
+        changes.update.push({
+          id: p.id,
+          name: p.name,
+          status: 'draft',
+          additional_properties: { ...(p.additional_properties || {}), archived: true },
+        });
+      });
+    }
+  }
+
   return changes;
 }
 
 export async function getPriceLevelsChangesToSyncOmnivore(
   siteId: number,
   omnivoreProductsToImport: OmnivoreProduct[]
-): Promise<Changes> {
+): Promise<Changes & { conflicts: SyncConflict[] }> {
   const changes: Changes = { create: [], update: [], delete: [] };
+  const conflicts: SyncConflict[] = [];
   const [currentPriceLevels, currentProducts] = await Promise.all([
     readAllBySite('product_price_levels', siteId),
     readAllBySite('products', siteId),
@@ -206,8 +266,24 @@ export async function getPriceLevelsChangesToSyncOmnivore(
     if (currentDefault && omnivorePosIds.includes(currentDefault.pos_id)) {
       defaultPosId = currentDefault.pos_id;
     } else {
+      // F13/F12(a): el price level que el operador eligió como default fue BORRADO en el POS pero MCM aún lo
+      // referencia → fallback (abajo) + registrar el override inválido. Excluye el default auto-creado
+      // (pos_id null/'') que es transición válida, no override.
       const matched = priceLevels.find((pl: any) => pl.price_per_unit === omnivoreProduct.price_per_unit);
       defaultPosId = matched?.id ?? priceLevels[0]?.id ?? null;
+      if (currentDefault && currentDefault.pos_id != null && currentDefault.pos_id !== '') {
+        conflicts.push({
+          conflict_type: 'price_level_deleted',
+          entity_type: 'product',
+          entity_omnivore_id: String(currentDefault.pos_id),
+          entity_mcm_id: String(productId),
+          detail: {
+            deletedCode: currentDefault.code ?? null,
+            productOmnivoreId: omnivoreProduct.id,
+            fallbackPosId: defaultPosId,
+          },
+        });
+      }
     }
 
     priceLevels.forEach((priceLevel: any) => {
@@ -250,5 +326,5 @@ export async function getPriceLevelsChangesToSyncOmnivore(
     }
   });
 
-  return changes;
+  return { ...changes, conflicts };
 }

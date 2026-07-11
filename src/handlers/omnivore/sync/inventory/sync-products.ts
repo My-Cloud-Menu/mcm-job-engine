@@ -1,5 +1,5 @@
 import { AxiosInstance } from 'axios';
-import type { OmnivoreProduct, Status } from './types';
+import type { OmnivoreProduct, Status, SyncConflict } from './types';
 import {
   getOmnivoreProductsToImport,
   getOmnivoreCategoriesToImport,
@@ -14,7 +14,8 @@ export interface SyncProductsParams {
   client: AxiosInstance;
   set_available_to_buy?: boolean; // true → products created 'published'; false → 'draft'
   only_include_prices_and_stock_changes?: boolean;
-  price_level_preferences?: Record<string, string>;
+  archive_removed?: boolean; // F7: soft-archive de productos ausentes del POS (config-gated)
+  skip_category_types?: string[]; // N8: tipos de menu_category_type a saltar (default [] = importar todo)
 }
 
 export interface SyncProductsResult {
@@ -22,6 +23,7 @@ export interface SyncProductsResult {
   categories: { created: number };
   products: { created: number; updated: number };
   price_levels: { created: number; updated: number; deleted: number };
+  conflicts: SyncConflict[];
 }
 
 /**
@@ -37,15 +39,17 @@ export async function syncOmnivoreProductsV2(params: SyncProductsParams): Promis
   const productsToImport = await getOmnivoreProductsToImport(params.client);
 
   // 2-4. Categories (referenced by products) → changes → write
-  const categoriesToImport = await getOmnivoreCategoriesToImport(params.client, productsToImport);
+  const categoriesToImport = await getOmnivoreCategoriesToImport(params.client, productsToImport, params.skip_category_types ?? []);
   const categoriesChanges = await getCategoriesChangesToSyncOmnivore(
     params.site_id, categoriesToImport, defaultStatus
   );
   await batchCategories(params.site_id, categoriesChanges);
 
   // 5-6. Products (now categories exist for ref-mapping) → changes → write
+  // F7: allowArchive lleva el empty-guard (productsToImport.length>0) y NUNCA archiva en modo only_include.
+  const allowArchive = !!params.archive_removed && productsToImport.length > 0 && !params.only_include_prices_and_stock_changes;
   const productsChanges = await getProductsChangesToSyncOmnivore(
-    params.site_id, productsToImport, defaultStatus, params.price_level_preferences || {}
+    params.site_id, productsToImport, defaultStatus, allowArchive
   );
   if (params.only_include_prices_and_stock_changes) {
     productsChanges.create = [];
@@ -66,5 +70,6 @@ export async function syncOmnivoreProductsV2(params: SyncProductsParams): Promis
       updated: priceLevelsChanges.update.length,
       deleted: priceLevelsChanges.delete.length,
     },
+    conflicts: priceLevelsChanges.conflicts,
   };
 }

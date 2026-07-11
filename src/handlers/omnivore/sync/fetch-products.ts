@@ -26,18 +26,21 @@ registerHandler('omnivore', 'fetch_products', async ({ stepInput, jobPayload, jo
   const { config } = await getSiteIntegrationConfig(job.site_id, 'omnivore', 'pos');
   const omnivoreConfig = OmnivoreConfigSchema.parse(config);
   const client = createOmnivoreClient(omnivoreConfig, job.correlation_id);
-  const priceLevelPreferences =
-    ((config as Record<string, unknown>).priceLevelPreferences as Record<string, string>) ?? {};
 
   const started = Date.now();
   let result;
   try {
+    const skipCategoryTypesRaw = (config as Record<string, unknown>).skipCategoryTypes;
+    const skipCategoryTypes = Array.isArray(skipCategoryTypesRaw)
+      ? skipCategoryTypesRaw.filter((x): x is string => typeof x === 'string')
+      : []; // N8: default [] = importar TODO (no-break)
     result = await syncOmnivoreInventory({
       site_id: job.site_id,
       client,
       set_available_to_buy: true, // imported products → published
       only_include_prices_and_stock_changes: false,
-      price_level_preferences: priceLevelPreferences,
+      archive_removed: (config as Record<string, unknown>).archiveRemoved === true, // F7: soft-archive de productos ausentes del POS
+      skip_category_types: skipCategoryTypes,
     });
   } catch (err) {
     throw mapOmnivoreError(err, 'OMNIVORE_FETCH_PRODUCTS_FAILED');
@@ -61,6 +64,45 @@ registerHandler('omnivore', 'fetch_products', async ({ stepInput, jobPayload, jo
     groups_updated: result.groups.updated,
     status: 'ok',
   });
+
+  // F12 · Persistir overrides inválidos detectados (non-fatal, secundario). Upsert por
+  // UNIQUE(site_id,conflict_type,entity_omnivore_id): refresca last_seen_at y re-abre (resolved_at=null)
+  // sin duplicar. first_seen_at se preserva (no va en el payload).
+  const conflicts = (result as unknown as { conflicts?: Array<Record<string, unknown>> }).conflicts ?? [];
+  try {
+    const nowIso = new Date().toISOString();
+    if (Array.isArray(conflicts) && conflicts.length > 0) {
+      await supabase.from('omnivore_inventory_sync_conflicts').upsert(
+        conflicts.map((c: any) => ({
+          site_id: job.site_id,
+          conflict_type: c.conflict_type,
+          entity_type: c.entity_type,
+          entity_omnivore_id: String(c.entity_omnivore_id),
+          entity_mcm_id: c.entity_mcm_id != null ? String(c.entity_mcm_id) : null,
+          detail: c.detail ?? {},
+          last_seen_at: nowIso,
+          resolved_at: null,
+        })),
+        { onConflict: 'site_id,conflict_type,entity_omnivore_id' }
+      );
+    }
+    // LOW auditoría: auto-cerrar (resolved_at) los conflicts OPEN que YA NO se detectan (el operador los resolvió),
+    // para que no queden abiertos permanentemente. Non-fatal.
+    const detectedKeys = new Set((conflicts as any[]).map((c) => `${c.conflict_type}|${String(c.entity_omnivore_id)}`));
+    const { data: openRows } = await supabase
+      .from('omnivore_inventory_sync_conflicts')
+      .select('id, conflict_type, entity_omnivore_id')
+      .eq('site_id', job.site_id)
+      .is('resolved_at', null);
+    const toResolve = (openRows ?? [])
+      .filter((r: any) => !detectedKeys.has(`${r.conflict_type}|${String(r.entity_omnivore_id)}`))
+      .map((r: any) => r.id);
+    if (toResolve.length > 0) {
+      await supabase.from('omnivore_inventory_sync_conflicts').update({ resolved_at: nowIso }).in('id', toResolve);
+    }
+  } catch (e) {
+    logger.warn({ site_id: job.site_id, err: String(e) }, 'omnivore conflicts persist/auto-close failed (non-fatal)');
+  }
 
   logger.info({ site_id: job.site_id, duration_ms: duration, ...result }, 'omnivore fetch_products completed');
 
