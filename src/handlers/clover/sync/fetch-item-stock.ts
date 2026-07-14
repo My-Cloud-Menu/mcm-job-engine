@@ -20,13 +20,15 @@ const InputSchema = z.object({
  * Gated by `config.sync_item_stock` (default OFF). Only flips products that changed; never
  * resurrects a soft-archived product. Rate-limited (G1).
  */
-registerHandler('clover', 'fetch_item_stock', async ({ stepInput, job }) => {
+registerHandler('clover', 'fetch_item_stock', async ({ stepInput, jobPayload, job }) => {
   const input = InputSchema.parse(stepInput);
+  const isManual = input.manual === true || (jobPayload as Record<string, unknown>)?.manual === true;
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
   const cloverConfig = CloverConfigSchema.parse(config);
 
-  if ((cloverConfig as any).sync_item_stock !== true) {
+  // The flag gates SCHEDULED runs only; a manual "sync now" always runs.
+  if ((cloverConfig as any).sync_item_stock !== true && !isManual) {
     if (input.schedule_id) await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
     return { skipped_reason: 'sync_item_stock_disabled' };
   }

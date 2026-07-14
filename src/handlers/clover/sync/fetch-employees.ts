@@ -46,7 +46,8 @@ registerHandler('clover', 'fetch_employees', async ({ stepInput, jobPayload, job
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
   const cloverConfig = CloverConfigSchema.parse(config);
 
-  if ((cloverConfig as any).sync_employees !== true) {
+  // The flag gates SCHEDULED runs only; a manual "sync now" always runs.
+  if ((cloverConfig as any).sync_employees !== true && !isManual) {
     if (input.schedule_id) await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
     return { skipped_reason: 'sync_employees_disabled' };
   }
@@ -70,7 +71,10 @@ registerHandler('clover', 'fetch_employees', async ({ stepInput, jobPayload, job
 
     const toWrite: Record<string, unknown>[] = [];
     for (const e of elements) {
-      const login = e.unhashedPin != null && String(e.unhashedPin) !== '' ? String(e.unhashedPin) : '';
+      // Production merchants return the passcode in `pin` (verified live, merchant
+      // 7HDQDCV6WGNB1); the sandbox exposed it as `unhashedPin`. Accept either.
+      const rawPin = e.unhashedPin ?? e.pin;
+      const login = rawPin != null && String(rawPin) !== '' ? String(rawPin) : '';
       if (!login) { skippedNoPin++; continue; }
       const prev = existing.get(login);
       const { first, last } = splitName(e.name);

@@ -34,8 +34,10 @@ registerHandler('clover', 'fetch_products', async ({ stepInput, jobPayload, job 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
   const cloverConfig = CloverConfigSchema.parse(config);
 
+  // The flag gates SCHEDULED runs only; a manual "sync now" (trigger_sync_now)
+  // is explicit user intent and always runs (parity with the Omnivore sync).
   const enabled = (cloverConfig as any).sync_products === true;
-  if (!enabled) {
+  if (!enabled && !isManual) {
     if (input.schedule_id) await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
     return { skipped_reason: 'sync_products_disabled' };
   }

@@ -67,9 +67,19 @@ Se cerró el gap de paridad de Clover contra Omnivore con **código 100% aditivo
 
 **Rollback:** (1) flags `sync_*` → OFF (⇒ `ensure_sync_schedules` deja los schedules `disabled`). (2) Re-aplicar el cuerpo previo de `ensure_sync_schedules`/`trigger_sync_now` (migración 021 verbatim). (3) `DROP TABLE clover_inventory_sync_log, clover_employee_sync_log` (service-role only). Los mapeos `additional_properties.cloverId` en catálogo son inertes si el sync se desactiva.
 
+## 6.1 UI del dashboard + sync manual (2026-07-14)
+
+**Cards en `/integrations`:** el form de Clover del dashboard (`mcm-dashboard-2.1/components/integrations/`) ahora expone estos syncs — `clover-inventory-sync-card.tsx` (toggle `sync_products` + intervalo + toggle `autoManageCloverCatalog`), `clover-employees-sync-card.tsx` (`sync_employees`) y `clover-item-stock-sync-card.tsx` (`sync_item_stock` + intervalo), cada una con botón "Sincronizar ahora" (`trigger_sync_now`) y última corrida (logs / `sync_schedules`). Los flags se agregaron a `cloverConfigSchema` y `CloverConfig`; el guardado existente ya llama `ensure_sync_schedules`. Ya NO hace falta activar flags por SQL.
+
+**Migración RLS (repo edge, `20260714000000_clover_sync_log_policies.sql`, aplicada en Dev):** GRANT SELECT + policies `has_location_access`/mcp_scoped en `clover_inventory_sync_log`/`clover_employee_sync_log` (028 las dejó sin grants ni policies → el dashboard no podía leer "última sync") + policy `sync_schedules_member_select` (antes solo super-admins). **Prod: aplicar junto con 028/029.**
+
+**Fix PIN de empleados (`pin` vs `unhashedPin`):** verificado EN VIVO contra un merchant real (Anto Haus, `7HDQDCV6WGNB1`): `GET /employees` devuelve el passcode en el campo **`pin`** (plaintext), NO en `unhashedPin` (que era lo que exponía el sandbox y lo único que leía el handler) → los 11 empleados caían como `skipped_no_pin`. Fix en `fetch-employees.ts`: `rawPin = e.unhashedPin ?? e.pin`. Tras el fix: 11/11 creados con PIN como `login`, roles ADMIN/MANAGER→manager y EMPLOYEE→waiter, segunda corrida idempotente (0/0/0).
+
+**Fix "sync manual siempre corre":** los 3 handlers (`fetch-products.ts`, `fetch-employees.ts`, `fetch-item-stock.ts`) gateaban TODA corrida por su flag — un "Sincronizar ahora" con el flag apagado (o encendido pero sin guardar) completaba con `skipped_reason` en silencio mientras la UI decía "encolada" (repro real: Anto Haus 70017001). Ahora el gate aplica solo a corridas del scheduler; `isManual` (payload `manual:true` de `trigger_sync_now`) lo bypassa — paridad con Omnivore, cuyo `fetch_products` nunca gateó el manual. Verificado en vivo tras reiniciar el worker: `fetch_item_stock`/`fetch_employees` con flags `false` corren y completan. Requiere redeploy/restart del worker `pos_sync` en prod.
+
 ## 7. Pendientes / preguntas para Carlos (detalle en `BLOQUEOS.md`)
 
-- **Empleados por PIN:** el sandbox no expone `unhashedPin` → verificación live del match `(site_id,login)` pendiente de un merchant con passcode-login.
+- ~~**Empleados por PIN:** el sandbox no expone `unhashedPin` → verificación live del match `(site_id,login)` pendiente de un merchant con passcode-login.~~ **RESUELTO 2026-07-14:** verificado live con Anto Haus — producción devuelve el passcode en `pin` (no `unhashedPin`); handler acepta ambos (ver §6.1). 11/11 empleados importados.
 - **Modificadores nativos outbound** (`/modifications`): feasible + no-idempotente (verificado). Cablearlo requiere idempotencia MCM-side + guard G5 + tocar el edge → follow-up con su ciclo de pruebas. Hoy queda el fallback de nota.
 - **Mesas Clover:** las órdenes core no traen `table` → sync de mesas solo tendría sentido floor-layout-only (Clover Tables app aparte). Confirmar si se requiere.
 - **OAuth expiring tokens:** requiere una app OAuth de Clover registrada para testear el intercambio (sandbox usa token estático).
