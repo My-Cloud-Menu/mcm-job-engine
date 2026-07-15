@@ -39,6 +39,37 @@ async function orderHasAppliedPayment(siteId: number, orderId: number): Promise<
 }
 
 /**
+ * check_numbers de los cheques ABIERTOS de una mesa — el dominio EXACTO del índice único
+ * `orders_unique_check_number_per_open_table (table_id, check_number) WHERE closed_at IS
+ * NULL AND table_id IS NOT NULL`. El sync insertaba sin check_number (default 1), así que
+ * TODO 2º cheque abierto de la misma mesa violaba el índice en cada ciclo y nunca aparecía
+ * en MCM mientras estuviera abierto (Arena Medalla mesa 21, 2026-07-14). Fail-open: ante
+ * error de lookup devuelve null y el caller conserva el default (nunca peor que antes).
+ */
+async function openCheckNumbersForTable(
+  siteId: number,
+  tableId: string,
+  excludeOrderId?: number,
+): Promise<number[] | null> {
+  let query = supabase
+    .from('orders')
+    .select('check_number')
+    .eq('site_id', siteId)
+    .eq('table_id', tableId)
+    .is('closed_at', null);
+  if (excludeOrderId != null) query = query.neq('id', excludeOrderId);
+  const { data, error } = await query;
+  if (error) {
+    logger.error({ error, site_id: siteId, table_id: tableId }, 'omnivore sync: check_number lookup failed — keeping default');
+    return null;
+  }
+  return (data ?? []).map((r: any) => Number(r.check_number ?? 1));
+}
+
+const nextCheckNumber = (siblings: number[]): number =>
+  siblings.reduce((max, n) => Math.max(max, n), 0) + 1;
+
+/**
  * WS-8/F15 (auditoría 2026-06-09): atribución de dinero cuando la orden se cobra
  * DIRECTO en Omnivore (due==0) y NO existe un pago en MCM. Sin esto la orden queda
  * `check-closed`/`fulfilled` pero el dinero es invisible para el dashboard de pagos /
@@ -359,7 +390,18 @@ export async function upsertOmnivoreOrders(
           // tocar órdenes ya linkeadas / sin floor_element).
           const floorPatch: Record<string, unknown> = {};
           if (floorEl) {
-            if (String((existing as any).table_id ?? '') !== floorEl.id) floorPatch.table_id = floorEl.id;
+            if (String((existing as any).table_id ?? '') !== floorEl.id) {
+              floorPatch.table_id = floorEl.id;
+              // Al re-linkear table_id la fila ENTRA al índice único de cheques abiertos:
+              // si un hermano abierto ya usa su check_number, el UPDATE fallaría con 23505
+              // en cada ciclo → asignar el siguiente libre solo en ese caso.
+              if (!(existing as any).closed_at) {
+                const siblings = await openCheckNumbersForTable(siteId, floorEl.id, Number(existing.id));
+                if (siblings && siblings.includes(Number((existing as any).check_number ?? 1))) {
+                  floorPatch.check_number = nextCheckNumber(siblings);
+                }
+              }
+            }
             if (String((existing as any).table?.id ?? '') !== floorEl.id) floorPatch.table = (order as any).table;
           }
 
@@ -432,6 +474,21 @@ export async function upsertOmnivoreOrders(
               (existing as any).line_items,
               (order as any).line_items,
             );
+          }
+          // Mismo guard de check_number que el path managed: este UPDATE escribe `order`
+          // completo (incluye table_id cuando floorEl resolvió). Si RE-LINKEA la mesa,
+          // la fila entra al índice único de cheques abiertos → asignar el siguiente
+          // check_number libre si el actual colisiona. Si table_id no cambia, no se toca
+          // nada (el mapper no emite check_number; el valor existente se preserva).
+          if (
+            floorEl &&
+            !(existing as any).closed_at &&
+            String((existing as any).table_id ?? '') !== floorEl.id
+          ) {
+            const siblings = await openCheckNumbersForTable(siteId, floorEl.id, Number(existing.id));
+            if (siblings && siblings.includes(Number((existing as any).check_number ?? 1))) {
+              (order as any).check_number = nextCheckNumber(siblings);
+            }
           }
           // Tras el merge, escribir solo si algo material cambió (evita churn: si el único "cambio"
           // era el ítem local que el merge ya preservó, el order resultante == existing → skip).
@@ -523,9 +580,7 @@ export async function upsertOmnivoreOrders(
           continue; // NO insertar: la orden quedó (o ya estaba) linkeada.
         }
 
-        const randomNumberId = Math.floor(Math.random() * 10_000_000_000_000_000);
         order.site_id = siteId;
-        order.id = randomNumberId;
 
         // POS-originada nueva: si el site tiene table-service y es dine-in/tab, marcarla
         // `omnivore_managed` → futuros pulls la mergean y el mesero la edita desde O&P.
@@ -536,14 +591,33 @@ export async function upsertOmnivoreOrders(
           };
         }
 
-        const { error: upsertError } = await supabase.from('orders').upsert(
-          {
-            ...order,
-            omnivore_pos_id: omnivorePosId,
-            global_pos_id: `${siteId}-${omnivorePosId}`,
-          },
-          { onConflict: 'site_id,omnivore_pos_id', ignoreDuplicates: true }
-        );
+        // FIX 2º cheque (2026-07-14): si la orden va linkeada al floor entra al índice único
+        // (table_id, check_number) de cheques ABIERTOS; el mapper no emite check_number
+        // (default 1), así que el 2º cheque abierto de una mesa fallaba con 23505 en cada
+        // ciclo y nunca entraba a MCM. Asignar el siguiente libre + retry acotado en 23505
+        // (mismo patrón que open-table-order). Sin table_id el índice no aplica → 1 intento,
+        // flujo idéntico al anterior.
+        const INSERT_ATTEMPTS = floorEl ? 3 : 1;
+        let upsertError: any = null;
+        for (let attempt = 0; attempt < INSERT_ATTEMPTS; attempt++) {
+          if (floorEl) {
+            const siblings = await openCheckNumbersForTable(siteId, floorEl.id);
+            if (siblings) (order as any).check_number = nextCheckNumber(siblings);
+          }
+          order.id = Math.floor(Math.random() * 10_000_000_000_000_000);
+          const { error } = await supabase.from('orders').upsert(
+            {
+              ...order,
+              omnivore_pos_id: omnivorePosId,
+              global_pos_id: `${siteId}-${omnivorePosId}`,
+            },
+            { onConflict: 'site_id,omnivore_pos_id', ignoreDuplicates: true }
+          );
+          upsertError = error ?? null;
+          // Con ignoreDuplicates en (site_id,omnivore_pos_id), un 23505 aquí viene de OTRA
+          // constraint (check_number tomado por una carrera, o el PK random) → recalcular ambos.
+          if (!upsertError || (upsertError as any).code !== '23505') break;
+        }
         if (upsertError) {
           logger.error({ error: upsertError, site_id: siteId, omnivore_pos_id: omnivorePosId }, 'omnivore upsert: insert failed');
           skipped++;
