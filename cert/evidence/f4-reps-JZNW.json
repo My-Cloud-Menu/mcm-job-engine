@@ -1,0 +1,29 @@
+[
+  {
+    "tag": "R2",
+    "error": "no llegó a MCM",
+    "ticket": "20260726-1010002"
+  },
+  {
+    "tag": "R3",
+    "ticket": "20260726-1010003",
+    "mcm": "10037",
+    "clover": "GYPTKA0TH90C8",
+    "cheque_total": 2419,
+    "tip_cobrado": 475,
+    "clover_pay": "NBW8J2PR9EJWA",
+    "enviado_amount": 1944,
+    "enviado_tip": 475,
+    "job": "dead_letter",
+    "error": "Omnivore insufficient_amount: Insufficient amount applied to payment or discount",
+    "due_final": 2419,
+    "paid_final": 0,
+    "tips_final": 0,
+    "open_final": true
+  },
+  {
+    "tag": "C0",
+    "error": "no llegó a MCM",
+    "ticket": "20260726-1010004"
+  }
+]

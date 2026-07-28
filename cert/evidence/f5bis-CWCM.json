@@ -1,0 +1,36 @@
+{
+  "f54": {
+    "llego_a_failing": true,
+    "fallos": 5,
+    "segundos": 285,
+    "error": "Omnivore invalid_api_key: Invalid or expired api key",
+    "alertas": [
+      {
+        "dedupe_key": "dead_letter:omnivore:99990003",
+        "event_type": "dead_letter",
+        "created_at": {}
+      }
+    ],
+    "revivio_solo": false,
+    "trigger_lo_revive": false
+  },
+  "palancas": [
+    {
+      "palanca": "sync_schedules.status='disabled'",
+      "alcance": "un sync",
+      "efecto": "inmediato",
+      "ms": 111
+    },
+    {
+      "palanca": "site_integrations.active=false",
+      "alcance": "un proveedor",
+      "efecto": "active=false, schedule sigue active",
+      "nota": "el schedule NO se apaga solo; la credencial falla al usarse (caché 60 s)"
+    },
+    {
+      "palanca": "config.sync_orders_to_clover=false",
+      "alcance": "una dirección",
+      "efecto": "schedule sigue active hasta re-ejecutar ensure_sync_schedules"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "ticket": "20260726-1010012",
+  "final": {
+    "discounts": 0,
+    "due": 541,
+    "items": 500,
+    "paid": 0,
+    "service_charges": 5,
+    "sub_total": 500,
+    "tax": 36,
+    "tips": 0,
+    "total": 541
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "caso": "M5 · tip adjust post-captura",
+  "tras_cobro": {
+    "mcm_pago": {
+      "id": "10033",
+      "site_id": "99990003",
+      "status": "completed",
+      "method": "ecr-card",
+      "source": "",
+      "total": "6.49",
+      "tip": "0.00",
+      "total_refunded": "0.00",
+      "pos_id": "H423EX6BXX4VM",
+      "reference": "H423EX6BXX4VM",
+      "orders_ids": [
+        "10053"
+      ],
+      "additional_properties": {
+        "omnivore_payment_id": "105906178"
+      },
+      "pos_request_payload": null,
+      "date_created": {}
+    },
+    "aloha": {
+      "discounts": 0,
+      "due": 0,
+      "items": 600,
+      "paid": 649,
+      "service_charges": 6,
+      "sub_total": 600,
+      "tax": 43,
+      "tips": 0,
+      "total": 649
+    }
+  },
+  "tip_adjust": {
+    "ok": false,
+    "intentos": [
+      {
+        "label": "POST /payments/{id} {tipAmount}",
+        "m": "POST",
+        "p": "/payments/H423EX6BXX4VM",
+        "b": {
+          "tipAmount": 200
+        },
+        "status": 400,
+        "body": {
+          "message": "Currently only lineItem payments or employee associated to payment can be updated. No lineItem payments or employee ID found."
+        }
+      },
+      {
+        "label": "POST /orders/{o}/payments/{p} {tipAmount}",
+        "m": "POST",
+        "p": "/orders/588XHTCACTMN8/payments/H423EX6BXX4VM",
+        "b": {
+          "tipAmount": 200
+        },
+        "status": 405,
+        "body": null
+      },
+      {
+        "label": "PUT /payments/{id} {tipAmount}",
+        "m": "PUT",
+        "p": "/payments/H423EX6BXX4VM",
+        "b": {
+          "tipAmount": 200
+        },
+        "status": 401,
+        "body": {
+          "message": "401 Unauthorized"
+        }
+      }
+    ]
+  }
+}

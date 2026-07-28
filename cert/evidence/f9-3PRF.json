@@ -1,0 +1,198 @@
+{
+  "ticket": "20260726-1010013",
+  "mcm": "10048",
+  "pasos": [
+    {
+      "paso": "A1 · comida $6 + alcohol $9",
+      "hash": "1t2lfg1",
+      "omni": {
+        "items": 1500,
+        "tax": 147,
+        "svc": 15,
+        "disc": 0,
+        "total": 1662
+      },
+      "mcm_total": "16.62",
+      "mcm_lineas": 2,
+      "clover_total": 1662,
+      "clover_lineas": [
+        "Chips & Salsa=600+42",
+        "Monte Xanic Chenin CP=900+104",
+        "Maintenance & Entertainment Fee=14+2"
+      ],
+      "cuadra": true,
+      "rec": {
+        "omnivore_total_cents": 1662,
+        "mcm_total_cents": 1662,
+        "clover_order_total": 1662,
+        "clover_sum_lines": 1662,
+        "mcm_vs_omnivore": 0,
+        "clover_vs_mcm": 0,
+        "clover_lines_vs_total": 0,
+        "cuadra": true
+      }
+    },
+    {
+      "paso": "A2 · +1 comida $6",
+      "hash": "116zf8l",
+      "omni": {
+        "items": 2100,
+        "tax": 190,
+        "svc": 21,
+        "disc": 0,
+        "total": 2311
+      },
+      "mcm_total": "23.11",
+      "mcm_lineas": 3,
+      "clover_total": 2311,
+      "clover_lineas": [
+        "Chips & Salsa=600+42",
+        "Monte Xanic Chenin CP=900+104",
+        "Refritos Small=600+42",
+        "Maintenance & Entertainment Fee=21+2"
+      ],
+      "cuadra": true,
+      "rec": {
+        "omnivore_total_cents": 2311,
+        "mcm_total_cents": 2311,
+        "clover_order_total": 2311,
+        "clover_sum_lines": 2311,
+        "mcm_vs_omnivore": 0,
+        "clover_vs_mcm": 0,
+        "clover_lines_vs_total": 0,
+        "cuadra": true
+      }
+    },
+    {
+      "paso": "A4 · +1 ítem con quantity=2",
+      "hash": "y30f50",
+      "omni": {
+        "items": 4700,
+        "tax": 374,
+        "svc": 47,
+        "disc": 0,
+        "total": 5121
+      },
+      "mcm_total": "51.21",
+      "mcm_lineas": 5,
+      "clover_total": 5121,
+      "clover_lineas": [
+        "Chips & Salsa=600+42",
+        "Monte Xanic Chenin CP=900+104",
+        "Refritos Small=600+42",
+        "Elote=1300+91",
+        "Elote=1300+91",
+        "Maintenance & Entertainment Fee=46+5"
+      ],
+      "cuadra": true,
+      "rec": {
+        "omnivore_total_cents": 5121,
+        "mcm_total_cents": 5121,
+        "clover_order_total": 5121,
+        "clover_sum_lines": 5121,
+        "mcm_vs_omnivore": 0,
+        "clover_vs_mcm": 0,
+        "clover_lines_vs_total": 0,
+        "cuadra": true
+      }
+    },
+    {
+      "paso": "A5 · void de ítem fireado",
+      "hash": "1vb6g6o",
+      "omni": {
+        "items": 4100,
+        "tax": 332,
+        "svc": 41,
+        "disc": 0,
+        "total": 4473
+      },
+      "mcm_total": "44.73",
+      "mcm_lineas": 4,
+      "clover_total": 4473,
+      "clover_lineas": [
+        "Chips & Salsa=600+42",
+        "Monte Xanic Chenin CP=900+104",
+        "Elote=1300+91",
+        "Elote=1300+91",
+        "Maintenance & Entertainment Fee=41+4"
+      ],
+      "cuadra": true,
+      "rec": {
+        "omnivore_total_cents": 4473,
+        "mcm_total_cents": 4473,
+        "clover_order_total": 4473,
+        "clover_sum_lines": 4473,
+        "mcm_vs_omnivore": 0,
+        "clover_vs_mcm": 0,
+        "clover_lines_vs_total": 0,
+        "cuadra": true
+      }
+    },
+    {
+      "paso": "A6 · +1 comida $5 tras el void",
+      "hash": "13w670v",
+      "omni": {
+        "items": 4600,
+        "tax": 367,
+        "svc": 46,
+        "disc": 0,
+        "total": 5013
+      },
+      "mcm_total": "50.13",
+      "mcm_lineas": 5,
+      "clover_total": 5013,
+      "clover_lineas": [
+        "Chips & Salsa=600+42",
+        "Monte Xanic Chenin CP=900+104",
+        "Elote=1300+91",
+        "Elote=1300+91",
+        "Arroz Verde=500+35",
+        "Maintenance & Entertainment Fee=45+5"
+      ],
+      "cuadra": true,
+      "rec": {
+        "omnivore_total_cents": 5013,
+        "mcm_total_cents": 5013,
+        "clover_order_total": 5013,
+        "clover_sum_lines": 5013,
+        "mcm_vs_omnivore": 0,
+        "clover_vs_mcm": 0,
+        "clover_lines_vs_total": 0,
+        "cuadra": true
+      }
+    },
+    {
+      "paso": "A7 · descuento de ticket $2.00",
+      "hash": "13w670v",
+      "omni": {
+        "items": 4600,
+        "tax": 367,
+        "svc": 46,
+        "disc": 0,
+        "total": 5013
+      },
+      "mcm_total": "50.13",
+      "mcm_lineas": 5,
+      "clover_total": 5013,
+      "clover_lineas": [
+        "Chips & Salsa=600+42",
+        "Monte Xanic Chenin CP=900+104",
+        "Elote=1300+91",
+        "Elote=1300+91",
+        "Arroz Verde=500+35",
+        "Maintenance & Entertainment Fee=45+5"
+      ],
+      "cuadra": true,
+      "rec": {
+        "omnivore_total_cents": 5013,
+        "mcm_total_cents": 5013,
+        "clover_order_total": 5013,
+        "clover_sum_lines": 5013,
+        "mcm_vs_omnivore": 0,
+        "clover_vs_mcm": 0,
+        "clover_lines_vs_total": 0,
+        "cuadra": true
+      }
+    }
+  ]
+}

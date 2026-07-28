@@ -1,0 +1,367 @@
+{
+  "caso": "M2 · void/refund de pago Clover",
+  "antes": {
+    "pagos": [
+      {
+        "id": "10032",
+        "site_id": "99990003",
+        "status": "completed",
+        "method": "ecr-card",
+        "source": "",
+        "total": "14.05",
+        "tip": "0.00",
+        "total_refunded": "0.00",
+        "pos_id": "HFKH880YV0D4A",
+        "reference": "HFKH880YV0D4A",
+        "orders_ids": [
+          "10051"
+        ],
+        "additional_properties": {},
+        "pos_request_payload": null,
+        "date_created": {}
+      }
+    ],
+    "orden": {
+      "id": "10051",
+      "site_id": "99990003",
+      "status": "check-closed",
+      "payment_status": "fulfilled",
+      "total": "14.05",
+      "subtotal": "13.00",
+      "total_tax": "0.92",
+      "paid": "14.05",
+      "discount_total": "0.00",
+      "fee_total": "0.13",
+      "pos_id": "20260726-1010016",
+      "omnivore_pos_id": "20260726-1010016",
+      "clover_pos_id": "EAT5C1ET849MY",
+      "clover_ticket_id": "EAT5C1ET849MY",
+      "clover_payment_id": "HFKH880YV0D4A",
+      "clover_line_items_hash": "1aaiv13",
+      "check_number": 1,
+      "table_id": "960ea787-18d9-468a-85a1-05d8aa52b9bd",
+      "channel": "pos",
+      "experience": "qe",
+      "line_items": [
+        {
+          "id": "lineitem-0",
+          "sku": "",
+          "tax": "0.00",
+          "name": "Elote",
+          "paid": 0,
+          "notes": "",
+          "price": "13.00",
+          "total": "13.00",
+          "status": "sent",
+          "sent_at": "2026-07-27T07:21:34.000Z",
+          "quantity": 1,
+          "tax_class": "reduced",
+          "thumbnail": "",
+          "total_tax": "0",
+          "attributes": [],
+          "product_id": 10003,
+          "variation_id": "",
+          "product_price": "13.00",
+          "variation_name": "",
+          "additional_properties": {
+            "omnivore": {
+              "sent": true,
+              "origin": "pos",
+              "item_id": "105906213"
+            }
+          }
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": "taxline-0",
+          "rate": "10.5",
+          "label": "Tax Estatal",
+          "rate_id": "10001",
+          "compound": false,
+          "subtotal": 0.13,
+          "rate_code": "estatal-tax",
+          "tax_total": "0.01",
+          "additional_properties": {}
+        },
+        {
+          "id": "taxline-1",
+          "rate": "6",
+          "label": "Tax Reducido",
+          "rate_id": "10002",
+          "compound": false,
+          "subtotal": 13,
+          "rate_code": "reduced-tax",
+          "tax_total": "0.78",
+          "additional_properties": {}
+        },
+        {
+          "id": "taxline-2",
+          "rate": "1",
+          "label": "Tax Municipal",
+          "rate_id": "10004",
+          "compound": false,
+          "subtotal": 13.13,
+          "rate_code": "municipal-tax",
+          "tax_total": "0.13",
+          "additional_properties": {}
+        }
+      ],
+      "fee_lines": [
+        {
+          "id": "feeline-0",
+          "name": "Maintenance & Entertainment Fee",
+          "total": "0.13",
+          "tax_class": "standard",
+          "total_tax": "0.01",
+          "is_taxable": false,
+          "additional_properties": {}
+        }
+      ],
+      "additional_properties": {},
+      "issues": null,
+      "pos_injection_error": null,
+      "date_created": {},
+      "date_updated": {},
+      "closed_at": {}
+    },
+    "aloha": {
+      "discounts": 0,
+      "due": 1405,
+      "items": 1300,
+      "paid": 0,
+      "service_charges": 13,
+      "sub_total": 1300,
+      "tax": 92,
+      "tips": 0,
+      "total": 1405
+    }
+  },
+  "refund_probe": {
+    "ok": false,
+    "intentos": [
+      {
+        "label": "POST /payments/{id}/refunds",
+        "m": "POST",
+        "p": "/payments/HFKH880YV0D4A/refunds",
+        "b": {
+          "amount": 1405
+        },
+        "status": 405,
+        "body": null
+      },
+      {
+        "label": "POST /refunds (payment)",
+        "m": "POST",
+        "p": "/refunds",
+        "b": {
+          "payment": {
+            "id": "HFKH880YV0D4A"
+          },
+          "amount": 1405
+        },
+        "status": 405,
+        "body": null
+      },
+      {
+        "label": "POST /orders/{id}/refunds",
+        "m": "POST",
+        "p": "/orders/EAT5C1ET849MY/refunds",
+        "b": {
+          "amount": 1405
+        },
+        "status": 401,
+        "body": {
+          "message": "401 Unauthorized"
+        }
+      }
+    ]
+  },
+  "despues": {
+    "clover_payment": {
+      "id": "HFKH880YV0D4A",
+      "order": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/EAT5C1ET849MY",
+        "id": "EAT5C1ET849MY",
+        "currency": "USD",
+        "total": 1405,
+        "externalReferenceId": "m7lpyqx",
+        "title": "MCM #10051",
+        "note": "",
+        "orderType": {
+          "id": "E409NQ4X4RQ0T"
+        },
+        "taxRemoved": false,
+        "isVat": false,
+        "state": "Open",
+        "manualTransaction": false,
+        "groupLineItems": true,
+        "testMode": false,
+        "createdTime": 1785136924000,
+        "clientCreatedTime": 1785136924000,
+        "modifiedTime": 1785136928000
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4",
+        "editable": true,
+        "label": "MCM",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      "amount": 1405,
+      "tipAmount": 0,
+      "externalPaymentId": "CERT-EXNH-M2",
+      "createdTime": 1785136928000,
+      "clientCreatedTime": 1785136928000,
+      "modifiedTime": 1785136928000,
+      "result": "SUCCESS",
+      "refunds": {
+        "elements": []
+      }
+    },
+    "map": {
+      "clover_payment_id": "HFKH880YV0D4A",
+      "mcm_payment_id": "10032",
+      "voided": false,
+      "total_refunded": "0"
+    },
+    "pagos": [
+      {
+        "id": "10032",
+        "site_id": "99990003",
+        "status": "completed",
+        "method": "ecr-card",
+        "source": "",
+        "total": "14.05",
+        "tip": "0.00",
+        "total_refunded": "0.00",
+        "pos_id": "HFKH880YV0D4A",
+        "reference": "HFKH880YV0D4A",
+        "orders_ids": [
+          "10051"
+        ],
+        "additional_properties": {},
+        "pos_request_payload": null,
+        "date_created": {}
+      }
+    ],
+    "orden": {
+      "id": "10051",
+      "site_id": "99990003",
+      "status": "check-closed",
+      "payment_status": "fulfilled",
+      "total": "14.05",
+      "subtotal": "13.00",
+      "total_tax": "0.92",
+      "paid": "14.05",
+      "discount_total": "0.00",
+      "fee_total": "0.13",
+      "pos_id": "20260726-1010016",
+      "omnivore_pos_id": "20260726-1010016",
+      "clover_pos_id": "EAT5C1ET849MY",
+      "clover_ticket_id": "EAT5C1ET849MY",
+      "clover_payment_id": "HFKH880YV0D4A",
+      "clover_line_items_hash": "1aaiv13",
+      "check_number": 1,
+      "table_id": "960ea787-18d9-468a-85a1-05d8aa52b9bd",
+      "channel": "pos",
+      "experience": "qe",
+      "line_items": [
+        {
+          "id": "lineitem-0",
+          "sku": "",
+          "tax": "0.00",
+          "name": "Elote",
+          "paid": 0,
+          "notes": "",
+          "price": "13.00",
+          "total": "13.00",
+          "status": "sent",
+          "sent_at": "2026-07-27T07:21:34.000Z",
+          "quantity": 1,
+          "tax_class": "reduced",
+          "thumbnail": "",
+          "total_tax": "0",
+          "attributes": [],
+          "product_id": 10003,
+          "variation_id": "",
+          "product_price": "13.00",
+          "variation_name": "",
+          "additional_properties": {
+            "omnivore": {
+              "sent": true,
+              "origin": "pos",
+              "item_id": "105906213"
+            }
+          }
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": "taxline-0",
+          "rate": "10.5",
+          "label": "Tax Estatal",
+          "rate_id": "10001",
+          "compound": false,
+          "subtotal": 0.13,
+          "rate_code": "estatal-tax",
+          "tax_total": "0.01",
+          "additional_properties": {}
+        },
+        {
+          "id": "taxline-1",
+          "rate": "6",
+          "label": "Tax Reducido",
+          "rate_id": "10002",
+          "compound": false,
+          "subtotal": 13,
+          "rate_code": "reduced-tax",
+          "tax_total": "0.78",
+          "additional_properties": {}
+        },
+        {
+          "id": "taxline-2",
+          "rate": "1",
+          "label": "Tax Municipal",
+          "rate_id": "10004",
+          "compound": false,
+          "subtotal": 13.13,
+          "rate_code": "municipal-tax",
+          "tax_total": "0.13",
+          "additional_properties": {}
+        }
+      ],
+      "fee_lines": [
+        {
+          "id": "feeline-0",
+          "name": "Maintenance & Entertainment Fee",
+          "total": "0.13",
+          "tax_class": "standard",
+          "total_tax": "0.01",
+          "is_taxable": false,
+          "additional_properties": {}
+        }
+      ],
+      "additional_properties": {},
+      "issues": null,
+      "pos_injection_error": null,
+      "date_created": {},
+      "date_updated": {},
+      "closed_at": {}
+    },
+    "aloha": {
+      "discounts": 0,
+      "due": 1405,
+      "items": 1300,
+      "paid": 0,
+      "service_charges": 13,
+      "sub_total": 1300,
+      "tax": 92,
+      "tips": 0,
+      "total": 1405
+    }
+  }
+}

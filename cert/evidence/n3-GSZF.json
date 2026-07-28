@@ -1,0 +1,40 @@
+{
+  "casos": [
+    {
+      "tag": "N3a",
+      "no_verificado": "POS no totalizó"
+    },
+    {
+      "tag": "N3b",
+      "ticket": "20260726-1010033",
+      "no_verificado": "POS no liquidó",
+      "aloha": {
+        "discounts": 0,
+        "due": 649,
+        "items": 600,
+        "paid": 649,
+        "service_charges": 6,
+        "sub_total": 600,
+        "tax": 43,
+        "tips": 1800,
+        "total": 649
+      }
+    },
+    {
+      "tag": "N3c",
+      "ticket": "20260726-1010034",
+      "no_verificado": "POS no liquidó",
+      "aloha": {
+        "discounts": 0,
+        "due": 1405,
+        "items": 1300,
+        "paid": 0,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    }
+  ]
+}

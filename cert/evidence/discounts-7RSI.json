@@ -1,0 +1,149 @@
+{
+  "total": 44,
+  "usables": [
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/c12/",
+          "type": "application/json; name=discount"
+        }
+      },
+      "applies_to": {
+        "item": false,
+        "ticket": true
+      },
+      "available": true,
+      "id": "c12",
+      "max_amount": 200000,
+      "max_percent": null,
+      "min_amount": null,
+      "min_percent": null,
+      "min_ticket_total": null,
+      "name": "District Employee",
+      "open": false,
+      "pos_id": "c12",
+      "type": "percent",
+      "value": 2000
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/c39/",
+          "type": "application/json; name=discount"
+        }
+      },
+      "applies_to": {
+        "item": false,
+        "ticket": true
+      },
+      "available": true,
+      "id": "c39",
+      "max_amount": 200000,
+      "max_percent": null,
+      "min_amount": null,
+      "min_percent": null,
+      "min_ticket_total": null,
+      "name": "Owners 20%",
+      "open": false,
+      "pos_id": "c39",
+      "type": "percent",
+      "value": 2000
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/c61/",
+          "type": "application/json; name=discount"
+        }
+      },
+      "applies_to": {
+        "item": false,
+        "ticket": true
+      },
+      "available": true,
+      "id": "c61",
+      "max_amount": 20000,
+      "max_percent": null,
+      "min_amount": null,
+      "min_percent": null,
+      "min_ticket_total": null,
+      "name": "Dislike",
+      "open": false,
+      "pos_id": "c61",
+      "type": "percent",
+      "value": 10000
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/c68/",
+          "type": "application/json; name=discount"
+        }
+      },
+      "applies_to": {
+        "item": false,
+        "ticket": true
+      },
+      "available": true,
+      "id": "c68",
+      "max_amount": 200000,
+      "max_percent": null,
+      "min_amount": null,
+      "min_percent": null,
+      "min_ticket_total": null,
+      "name": "Mercadeo",
+      "open": false,
+      "pos_id": "c68",
+      "type": "percent",
+      "value": 10000
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/c69/",
+          "type": "application/json; name=discount"
+        }
+      },
+      "applies_to": {
+        "item": false,
+        "ticket": true
+      },
+      "available": true,
+      "id": "c69",
+      "max_amount": 200000,
+      "max_percent": null,
+      "min_amount": null,
+      "min_percent": null,
+      "min_ticket_total": null,
+      "name": "F&B Rev",
+      "open": false,
+      "pos_id": "c69",
+      "type": "percent",
+      "value": 10000
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/c83/",
+          "type": "application/json; name=discount"
+        }
+      },
+      "applies_to": {
+        "item": false,
+        "ticket": true
+      },
+      "available": true,
+      "id": "c83",
+      "max_amount": 200000,
+      "max_percent": null,
+      "min_amount": null,
+      "min_percent": null,
+      "min_ticket_total": null,
+      "name": "NBO/Comp",
+      "open": false,
+      "pos_id": "c83",
+      "type": "percent",
+      "value": 10000
+    }
+  ]
+}

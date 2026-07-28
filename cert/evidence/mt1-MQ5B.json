@@ -1,0 +1,49 @@
+{
+  "estado_previo": [
+    {
+      "note": "silenciado para certificación",
+      "site_id": "25612612",
+      "integration": "omnivore",
+      "sync_type": "fetch_recent_orders",
+      "prev_status": "active",
+      "prev_interval": 60,
+      "saved_at": {}
+    }
+  ],
+  "ticket": "20260727-1010057",
+  "cert": {
+    "id": "10192",
+    "site_id": "99990003",
+    "check_number": 1,
+    "total": "14.05",
+    "table_id": "41bb623b-37c4-4504-a355-fd069711ff27",
+    "pos_id": "20260727-1010057",
+    "emp": "975"
+  },
+  "vecino": {
+    "id": "10451",
+    "site_id": "25612612",
+    "check_number": 1,
+    "total": "14.05",
+    "table_id": "b3849f19-c92d-422d-a637-c1e07ef0866a",
+    "pos_id": "20260727-1010057",
+    "emp": "975"
+  },
+  "jobs": [
+    {
+      "site_id": "25612612",
+      "n": 6
+    },
+    {
+      "site_id": "99990003",
+      "n": 86
+    }
+  ],
+  "crecimiento_vecino": 148,
+  "restaurado": {
+    "status": "active",
+    "interval_seconds": 60,
+    "consecutive_failures": 0,
+    "next_run_at": {}
+  }
+}

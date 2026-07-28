@@ -1,0 +1,59 @@
+{
+  "por_tender": [
+    {
+      "method": "ecr-card",
+      "source": "Omnivore POS",
+      "n": 31,
+      "monto": "2074.71",
+      "propina": "0.00"
+    },
+    {
+      "method": "ecr-card",
+      "source": "",
+      "n": 9,
+      "monto": "100.22",
+      "propina": "10.25"
+    }
+  ],
+  "por_mesero": [
+    {
+      "emp": "3184",
+      "n": 35,
+      "monto": "2454.55"
+    },
+    {
+      "emp": "975",
+      "n": 47,
+      "monto": "583.35"
+    },
+    {
+      "emp": "976",
+      "n": 6,
+      "monto": "104.58"
+    }
+  ],
+  "dead_letters": [
+    {
+      "job_type": "order_injection",
+      "integration": "clover",
+      "n": 12,
+      "codigos": [
+        "HTTP_429",
+        null
+      ]
+    },
+    {
+      "job_type": "payment_injection",
+      "integration": "omnivore",
+      "n": 6,
+      "codigos": [
+        "OMNIVORE_INSUFFICIENT_AMOUNT"
+      ]
+    }
+  ],
+  "idempotencia": {
+    "dupOrd": [],
+    "dupPag": [],
+    "dupClover": []
+  }
+}

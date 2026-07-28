@@ -1,0 +1,686 @@
+{
+  "n": 80,
+  "concurrencia": 6,
+  "casos": [
+    {
+      "idx": 2,
+      "mesa": "111",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 5,
+      "mesa": "204",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 1,
+      "mesa": "103",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 3,
+      "mesa": "154",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 6,
+      "mesa": "23",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 7,
+      "mesa": "26",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 9,
+      "mesa": "29",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 10,
+      "mesa": "3",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 11,
+      "mesa": "300",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 0,
+      "mesa": "102",
+      "mesero": "975",
+      "ticket": "20260726-1010089",
+      "pos_total": 649,
+      "t_pos_listo": 1785142295744,
+      "ms_crear": 3438,
+      "mcm_id": "10116",
+      "t_mcm": 1785142332762,
+      "ms_a_mcm": 37018,
+      "clover_id": "QPQKW2W4Y9KQM",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 47186,
+      "mcm_total": 649
+    },
+    {
+      "idx": 14,
+      "mesa": "303",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 13,
+      "mesa": "302",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 15,
+      "mesa": "304",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 4,
+      "mesa": "18",
+      "mesero": "975",
+      "ticket": "20260726-1010090",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142296782,
+      "ms_crear": 4474,
+      "mcm_id": "10115",
+      "t_mcm": 1785142332762,
+      "ms_a_mcm": 35980,
+      "clover_id": "GTS0Y8QX2PFH6",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 46148,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 17,
+      "mesa": "306",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 18,
+      "mesa": "310",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 19,
+      "mesa": "311",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 8,
+      "mesa": "28",
+      "mesero": "975",
+      "ticket": "20260726-1010091",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142297941,
+      "ms_crear": 4384,
+      "mcm_id": "10114",
+      "t_mcm": 1785142332762,
+      "ms_a_mcm": 34821,
+      "clover_id": "QFSCXM2M218MY",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 44989,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 21,
+      "mesa": "37",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 12,
+      "mesa": "301",
+      "mesero": "975",
+      "ticket": "20260726-1010092",
+      "pos_total": 649,
+      "t_pos_listo": 1785142298326,
+      "ms_crear": 3569,
+      "mcm_id": "10113",
+      "t_mcm": 1785142332762,
+      "ms_a_mcm": 34436,
+      "clover_id": "QW4D31M8WXJB2",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 44604,
+      "mcm_total": 649
+    },
+    {
+      "idx": 22,
+      "mesa": "38",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 23,
+      "mesa": "39",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 25,
+      "mesa": "400",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 26,
+      "mesa": "402",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 27,
+      "mesa": "403",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 16,
+      "mesa": "305",
+      "mesero": "975",
+      "ticket": "20260726-1010093",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142300188,
+      "ms_crear": 4079,
+      "mcm_id": "10112",
+      "t_mcm": 1785142332762,
+      "ms_a_mcm": 32574,
+      "clover_id": "7DDMWK43SQNZ8",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 42742,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 29,
+      "mesa": "405",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 30,
+      "mesa": "406",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 31,
+      "mesa": "408",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 20,
+      "mesa": "36",
+      "mesero": "975",
+      "ticket": "20260726-1010094",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142301511,
+      "ms_crear": 4185,
+      "mcm_id": "10111",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 26167,
+      "clover_id": "6AXARNGBCWQEG",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 41419,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 33,
+      "mesa": "41",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 24,
+      "mesa": "4",
+      "mesero": "975",
+      "ticket": "20260726-1010095",
+      "pos_total": 649,
+      "t_pos_listo": 1785142301842,
+      "ms_crear": 3638,
+      "mcm_id": "10110",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 25836,
+      "clover_id": "JBMNRD67S74Y0",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 41088,
+      "mcm_total": 649
+    },
+    {
+      "idx": 34,
+      "mesa": "410",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 35,
+      "mesa": "414",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 28,
+      "mesa": "404",
+      "mesero": "975",
+      "ticket": "20260726-1010096",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142302471,
+      "ms_crear": 3085,
+      "mcm_id": "10109",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 25207,
+      "clover_id": "WA6SAN61FGZN2",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 40459,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 37,
+      "mesa": "45",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 38,
+      "mesa": "46",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 39,
+      "mesa": "47",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 41,
+      "mesa": "49",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 43,
+      "mesa": "50",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 42,
+      "mesa": "5",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 45,
+      "mesa": "501",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 46,
+      "mesa": "502",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 32,
+      "mesa": "409",
+      "mesero": "975",
+      "ticket": "20260726-1010097",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142305160,
+      "ms_crear": 4554,
+      "mcm_id": "10108",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 22518,
+      "clover_id": "X27GQHN58VRS8",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 37770,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 47,
+      "mesa": "503",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 36,
+      "mesa": "44",
+      "mesero": "975",
+      "ticket": "20260726-1010098",
+      "pos_total": 649,
+      "t_pos_listo": 1785142305723,
+      "ms_crear": 4118,
+      "mcm_id": "10106",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 21955,
+      "clover_id": "A6E9YM9VYSXT8",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 37207,
+      "mcm_total": 649
+    },
+    {
+      "idx": 49,
+      "mesa": "505",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 40,
+      "mesa": "48",
+      "mesero": "975",
+      "ticket": "20260726-1010099",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142306298,
+      "ms_crear": 3827,
+      "mcm_id": "10107",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 21380,
+      "clover_id": "2E8ABS1WTW2MG",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 36632,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 50,
+      "mesa": "52",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 51,
+      "mesa": "53",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 44,
+      "mesa": "500",
+      "mesero": "975",
+      "ticket": "20260726-1010100",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142306793,
+      "ms_crear": 3471,
+      "mcm_id": "10105",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 20885,
+      "clover_id": "16PH1ZY3ZS54R",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 36137,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 53,
+      "mesa": "600",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 54,
+      "mesa": "602",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 55,
+      "mesa": "61",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 57,
+      "mesa": "63",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 58,
+      "mesa": "64",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 59,
+      "mesa": "65",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 48,
+      "mesa": "504",
+      "mesero": "975",
+      "ticket": "20260726-1010101",
+      "pos_total": 649,
+      "t_pos_listo": 1785142308806,
+      "ms_crear": 3736,
+      "mcm_id": "10104",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 18872,
+      "clover_id": "2YZABN5EJN5NC",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 34124,
+      "mcm_total": 649
+    },
+    {
+      "idx": 61,
+      "mesa": "68",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 62,
+      "mesa": "69",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 63,
+      "mesa": "7",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 52,
+      "mesa": "58",
+      "mesero": "975",
+      "ticket": "20260726-1010102",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142310096,
+      "ms_crear": 3894,
+      "mcm_id": "10103",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 17582,
+      "clover_id": "2XEYQGNYPK1GG",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 32834,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 65,
+      "mesa": "72",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 66,
+      "mesa": "73",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 56,
+      "mesa": "62",
+      "mesero": "975",
+      "ticket": "20260726-1010103",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142310822,
+      "ms_crear": 4029,
+      "mcm_id": "10102",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 16856,
+      "clover_id": "PTN5S2EB759WC",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 32108,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 67,
+      "mesa": "74",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 69,
+      "mesa": "76",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 70,
+      "mesa": "77",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 60,
+      "mesa": "66",
+      "mesero": "975",
+      "ticket": "20260726-1010104",
+      "pos_total": 649,
+      "t_pos_listo": 1785142312379,
+      "ms_crear": 4241,
+      "mcm_id": "10101",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 15299,
+      "clover_id": "Z35997TWZ9934",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 30551,
+      "mcm_total": 649
+    },
+    {
+      "idx": 71,
+      "mesa": "78",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 64,
+      "mesa": "70",
+      "mesero": "975",
+      "ticket": "20260726-1010105",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142312827,
+      "ms_crear": 3636,
+      "mcm_id": "10100",
+      "t_mcm": 1785142327678,
+      "ms_a_mcm": 14851,
+      "clover_id": "QHA0Z705T3SRT",
+      "t_clover": 1785142342930,
+      "ms_a_clover": 30103,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 73,
+      "mesa": "8",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 74,
+      "mesa": "80",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 75,
+      "mesa": "81",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 77,
+      "mesa": "83",
+      "mesero": "1107",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 68,
+      "mesa": "75",
+      "mesero": "975",
+      "ticket": "20260726-1010106",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142315523,
+      "ms_crear": 5084,
+      "mcm_id": "10119",
+      "t_mcm": 1785142373409,
+      "ms_a_mcm": 57886,
+      "clover_id": "2TCP15H13PX82",
+      "t_clover": 1785142388660,
+      "ms_a_clover": 73137,
+      "mcm_total": 2054
+    },
+    {
+      "idx": 78,
+      "mesa": "84",
+      "mesero": "1116",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 79,
+      "mesa": "85",
+      "mesero": "1202",
+      "error": "employee_clocked_out"
+    },
+    {
+      "idx": 72,
+      "mesa": "79",
+      "mesero": "975",
+      "ticket": "20260726-1010107",
+      "pos_total": 649,
+      "t_pos_listo": 1785142316575,
+      "ms_crear": 4759,
+      "mcm_id": "10118",
+      "t_mcm": 1785142373409,
+      "ms_a_mcm": 56834,
+      "clover_id": "1EPT0N16NKDBG",
+      "t_clover": 1785142383573,
+      "ms_a_clover": 66998,
+      "mcm_total": 649
+    },
+    {
+      "idx": 76,
+      "mesa": "82",
+      "mesero": "975",
+      "ticket": "20260726-1010108",
+      "pos_total": 2054,
+      "t_pos_listo": 1785142317170,
+      "ms_crear": 4343,
+      "mcm_id": "10117",
+      "t_mcm": 1785142373409,
+      "ms_a_mcm": 56239,
+      "clover_id": "GKG31AQFQ87A4",
+      "t_clover": 1785142383573,
+      "ms_a_clover": 66403,
+      "mcm_total": 2054
+    }
+  ]
+}

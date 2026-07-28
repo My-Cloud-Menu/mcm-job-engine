@@ -1,0 +1,2148 @@
+{
+  "ordenes": [
+    {
+      "mcm_id": "10001",
+      "ticket": "20260726-10027",
+      "clover_id": "AQT4FYDVS6BBR",
+      "omni": {
+        "total": 4432,
+        "tax": 291,
+        "due": 4432,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 4432,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 4432,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -291
+    },
+    {
+      "mcm_id": "10002",
+      "ticket": "20260726-10026",
+      "clover_id": "F7JXYVKZMV612",
+      "omni": {
+        "total": 6649,
+        "tax": 385,
+        "due": 6649,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 6649,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -385
+    },
+    {
+      "mcm_id": "10003",
+      "ticket": "20260726-10025",
+      "clover_id": "3HRQPE61DQ37R",
+      "omni": {
+        "total": 13613,
+        "tax": 1146,
+        "due": 0,
+        "paid": 13613,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 13613,
+        "paid": 13613,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 13613,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -1146
+    },
+    {
+      "mcm_id": "10004",
+      "ticket": "20260726-10024",
+      "clover_id": "FMCGW80RE53BM",
+      "omni": {
+        "total": 2595,
+        "tax": 171,
+        "due": 0,
+        "paid": 2595,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2595,
+        "paid": 2595,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2595,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -171
+    },
+    {
+      "mcm_id": "10005",
+      "ticket": "20260726-10023",
+      "clover_id": "JK1JSNRREMX8P",
+      "omni": {
+        "total": 4432,
+        "tax": 256,
+        "due": 0,
+        "paid": 4432,
+        "tips": 1000,
+        "open": true
+      },
+      "mcm": {
+        "total": 4432,
+        "paid": 4432,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 4432,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10006",
+      "ticket": "20260726-10022",
+      "clover_id": "W3F269F28NY5G",
+      "omni": {
+        "total": 7264,
+        "tax": 420,
+        "due": 0,
+        "paid": 7264,
+        "tips": 500,
+        "open": true
+      },
+      "mcm": {
+        "total": 7264,
+        "paid": 7264,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 7365,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -420
+    },
+    {
+      "mcm_id": "10007",
+      "ticket": "20260726-10021",
+      "clover_id": "T6S4WY7FYENGR",
+      "omni": {
+        "total": 3447,
+        "tax": 199,
+        "due": 0,
+        "paid": 3447,
+        "tips": 400,
+        "open": true
+      },
+      "mcm": {
+        "total": 3447,
+        "paid": 3447,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3447,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -199
+    },
+    {
+      "mcm_id": "10008",
+      "ticket": "20260726-10018",
+      "clover_id": null,
+      "omni": {
+        "total": 19236,
+        "tax": 1472,
+        "due": 0,
+        "paid": 19236,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 19236,
+        "paid": 19236,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -1472
+    },
+    {
+      "mcm_id": "10009",
+      "ticket": "20260726-10012",
+      "clover_id": "3RBBC1SMY5AHP",
+      "omni": {
+        "total": 13306,
+        "tax": 1106,
+        "due": 0,
+        "paid": 13306,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 13306,
+        "paid": 13306,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 13306,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -1106
+    },
+    {
+      "mcm_id": "10010",
+      "ticket": "20260726-10011",
+      "clover_id": "F1N14MVV0QGQ8",
+      "omni": {
+        "total": 6402,
+        "tax": 370,
+        "due": 4402,
+        "paid": 2000,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 6402,
+        "paid": 2000,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6402,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -370
+    },
+    {
+      "mcm_id": "10011",
+      "ticket": "20260726-10010",
+      "clover_id": "PE15KWN67FHQP",
+      "omni": {
+        "total": 20747,
+        "tax": 1588,
+        "due": 0,
+        "paid": 20747,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 20747,
+        "paid": 20747,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 20747,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -1588
+    },
+    {
+      "mcm_id": "10012",
+      "ticket": "20260726-10009",
+      "clover_id": "8K4425EK5MD18",
+      "omni": {
+        "total": 6379,
+        "tax": 420,
+        "due": 4379,
+        "paid": 2000,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 6379,
+        "paid": 2000,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6379,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -420
+    },
+    {
+      "mcm_id": "10013",
+      "ticket": "20260726-10008",
+      "clover_id": null,
+      "omni": {
+        "total": 3027,
+        "tax": 199,
+        "due": 2027,
+        "paid": 1000,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 3027,
+        "paid": 1000,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -199
+    },
+    {
+      "mcm_id": "10014",
+      "ticket": "20260726-10007",
+      "clover_id": "CQNKXZ51YDGZG",
+      "omni": {
+        "total": 6487,
+        "tax": 427,
+        "due": 6487,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 6487,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6487,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -427
+    },
+    {
+      "mcm_id": "10015",
+      "ticket": "20260726-10005",
+      "clover_id": "YATYFZD3SXQEE",
+      "omni": {
+        "total": 3892,
+        "tax": 256,
+        "due": 3892,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 3892,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3892,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10016",
+      "ticket": "20260726-10002",
+      "clover_id": "ED67N4G1VXJ12",
+      "omni": {
+        "total": 5081,
+        "tax": 334,
+        "due": 5081,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 5081,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 5081,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -334
+    },
+    {
+      "mcm_id": "10017",
+      "ticket": "20260726-10036",
+      "clover_id": "62BDBM3B5FPHC",
+      "omni": {
+        "total": 5896,
+        "tax": 388,
+        "due": 0,
+        "paid": 5896,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 5896,
+        "paid": 5896,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6271,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -388
+    },
+    {
+      "mcm_id": "10018",
+      "ticket": "20260726-10035",
+      "clover_id": "EW8CHJH7ETAB6",
+      "omni": {
+        "total": 3892,
+        "tax": 256,
+        "due": 0,
+        "paid": 3892,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 3892,
+        "paid": 3892,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3892,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10019",
+      "ticket": "20260726-10034",
+      "clover_id": "7R4RNX8YC8WX2",
+      "omni": {
+        "total": 6271,
+        "tax": 413,
+        "due": 0,
+        "paid": 6271,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 6271,
+        "paid": 6271,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6271,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -413
+    },
+    {
+      "mcm_id": "10020",
+      "ticket": "20260726-10033",
+      "clover_id": "XZPT5R3QXTR3C",
+      "omni": {
+        "total": 6271,
+        "tax": 413,
+        "due": 0,
+        "paid": 6271,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 6271,
+        "paid": 6271,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6271,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -413
+    },
+    {
+      "mcm_id": "10021",
+      "ticket": "20260726-10032",
+      "clover_id": "NG7XM76C3Z4CY",
+      "omni": {
+        "total": 5731,
+        "tax": 378,
+        "due": 0,
+        "paid": 5731,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 5731,
+        "paid": 5731,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 5731,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -378
+    },
+    {
+      "mcm_id": "10022",
+      "ticket": "20260726-10031",
+      "clover_id": "ZZXGCDJTDSXTR",
+      "omni": {
+        "total": 4757,
+        "tax": 313,
+        "due": 0,
+        "paid": 4757,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 4757,
+        "paid": 4757,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 4757,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -313
+    },
+    {
+      "mcm_id": "10023",
+      "ticket": "20260726-10030",
+      "clover_id": "C9EVAYVV0PB9G",
+      "omni": {
+        "total": 5406,
+        "tax": 356,
+        "due": 0,
+        "paid": 5406,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 5406,
+        "paid": 5406,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 5406,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -356
+    },
+    {
+      "mcm_id": "10024",
+      "ticket": "20260726-10029",
+      "clover_id": "M3NAXG4846CCA",
+      "omni": {
+        "total": 22235,
+        "tax": 2035,
+        "due": 0,
+        "paid": 22235,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 22235,
+        "paid": 22235,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 22235,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -2035
+    },
+    {
+      "mcm_id": "10025",
+      "ticket": "20260726-10028",
+      "clover_id": "72E7ZTGBT18XG",
+      "omni": {
+        "total": 3892,
+        "tax": 256,
+        "due": 0,
+        "paid": 3892,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 3892,
+        "paid": 3892,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3892,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10026",
+      "ticket": "20260726-10016",
+      "clover_id": "N72EX066NA1SE",
+      "omni": {
+        "total": 4432,
+        "tax": 256,
+        "due": 0,
+        "paid": 4432,
+        "tips": 10,
+        "open": false
+      },
+      "mcm": {
+        "total": 4432,
+        "paid": 4432,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 4432,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10027",
+      "ticket": "20260726-10013",
+      "clover_id": "5CWZKG0BY18JJ",
+      "omni": {
+        "total": 4432,
+        "tax": 256,
+        "due": 0,
+        "paid": 4432,
+        "tips": 80,
+        "open": false
+      },
+      "mcm": {
+        "total": 4432,
+        "paid": 4432,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 4432,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10028",
+      "ticket": "20260726-10020",
+      "clover_id": "4X5G0VZ6QME3E",
+      "omni": {
+        "total": 6379,
+        "tax": 420,
+        "due": 0,
+        "paid": 6379,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 6379,
+        "paid": 6379,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 6379,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -420
+    },
+    {
+      "mcm_id": "10029",
+      "ticket": "20260726-10019",
+      "clover_id": "H6S2SW1282K5Y",
+      "omni": {
+        "total": 12059,
+        "tax": 961,
+        "due": 0,
+        "paid": 12059,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 12059,
+        "paid": 12059,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 12059,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -961
+    },
+    {
+      "mcm_id": "10030",
+      "ticket": "20260726-10017",
+      "clover_id": "A0EC7BRAQWWB2",
+      "omni": {
+        "total": 4649,
+        "tax": 306,
+        "due": 0,
+        "paid": 4649,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 4649,
+        "paid": 4649,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 4649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -306
+    },
+    {
+      "mcm_id": "10031",
+      "ticket": "20260726-10014",
+      "clover_id": "24BDGYDSEEH3P",
+      "omni": {
+        "total": 3676,
+        "tax": 242,
+        "due": 0,
+        "paid": 3676,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 3676,
+        "paid": 3676,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3676,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -242
+    },
+    {
+      "mcm_id": "10032",
+      "ticket": "20260726-10006",
+      "clover_id": "PRMFGJM4HS5RJ",
+      "omni": {
+        "total": 8974,
+        "tax": 591,
+        "due": 0,
+        "paid": 8974,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 8974,
+        "paid": 8974,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 8974,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -591
+    },
+    {
+      "mcm_id": "10033",
+      "ticket": "20260726-10003",
+      "clover_id": "1BXMFBS8HFP6P",
+      "omni": {
+        "total": 3027,
+        "tax": 199,
+        "due": 0,
+        "paid": 3027,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 3027,
+        "paid": 3027,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3027,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -199
+    },
+    {
+      "mcm_id": "10034",
+      "ticket": "20260726-10004",
+      "clover_id": "0EJJVVPZB5AMR",
+      "omni": {
+        "total": 3892,
+        "tax": 256,
+        "due": 0,
+        "paid": 3892,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 3892,
+        "paid": 3892,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3892,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -256
+    },
+    {
+      "mcm_id": "10035",
+      "ticket": "20260726-10001",
+      "clover_id": null,
+      "omni": {
+        "total": 2595,
+        "tax": 171,
+        "due": 0,
+        "paid": 2595,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 2595,
+        "paid": 2595,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -171
+    },
+    {
+      "mcm_id": "10036",
+      "ticket": "20260726-1010001",
+      "clover_id": "CRV219DTMBHX8",
+      "omni": {
+        "total": 1662,
+        "tax": 147,
+        "due": 1662,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1662,
+        "paid": 1662,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1662,
+        "paymentState": "PAID",
+        "state": "Open",
+        "pagos": 1662,
+        "propinas": 300
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -147
+    },
+    {
+      "mcm_id": "10037",
+      "ticket": "20260726-1010003",
+      "clover_id": "GYPTKA0TH90C8",
+      "omni": {
+        "total": 2419,
+        "tax": 197,
+        "due": 2419,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2419,
+        "paid": 2419,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2419,
+        "paymentState": "PAID",
+        "state": "Open",
+        "pagos": 2419,
+        "propinas": 475
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -197
+    },
+    {
+      "mcm_id": "10038",
+      "ticket": "20260726-1010002",
+      "clover_id": "M8PS64MJD0T54",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 649,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10039",
+      "ticket": "20260726-1010004",
+      "clover_id": "1BP2KP85M3S4E",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 649,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10040",
+      "ticket": "20260726-1010005",
+      "clover_id": "NDJ7XW4GSMXVW",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 649,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 649,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "PAID",
+        "state": "Open",
+        "pagos": 649,
+        "propinas": 250
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10041",
+      "ticket": "20260726-1010006",
+      "clover_id": "NN8MZ9QH1VB76",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 0,
+        "paid": 649,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 649,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "PAID",
+        "state": "Open",
+        "pagos": 649,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10042",
+      "ticket": "20260726-1010007",
+      "clover_id": "VB106QKDMS608",
+      "omni": {
+        "total": 2959,
+        "tax": 232,
+        "due": 2959,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2959,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2959,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -232
+    },
+    {
+      "mcm_id": "10043",
+      "ticket": "20260726-1010008",
+      "clover_id": "K5VSF0M2NH1GJ",
+      "omni": {
+        "total": 2959,
+        "tax": 232,
+        "due": 2959,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2959,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2959,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -232
+    },
+    {
+      "mcm_id": "10044",
+      "ticket": "20260726-1010010",
+      "clover_id": "FWRAK996QBB5G",
+      "omni": {
+        "total": 1405,
+        "tax": 92,
+        "due": 1405,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1405,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1405,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -92
+    },
+    {
+      "mcm_id": "10045",
+      "ticket": "20260726-1010009",
+      "clover_id": "PW3SJHV6423DY",
+      "omni": {
+        "total": 1405,
+        "tax": 92,
+        "due": 1405,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1405,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1405,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -92
+    },
+    {
+      "mcm_id": "10046",
+      "ticket": "20260726-1010011",
+      "clover_id": "1TWB1EDSA7TXE",
+      "omni": {
+        "total": 1405,
+        "tax": 92,
+        "due": 1405,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1405,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1405,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -92
+    },
+    {
+      "mcm_id": "10047",
+      "ticket": "20260726-1010012",
+      "clover_id": "QNY575J57JVJJ",
+      "omni": {
+        "total": 541,
+        "tax": 36,
+        "due": 541,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 541,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 541,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -36
+    },
+    {
+      "mcm_id": "10048",
+      "ticket": "20260726-1010013",
+      "clover_id": "B8HDSMVYMJWZT",
+      "omni": {
+        "total": 4021,
+        "tax": 295,
+        "due": 4021,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 4021,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 5014,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -295
+    },
+    {
+      "mcm_id": "10049",
+      "ticket": "20260726-1010014",
+      "clover_id": "ZKA56TYMV0GV0",
+      "omni": {
+        "total": 1647,
+        "tax": 108,
+        "due": 1647,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1647,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2054,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -108
+    },
+    {
+      "mcm_id": "10050",
+      "ticket": "20260726-1010015",
+      "clover_id": "55JZ2H2YQH5D8",
+      "omni": {
+        "total": 17,
+        "tax": 2,
+        "due": 17,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 17,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1663,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -2
+    },
+    {
+      "mcm_id": "10051",
+      "ticket": "20260726-1010016",
+      "clover_id": "EAT5C1ET849MY",
+      "omni": {
+        "total": 1405,
+        "tax": 92,
+        "due": 1405,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1405,
+        "paid": 1405,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1405,
+        "paymentState": "PAID",
+        "state": "Open",
+        "pagos": 1405,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -92
+    },
+    {
+      "mcm_id": "10052",
+      "ticket": "20260726-1010017",
+      "clover_id": "4SGPFNYB05778",
+      "omni": {
+        "total": 2054,
+        "tax": 135,
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2054,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2696,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -135
+    },
+    {
+      "mcm_id": "10053",
+      "ticket": "20260726-1010018",
+      "clover_id": "588XHTCACTMN8",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 0,
+        "paid": 649,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 649,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "PAID",
+        "state": "Open",
+        "pagos": 649,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10054",
+      "ticket": "20260726-1010019",
+      "clover_id": "WX9MGCNKQYR1J",
+      "omni": {
+        "total": 2054,
+        "tax": 135,
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2054,
+        "paid": 1027,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2054,
+        "paymentState": "PARTIALLY_PAID",
+        "state": "Open",
+        "pagos": 1027,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -135
+    },
+    {
+      "mcm_id": "10055",
+      "ticket": "20260726-1010020",
+      "clover_id": "NNH7QVZ0JX3WT",
+      "omni": {
+        "total": 2595,
+        "tax": 171,
+        "due": 2595,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 2595,
+        "paid": 1562,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2054,
+        "paymentState": "PARTIALLY_PAID",
+        "state": "Open",
+        "pagos": 1027,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -171
+    },
+    {
+      "mcm_id": "10056",
+      "ticket": "20260726-1010021",
+      "clover_id": "D5Q91G000YP0E",
+      "omni": {
+        "total": 1662,
+        "tax": 147,
+        "due": 1662,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1662,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 3054,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -147
+    },
+    {
+      "mcm_id": "10057",
+      "ticket": "20260726-1010022",
+      "clover_id": "W7FE3KPXBEKB4",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 649,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1653,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10058",
+      "ticket": "20260726-1010023",
+      "clover_id": "EV6D0G374PGQY",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 0,
+        "paid": 649,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 649,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10059",
+      "ticket": "20260726-1010024",
+      "clover_id": null,
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "new-order",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10060",
+      "ticket": "20260726-1010025",
+      "clover_id": null,
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "new-order",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10061",
+      "ticket": "20260726-1010027",
+      "clover_id": null,
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "new-order",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10062",
+      "ticket": "20260726-1010026",
+      "clover_id": "R5EBEHJ7TFKV8",
+      "omni": {
+        "total": 757,
+        "tax": 50,
+        "due": 757,
+        "paid": 757,
+        "tips": 300,
+        "open": true
+      },
+      "mcm": {
+        "total": 757,
+        "paid": 757,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 757,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -50
+    },
+    {
+      "mcm_id": "10063",
+      "ticket": "20260726-1010029",
+      "clover_id": "Z714PQ2PP8RCG",
+      "omni": {
+        "total": 2419,
+        "tax": 197,
+        "due": 2419,
+        "paid": 2419,
+        "tips": 500,
+        "open": true
+      },
+      "mcm": {
+        "total": 2419,
+        "paid": 2419,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2419,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -197
+    },
+    {
+      "mcm_id": "10064",
+      "ticket": "20260726-1010028",
+      "clover_id": "H19TZBP5B2Y4T",
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10065",
+      "ticket": "20260726-1010030",
+      "clover_id": "M614V741HJS56",
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10066",
+      "ticket": "20260726-1010031",
+      "clover_id": "B477KQHFKRPG4",
+      "omni": {
+        "total": 2419,
+        "tax": 197,
+        "due": 2419,
+        "paid": 2419,
+        "tips": 500,
+        "open": true
+      },
+      "mcm": {
+        "total": 2419,
+        "paid": 2419,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 2419,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -197
+    },
+    {
+      "mcm_id": "10067",
+      "ticket": "20260726-1010032",
+      "clover_id": "N27WWEE4GGQGP",
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10068",
+      "ticket": "20260726-1010033",
+      "clover_id": "Q6P1NBMW10M9G",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 649,
+        "paid": 649,
+        "tips": 1800,
+        "open": true
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 649,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10069",
+      "ticket": "20260726-1010034",
+      "clover_id": "7RFGYNTXE6ZX8",
+      "omni": {
+        "total": 1405,
+        "tax": 92,
+        "due": 1405,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 1405,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1405,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -92
+    },
+    {
+      "mcm_id": "10070",
+      "ticket": "20260726-1010035",
+      "clover_id": "4JBGJMTBE9M3T",
+      "omni": {
+        "total": 649,
+        "tax": 43,
+        "due": 649,
+        "paid": 649,
+        "tips": 200,
+        "open": true
+      },
+      "mcm": {
+        "total": 649,
+        "paid": 649,
+        "status": "in-kitchen",
+        "payment_status": "partially_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 649,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -43
+    },
+    {
+      "mcm_id": "10071",
+      "ticket": "20260726-1010036",
+      "clover_id": "QC00JHM40V1CR",
+      "omni": {
+        "total": 0,
+        "tax": 0,
+        "due": 0,
+        "paid": 0,
+        "tips": 0,
+        "open": true
+      },
+      "mcm": {
+        "total": 0,
+        "paid": 0,
+        "status": "in-kitchen",
+        "payment_status": "not_fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": false,
+      "cuadra_tax": true,
+      "delta_tax": 0
+    },
+    {
+      "mcm_id": "10072",
+      "ticket": "20260726-1010037",
+      "clover_id": "23NWEKF382V8G",
+      "omni": {
+        "total": 1405,
+        "tax": 92,
+        "due": 0,
+        "paid": 1405,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 1405,
+        "paid": 1405,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1405,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -92
+    },
+    {
+      "mcm_id": "10073",
+      "ticket": "20260726-1010038",
+      "clover_id": "DBDFE88BK3HS8",
+      "omni": {
+        "total": 1662,
+        "tax": 147,
+        "due": 0,
+        "paid": 1662,
+        "tips": 0,
+        "open": false
+      },
+      "mcm": {
+        "total": 1662,
+        "paid": 1662,
+        "status": "check-closed",
+        "payment_status": "fulfilled",
+        "tax": 0
+      },
+      "clover": {
+        "total": 1662,
+        "paymentState": "OPEN",
+        "state": "Open",
+        "pagos": 0,
+        "propinas": 0
+      },
+      "cuadra_total": true,
+      "cuadra_tax": false,
+      "delta_tax": -147
+    }
+  ]
+}

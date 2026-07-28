@@ -1,0 +1,16 @@
+{
+  "casos": [
+    {
+      "tag": "M7c",
+      "ticket": "20260726-1010029",
+      "error": {
+        "errors": [
+          {
+            "description": "POS did not respond to the request, but is expected to next time.",
+            "error": "pos_not_responding_retry"
+          }
+        ]
+      }
+    }
+  ]
+}

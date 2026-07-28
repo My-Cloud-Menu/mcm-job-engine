@@ -1,0 +1,500 @@
+{
+  "ticket": "20260726-1010013",
+  "mcm": 10048,
+  "omni": {
+    "discounts": 920,
+    "due": 4021,
+    "items": 4600,
+    "paid": 0,
+    "service_charges": 46,
+    "sub_total": 3680,
+    "tax": 295,
+    "tips": 0,
+    "total": 4021
+  },
+  "mcm_order": {
+    "id": "10048",
+    "site_id": "99990003",
+    "status": "in-kitchen",
+    "payment_status": "not_fulfilled",
+    "total": "40.21",
+    "subtotal": "46.00",
+    "total_tax": "2.95",
+    "paid": "0.00",
+    "discount_total": "9.20",
+    "fee_total": "0.46",
+    "pos_id": "20260726-1010013",
+    "omnivore_pos_id": "20260726-1010013",
+    "clover_pos_id": "B8HDSMVYMJWZT",
+    "clover_ticket_id": "B8HDSMVYMJWZT",
+    "clover_payment_id": null,
+    "clover_line_items_hash": "13a8pin",
+    "check_number": 1,
+    "table_id": "b0eb5101-d4ea-410e-9440-e95df13d6bd9",
+    "channel": "pos",
+    "experience": "qe",
+    "line_items": [
+      {
+        "id": "lineitem-0",
+        "sku": "",
+        "tax": "0.00",
+        "name": "Chips & Salsa",
+        "paid": 0,
+        "notes": "",
+        "price": "6.00",
+        "total": "6.00",
+        "status": "sent",
+        "sent_at": "2026-07-27T07:12:49.000Z",
+        "quantity": 1,
+        "tax_class": "reduced",
+        "thumbnail": "",
+        "total_tax": "0",
+        "attributes": [],
+        "product_id": 10001,
+        "variation_id": "",
+        "product_price": "6.00",
+        "variation_name": "",
+        "additional_properties": {
+          "omnivore": {
+            "sent": true,
+            "origin": "pos",
+            "item_id": "105906203"
+          }
+        }
+      },
+      {
+        "id": "lineitem-1",
+        "sku": "",
+        "tax": "0.00",
+        "name": "Monte Xanic Chenin CP",
+        "paid": 0,
+        "notes": "",
+        "price": "9.00",
+        "total": "9.00",
+        "status": "sent",
+        "sent_at": "2026-07-27T07:12:49.000Z",
+        "quantity": 1,
+        "tax_class": "standard",
+        "thumbnail": "",
+        "total_tax": "0",
+        "attributes": [],
+        "product_id": 10175,
+        "variation_id": "",
+        "product_price": "9.00",
+        "variation_name": "",
+        "additional_properties": {
+          "omnivore": {
+            "sent": true,
+            "origin": "pos",
+            "item_id": "105906204"
+          }
+        }
+      },
+      {
+        "id": "lineitem-2",
+        "sku": "",
+        "tax": "0.00",
+        "name": "Elote",
+        "paid": 0,
+        "notes": "",
+        "price": "13.00",
+        "total": "13.00",
+        "status": "sent",
+        "sent_at": "2026-07-27T07:13:44.000Z",
+        "quantity": 1,
+        "tax_class": "reduced",
+        "thumbnail": "",
+        "total_tax": "0",
+        "attributes": [],
+        "product_id": 10003,
+        "variation_id": "",
+        "product_price": "13.00",
+        "variation_name": "",
+        "additional_properties": {
+          "omnivore": {
+            "sent": true,
+            "origin": "pos",
+            "item_id": "105906206"
+          }
+        }
+      },
+      {
+        "id": "lineitem-3",
+        "sku": "",
+        "tax": "0.00",
+        "name": "Elote",
+        "paid": 0,
+        "notes": "",
+        "price": "13.00",
+        "total": "13.00",
+        "status": "sent",
+        "sent_at": "2026-07-27T07:13:44.000Z",
+        "quantity": 1,
+        "tax_class": "reduced",
+        "thumbnail": "",
+        "total_tax": "0",
+        "attributes": [],
+        "product_id": 10003,
+        "variation_id": "",
+        "product_price": "13.00",
+        "variation_name": "",
+        "additional_properties": {
+          "omnivore": {
+            "sent": true,
+            "origin": "pos",
+            "item_id": "105906207"
+          }
+        }
+      },
+      {
+        "id": "lineitem-4",
+        "sku": "",
+        "tax": "0.00",
+        "name": "Arroz Verde",
+        "paid": 0,
+        "notes": "",
+        "price": "5.00",
+        "total": "5.00",
+        "status": "sent",
+        "sent_at": "2026-07-27T07:14:32.000Z",
+        "quantity": 1,
+        "tax_class": "reduced",
+        "thumbnail": "",
+        "total_tax": "0",
+        "attributes": [],
+        "product_id": 10009,
+        "variation_id": "",
+        "product_price": "5.00",
+        "variation_name": "",
+        "additional_properties": {
+          "omnivore": {
+            "sent": true,
+            "origin": "pos",
+            "item_id": "105906208"
+          }
+        }
+      }
+    ],
+    "tax_lines": [
+      {
+        "id": "taxline-0",
+        "rate": "10.5",
+        "label": "Tax Estatal",
+        "rate_id": "10001",
+        "compound": false,
+        "subtotal": 7.66,
+        "rate_code": "estatal-tax",
+        "tax_total": "0.80",
+        "additional_properties": {}
+      },
+      {
+        "id": "taxline-1",
+        "rate": "6",
+        "label": "Tax Reducido",
+        "rate_id": "10002",
+        "compound": false,
+        "subtotal": 29.6,
+        "rate_code": "reduced-tax",
+        "tax_total": "1.78",
+        "additional_properties": {}
+      },
+      {
+        "id": "taxline-2",
+        "rate": "1",
+        "label": "Tax Municipal",
+        "rate_id": "10004",
+        "compound": false,
+        "subtotal": 37.26,
+        "rate_code": "municipal-tax",
+        "tax_total": "0.37",
+        "additional_properties": {}
+      }
+    ],
+    "fee_lines": [
+      {
+        "id": "feeline-0",
+        "name": "Maintenance & Entertainment Fee",
+        "total": "0.46",
+        "tax_class": "standard",
+        "total_tax": "0.05",
+        "is_taxable": false,
+        "additional_properties": {}
+      }
+    ],
+    "additional_properties": {},
+    "issues": null,
+    "pos_injection_error": null,
+    "date_created": {},
+    "date_updated": {},
+    "closed_at": null
+  },
+  "clover": {
+    "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/B8HDSMVYMJWZT",
+    "id": "B8HDSMVYMJWZT",
+    "currency": "USD",
+    "total": 5014,
+    "externalReferenceId": "m7lpypt",
+    "paymentState": "OPEN",
+    "title": "MCM #10048",
+    "note": "",
+    "orderType": {
+      "id": "E409NQ4X4RQ0T"
+    },
+    "taxRemoved": false,
+    "isVat": false,
+    "state": "Open",
+    "manualTransaction": false,
+    "groupLineItems": true,
+    "testMode": false,
+    "createdTime": 1785136392000,
+    "clientCreatedTime": 1785136392000,
+    "modifiedTime": 1785136623000,
+    "lineItems": {
+      "elements": [
+        {
+          "id": "V321CZXT896ZE",
+          "orderRef": {
+            "id": "B8HDSMVYMJWZT"
+          },
+          "name": "Chips & Salsa",
+          "price": 600,
+          "printed": false,
+          "createdTime": 1785136623000,
+          "orderClientCreatedTime": 1785136392000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "V321CZXT896ZE"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 36
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "V321CZXT896ZE"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 6
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "7ZC6STM5SMD0R",
+          "orderRef": {
+            "id": "B8HDSMVYMJWZT"
+          },
+          "name": "Monte Xanic Chenin CP",
+          "price": 900,
+          "printed": false,
+          "createdTime": 1785136623000,
+          "orderClientCreatedTime": 1785136392000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "348P6Q73G0JX8",
+                "lineItemRef": {
+                  "id": "7ZC6STM5SMD0R"
+                },
+                "name": "estatal",
+                "rate": 1050000,
+                "isDefault": false,
+                "taxAmount": 95
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "7ZC6STM5SMD0R"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 9
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "DVXKJG0S389NY",
+          "orderRef": {
+            "id": "B8HDSMVYMJWZT"
+          },
+          "name": "Elote",
+          "price": 1300,
+          "printed": false,
+          "createdTime": 1785136623000,
+          "orderClientCreatedTime": 1785136392000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "DVXKJG0S389NY"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 78
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "DVXKJG0S389NY"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 13
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "4C079SXDZKMFY",
+          "orderRef": {
+            "id": "B8HDSMVYMJWZT"
+          },
+          "name": "Elote",
+          "price": 1300,
+          "printed": false,
+          "createdTime": 1785136623000,
+          "orderClientCreatedTime": 1785136392000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "4C079SXDZKMFY"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 78
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "4C079SXDZKMFY"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 13
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "N7Z5B9PPER1JT",
+          "orderRef": {
+            "id": "B8HDSMVYMJWZT"
+          },
+          "name": "Arroz Verde",
+          "price": 500,
+          "printed": false,
+          "createdTime": 1785136623000,
+          "orderClientCreatedTime": 1785136392000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "N7Z5B9PPER1JT"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 30
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "N7Z5B9PPER1JT"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 5
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "VAEG2YRCB7204",
+          "orderRef": {
+            "id": "B8HDSMVYMJWZT"
+          },
+          "name": "Maintenance & Entertainment Fee",
+          "price": 46,
+          "printed": false,
+          "createdTime": 1785136623000,
+          "orderClientCreatedTime": 1785136392000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "348P6Q73G0JX8",
+                "lineItemRef": {
+                  "id": "VAEG2YRCB7204"
+                },
+                "name": "estatal",
+                "rate": 1050000,
+                "isDefault": false,
+                "taxAmount": 5
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "VAEG2YRCB7204"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false
+              }
+            ]
+          },
+          "isOrderFee": false
+        }
+      ]
+    }
+  },
+  "rec": {
+    "omnivore_total_cents": 4021,
+    "mcm_total_cents": 4021,
+    "clover_order_total": 5014,
+    "clover_sum_lines": 5014,
+    "mcm_vs_omnivore": 0,
+    "clover_vs_mcm": 993,
+    "clover_lines_vs_total": 0,
+    "cuadra": false
+  }
+}

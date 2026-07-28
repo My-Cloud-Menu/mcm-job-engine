@@ -1,0 +1,16 @@
+{
+  "casos": [
+    {
+      "tag": "M7b",
+      "ticket": "20260726-1010026",
+      "error": {
+        "errors": [
+          {
+            "description": "The operation timed out.",
+            "error": "timeout"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "tag": "M8b",
+    "ticket": "20260726-1010021",
+    "mcm": "10056",
+    "clover": "D5Q91G000YP0E",
+    "anulado": "Elote",
+    "precio_anulado": 1300,
+    "pos_total": 1662,
+    "mcm_total": 1662,
+    "clover_total": 3054,
+    "delta": 1392,
+    "lineas_anuladas_en_mcm": 1,
+    "sigue_en_clover": true,
+    "cuadra": false
+  },
+  {
+    "tag": "M8c",
+    "ticket": "20260726-1010022",
+    "mcm": "10057",
+    "clover": "W7FE3KPXBEKB4",
+    "anulado": "Codorniu Cuvee Brut CP",
+    "precio_anulado": 900,
+    "pos_total": 649,
+    "mcm_total": 649,
+    "clover_total": 1653,
+    "delta": 1004,
+    "lineas_anuladas_en_mcm": 1,
+    "sigue_en_clover": true,
+    "cuadra": false
+  }
+]

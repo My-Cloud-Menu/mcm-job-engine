@@ -197,7 +197,7 @@ import { ensureSyncSchedule } from 'mcm-job-engine/enqueue';
 await ensureSyncSchedule({
   siteId: 42,
   integration: 'clover',
-  syncType: 'fetch_recent_orders',
+  syncType: 'fetch_open_orders',
   intervalSeconds: 30,
   config: {}, // passed through to the sync handler
 });

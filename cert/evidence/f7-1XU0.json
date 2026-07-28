@@ -1,0 +1,75 @@
+{
+  "casos": [
+    {
+      "tag": "7.12",
+      "titulo": "comp / cortesía 100 % (total = 0)",
+      "ticket": "20260726-1010077",
+      "pos_total": 1405,
+      "mcm_total": "14.05",
+      "clover_total": 1405,
+      "sobrecobro": 0
+    },
+    {
+      "tag": "7.6",
+      "titulo": "transferencia de mesa en el terminal",
+      "ticket": "20260726-1010078",
+      "mcm_id": "10089",
+      "pos_mesa": "15",
+      "ok": false
+    },
+    {
+      "tag": "1.12",
+      "titulo": "multi-check en una mesa (3 cheques)",
+      "mesa": "20",
+      "tickets": [
+        "20260726-1010079",
+        "20260726-1010080",
+        "20260726-1010081"
+      ],
+      "check_numbers": [
+        3,
+        2,
+        1
+      ],
+      "unicos": true,
+      "en_mcm": 3
+    },
+    {
+      "tag": "1.23",
+      "titulo": "fire selectivo (solo 1 de 3 ítems)",
+      "ticket": "20260726-1010082",
+      "mcm_id": "10093",
+      "enviados_pos": 1,
+      "sent_mcm": 1,
+      "status": "in-kitchen",
+      "ok": true
+    },
+    {
+      "tag": "1.25",
+      "titulo": "void de ticket completo",
+      "ticket": "20260726-1010083",
+      "mcm_id": "10094",
+      "mcm_status": "in-kitchen",
+      "clover": {
+        "total": 1405,
+        "state": "Open",
+        "paymentState": "OPEN"
+      },
+      "mcmAnulada": false
+    },
+    {
+      "tag": "7.10",
+      "titulo": "doble tap: 2 tickets simultáneos en la misma mesa",
+      "mesa": "27",
+      "tickets": [
+        "20260726-1010085",
+        "20260726-1010084"
+      ],
+      "en_mcm": 2,
+      "check_numbers": [
+        2,
+        1
+      ]
+    }
+  ]
+}

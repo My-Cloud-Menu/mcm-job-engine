@@ -1,0 +1,106 @@
+{
+  "caso": "F4.1 — reenvío del pago con propina (M1)",
+  "ticket": "20260726-1010001",
+  "clover": "CRV219DTMBHX8",
+  "mcm": 10036,
+  "tip_cents": 300,
+  "omnivore_antes": {
+    "discounts": 0,
+    "due": 1662,
+    "items": 1500,
+    "paid": 0,
+    "service_charges": 15,
+    "sub_total": 1500,
+    "tax": 147,
+    "tips": 0,
+    "total": 1662
+  },
+  "clover_pay": {
+    "status": 200,
+    "body": {
+      "id": "BKY701QKRZHEG",
+      "order": {
+        "id": "CRV219DTMBHX8"
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4"
+      },
+      "amount": 1662,
+      "tipAmount": 300,
+      "externalPaymentId": "CERT-IQOO-F41",
+      "createdTime": 1785135391000,
+      "clientCreatedTime": 1785135391000,
+      "modifiedTime": 1785135391000,
+      "result": "SUCCESS"
+    }
+  },
+  "fetch_payments": {
+    "status": "completed",
+    "context": {
+      "fetch_payments": {
+        "cursor": "1785134954999",
+        "created": 1,
+        "fetched": 6,
+        "skipped": 5,
+        "updated": 0
+      }
+    },
+    "error": null
+  },
+  "mcm_payments": [
+    {
+      "id": "10028",
+      "site_id": "99990003",
+      "status": "completed",
+      "method": "ecr-card",
+      "source": "",
+      "total": "16.62",
+      "tip": "3.00",
+      "total_refunded": "0.00",
+      "pos_id": "BKY701QKRZHEG",
+      "reference": "BKY701QKRZHEG",
+      "orders_ids": [
+        "10036"
+      ],
+      "additional_properties": {},
+      "pos_request_payload": null,
+      "date_created": {}
+    }
+  ],
+  "injection_job": {
+    "id": "6e8e8feb-2577-4bfa-aef6-7f609c41ae3d",
+    "job_type": "payment_injection",
+    "integration": "omnivore",
+    "status": "dead_letter",
+    "idempotency_key": "pos_pay:omnivore:10028",
+    "last_error": "Omnivore insufficient_amount: Insufficient amount applied to payment or discount.",
+    "context": {},
+    "payload": {
+      "payment": {
+        "tip": 300,
+        "type": "3rd_party",
+        "amount": 1362,
+        "comment": "Invoice #: BKY701QKRZHEG",
+        "tender_type": "979"
+      },
+      "order_id": 10036,
+      "ticket_id": "20260726-1010001",
+      "payment_id": 10028,
+      "pos_id_field": "additional_properties.omnivore_payment_id"
+    },
+    "created_at": {},
+    "completed_at": null
+  },
+  "omnivore_despues": {
+    "discounts": 0,
+    "due": 1662,
+    "items": 1500,
+    "paid": 0,
+    "service_charges": 15,
+    "sub_total": 1500,
+    "tax": 147,
+    "tips": 0,
+    "total": 1662
+  }
+}

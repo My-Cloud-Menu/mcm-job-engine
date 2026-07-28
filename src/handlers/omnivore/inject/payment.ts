@@ -1,8 +1,9 @@
 import { registerHandler } from '../../registry';
 import { getSiteIntegrationConfig } from '../../../lib/credentials';
 import { createOmnivoreClient, OmnivoreConfigSchema } from '../client';
-import { HandlerError } from '../../../core/types';
+import { HandlerError, JobStep } from '../../../core/types';
 import { supabase } from '../../../lib/supabase';
+import { logger } from '../../../lib/logger';
 import { mapOmnivoreError, assertNoOmnivoreErrors } from '../error-map';
 import { idempotencyId, persistPaymentIssue, reconcileOrderIssues, willTerminate } from './shared';
 
@@ -27,6 +28,61 @@ import { idempotencyId, persistPaymentIssue, reconcileOrderIssues, willTerminate
  * so reusing it would make the resume guard skip immediately and never apply.
  */
 const OMNIVORE_MARKER_FIELD = 'additional_properties.omnivore_payment_id';
+
+/**
+ * CONTENCIÓN `ticket_locked` — el mesero tiene el ticket abierto en el terminal.
+ *
+ * Omnivore rechaza el tender con el slug `ticket_locked`, que `error-map.ts` clasifica como
+ * error de NEGOCIO (no-retryable) → el job moría en dead_letter al primer intento. Pero no es
+ * permanente: en cuanto el mesero se desloguea, el mismo POST entra. Aquí —y SOLO en este
+ * handler standalone, no en `create_payment` dentro de `order_injection`— lo tratamos como
+ * contención y reintentamos ~30 min.
+ *
+ * 31 intentos × 60s ≈ 30 min. El ritmo PLANO de 60s es deliberado: a 1 fallo por minuto un pago
+ * trabado no puede acercarse al umbral del circuit breaker (10 fallos en 60s por
+ * `(omnivore, pos_injection)`), así que no hace falta tocar el núcleo para excluirlo.
+ *
+ * Reintentar es seguro contra el doble-tender: el guard de reconcile-before-repost de abajo
+ * corre en CADA reintento (`attempt_count > 0`) y, si un intento previo llegó a aplicar el pago,
+ * lo detecta por `comment` + `amount` y sale sin re-postear.
+ */
+const TICKET_LOCKED_CODE = 'OMNIVORE_TICKET_LOCKED';
+const TICKET_LOCKED_MAX_ATTEMPTS = 31;
+const TICKET_LOCKED_RETRY_SECONDS = 60;
+
+/**
+ * Convierte el error de contención en retryable y le sube el techo de intentos AL PROPIO STEP.
+ *
+ * Los productores encolan con `max_attempts: 5` (edge `enqueueOmnivorePaymentInjection`); subir
+ * ese literal obligaría a redesplegar ~20 edge functions del camino de cobro, así que el techo
+ * se eleva aquí. Se persiste en `job_steps` —`getJobSteps` relee la fila en cada ejecución del
+ * job, así que los reintentos siguientes lo ven— y además se muta en memoria para que el
+ * `attemptNumber < step.max_attempts` del executor lo respete ya en esta misma pasada.
+ *
+ * Si el UPDATE falla, degrada de forma segura: el step conserva su techo original y el job
+ * simplemente agota antes sus intentos.
+ */
+async function escalateTicketLockedRetry(he: HandlerError, step: JobStep): Promise<HandlerError> {
+  if (step.max_attempts < TICKET_LOCKED_MAX_ATTEMPTS) {
+    const { error } = await supabase
+      .from('job_steps')
+      .update({ max_attempts: TICKET_LOCKED_MAX_ATTEMPTS })
+      .eq('id', step.id)
+      .lt('max_attempts', TICKET_LOCKED_MAX_ATTEMPTS);
+    if (error) {
+      logger.error({ error, step_id: step.id }, 'omnivore payment: failed to raise max_attempts for ticket_locked');
+    } else {
+      step.max_attempts = TICKET_LOCKED_MAX_ATTEMPTS;
+    }
+  }
+
+  // `retryAfterSeconds` gana sobre el perfil de backoff en el executor, así que el perfil
+  // compartido `payment_injection: [30,30,30,30]` queda intacto para el resto de errores y para
+  // el `payment_injection` de Clover. ±10% de jitter para no sincronizar varios pagos trabados.
+  const retryAfterSeconds = Math.round(TICKET_LOCKED_RETRY_SECONDS * (1 + (Math.random() * 0.2 - 0.1)));
+
+  return new HandlerError(he.message, he.code, true, he.statusCode, he.responseBody, retryAfterSeconds);
+}
 
 async function readOmnivoreApplied(
   siteId: number,
@@ -153,6 +209,17 @@ registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step 
     return { omnivore_payment_id: omnivorePaymentId };
   } catch (err) {
     const he = err instanceof HandlerError ? err : mapOmnivoreError(err, 'OMNIVORE_PAYMENT_FAILED');
+
+    // Ticket bloqueado por el mesero: reintentar ~30 min en vez de morir en el primer intento.
+    // Se marca `orders.issues` desde YA (sin esperar a `willTerminate`) para que el pago pendiente
+    // sea visible durante la espera; es un slot JSONB único que se sobrescribe, y
+    // `reconcileOrderIssues` lo limpia solo cuando el pago finalmente entra.
+    if (he.code === TICKET_LOCKED_CODE) {
+      const retryable = await escalateTicketLockedRetry(he, step);
+      await persistPaymentIssue(job.site_id, orderId, paymentId, retryable);
+      throw retryable;
+    }
+
     if (willTerminate(he.retryable, step)) {
       await persistPaymentIssue(job.site_id, orderId, paymentId, he);
     }

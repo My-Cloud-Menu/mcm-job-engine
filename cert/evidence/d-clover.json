@@ -1,0 +1,227 @@
+{
+  "host": "https://apisandbox.dev.clover.com",
+  "tenders": {
+    "elements": [
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/QV0654SVQF9RW",
+        "id": "QV0654SVQF9RW",
+        "editable": false,
+        "labelKey": "com.clover.tender.cash",
+        "label": "Cash",
+        "opensCashDrawer": true,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/BX9GRVH6Q6HXW",
+        "id": "BX9GRVH6Q6HXW",
+        "editable": false,
+        "labelKey": "com.clover.tender.credit_card",
+        "label": "Credit Card",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/SNFV72DT4FGYT",
+        "id": "SNFV72DT4FGYT",
+        "editable": false,
+        "labelKey": "com.clover.tender.check",
+        "label": "Check",
+        "opensCashDrawer": true,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/H8EDKEVXEPC7R",
+        "id": "H8EDKEVXEPC7R",
+        "editable": false,
+        "labelKey": "com.clover.tender.external_gift_card",
+        "label": "External Gift Card",
+        "opensCashDrawer": true,
+        "enabled": false,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/EKBSE2W25CAX6",
+        "id": "EKBSE2W25CAX6",
+        "editable": false,
+        "labelKey": "com.clover.tender.level_up",
+        "label": "LevelUp",
+        "opensCashDrawer": false,
+        "enabled": false,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/83BVTM1R6W0GT",
+        "id": "83BVTM1R6W0GT",
+        "editable": false,
+        "labelKey": "com.clover.tender.external_payment",
+        "label": "External Payment",
+        "opensCashDrawer": false,
+        "enabled": false,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/XE6EF3FN5ME1M",
+        "id": "XE6EF3FN5ME1M",
+        "editable": false,
+        "labelKey": "com.clover.tender.external_pin_debit",
+        "label": "External PIN Debit",
+        "opensCashDrawer": false,
+        "enabled": false,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/P111W186KJV0J",
+        "id": "P111W186KJV0J",
+        "editable": false,
+        "labelKey": "com.clover.tender.debit_card",
+        "label": "Debit Card",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/VZ6WS2KMZ9E0M",
+        "id": "VZ6WS2KMZ9E0M",
+        "editable": false,
+        "labelKey": "com.clover.tender.eat24_clover_integration",
+        "label": "Eat24 Clover Integration",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/NHR2955HCQA1C",
+        "id": "NHR2955HCQA1C",
+        "editable": false,
+        "labelKey": "com.clover.tender.clover_eat24_integration",
+        "label": "Clover Eat24 Integration",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/97GVCN9RPNK62",
+        "id": "97GVCN9RPNK62",
+        "editable": false,
+        "labelKey": "com.clover.tender.eat24_integration",
+        "label": "Eat24 Integration",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/J94VBXM1ZH3KY",
+        "id": "J94VBXM1ZH3KY",
+        "editable": false,
+        "labelKey": "com.clover.tender.tapmango_wallet",
+        "label": "TapMango Wallet",
+        "opensCashDrawer": true,
+        "enabled": true,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/5S7D7SW69EQET",
+        "id": "5S7D7SW69EQET",
+        "editable": false,
+        "labelKey": "com.clover.tender.mytab",
+        "label": "MyTab",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/GXJE4DNFGRZXR",
+        "id": "GXJE4DNFGRZXR",
+        "editable": false,
+        "labelKey": "com.clover.tender.kosher24",
+        "label": "Kosher24",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": false,
+        "supportsCashDiscount": false
+      },
+      {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4",
+        "editable": true,
+        "label": "MCM",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      }
+    ],
+    "href": "http://apisandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders?limit=100"
+  },
+  "tax": {
+    "elements": [
+      {
+        "id": "AEYTXX25NKZKE",
+        "name": "reduced",
+        "rate": 600000,
+        "isDefault": false,
+        "modifiedTime": 1776979728000
+      },
+      {
+        "id": "348P6Q73G0JX8",
+        "name": "estatal",
+        "rate": 1050000,
+        "isDefault": false,
+        "modifiedTime": 1776979724000
+      },
+      {
+        "id": "BHNNEH2NBTGHA",
+        "name": "municipal",
+        "rate": 100000,
+        "isDefault": false,
+        "modifiedTime": 1776979718000
+      },
+      {
+        "id": "81HRJNF07G2Z4",
+        "name": "NO_TAX_APPLIED",
+        "rate": 0,
+        "isDefault": false,
+        "modifiedTime": 1727728941000
+      }
+    ],
+    "href": "http://apisandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tax_rates?limit=100"
+  },
+  "orderTypes": {
+    "elements": [
+      {
+        "id": "E409NQ4X4RQ0T",
+        "labelKey": "com.clover.order.type.dine_in",
+        "label": "MCM",
+        "taxable": true,
+        "isDefault": true,
+        "filterCategories": false,
+        "isHidden": false,
+        "fee": 0,
+        "minOrderAmount": 0,
+        "maxOrderAmount": 0,
+        "maxRadius": 0,
+        "avgOrderTime": 0,
+        "hoursAvailable": "BUSINESS",
+        "isDeleted": false,
+        "systemOrderTypeId": "DINE-IN-TYPE"
+      }
+    ],
+    "href": "http://apisandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/order_types?limit=100"
+  }
+}

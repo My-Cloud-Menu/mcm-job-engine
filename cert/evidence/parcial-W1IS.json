@@ -1,0 +1,122 @@
+{
+  "casos": [
+    {
+      "tag": "P1",
+      "desc": "parcial del 50 %, sin propina",
+      "frac": 0.5,
+      "tip": 0,
+      "ticket": "20260727-1010061",
+      "due": 1405,
+      "amount": 703,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "totals": {
+        "discounts": 0,
+        "due": 1405,
+        "items": 1300,
+        "paid": 0,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    },
+    {
+      "tag": "P2",
+      "desc": "parcial del 50 % + full:true",
+      "frac": 0.5,
+      "tip": 0,
+      "full": true,
+      "ticket": "20260727-1010062",
+      "due": 1405,
+      "amount": 703,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Full is not accepted",
+        "error": "invalid_input",
+        "fields": [
+          "$.full"
+        ]
+      },
+      "totals": {
+        "discounts": 0,
+        "due": 1405,
+        "items": 1300,
+        "paid": 0,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    },
+    {
+      "tag": "P3",
+      "desc": "completo + full:true + propina",
+      "frac": 1,
+      "tip": 300,
+      "full": true,
+      "ticket": "20260727-1010063",
+      "due": 1405,
+      "amount": 1405,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Full is not accepted",
+        "error": "invalid_input",
+        "fields": [
+          "$.full"
+        ]
+      },
+      "totals": {
+        "discounts": 0,
+        "due": 1405,
+        "items": 1300,
+        "paid": 0,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    },
+    {
+      "tag": "P4",
+      "desc": "parcial: amount+tip == due (M1-B exacto)",
+      "frac": null,
+      "tip": 300,
+      "ticket": "20260727-1010064",
+      "due": 1405,
+      "amount": 1105,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "totals": {
+        "discounts": 0,
+        "due": 1405,
+        "items": 1300,
+        "paid": 0,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    }
+  ]
+}

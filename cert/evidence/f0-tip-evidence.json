@@ -1,0 +1,173 @@
+{
+  "order_create": {
+    "status": 200,
+    "id": "CWJGNTTNSW7BC",
+    "body": {
+      "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/CWJGNTTNSW7BC",
+      "id": "CWJGNTTNSW7BC",
+      "currency": "USD",
+      "externalReferenceId": "CERTF01TIP",
+      "title": "CERT-F01-TIP",
+      "note": "certificacion tip semantics",
+      "orderType": {
+        "id": "E409NQ4X4RQ0T"
+      },
+      "taxRemoved": false,
+      "isVat": false,
+      "state": "Open",
+      "manualTransaction": false,
+      "groupLineItems": true,
+      "testMode": false,
+      "createdTime": 1785134955000,
+      "clientCreatedTime": 1785134955000,
+      "modifiedTime": 1785134954000
+    }
+  },
+  "line_item": {
+    "status": 200,
+    "body": {
+      "id": "SNDJW4VXVTCRA",
+      "orderRef": {
+        "id": "CWJGNTTNSW7BC"
+      },
+      "name": "CERT item $10",
+      "price": 1000,
+      "printed": false,
+      "createdTime": 1785134955000,
+      "orderClientCreatedTime": 1785134955000,
+      "exchanged": false,
+      "refunded": false,
+      "isRevenue": true,
+      "isOrderFee": false
+    }
+  },
+  "payment_post": {
+    "status": 200,
+    "body": {
+      "id": "Q8RSQ4WQGEP94",
+      "order": {
+        "id": "CWJGNTTNSW7BC"
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4"
+      },
+      "amount": 1000,
+      "tipAmount": 200,
+      "externalPaymentId": "CERT-F01-TIP",
+      "createdTime": 1785134955000,
+      "clientCreatedTime": 1785134955000,
+      "modifiedTime": 1785134955000,
+      "result": "SUCCESS"
+    }
+  },
+  "payment_read": {
+    "status": 200,
+    "body": {
+      "id": "Q8RSQ4WQGEP94",
+      "order": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/CWJGNTTNSW7BC",
+        "id": "CWJGNTTNSW7BC",
+        "currency": "USD",
+        "total": 1000,
+        "externalReferenceId": "CERTF01TIP",
+        "title": "CERT-F01-TIP",
+        "note": "certificacion tip semantics",
+        "orderType": {
+          "id": "E409NQ4X4RQ0T"
+        },
+        "taxRemoved": false,
+        "isVat": false,
+        "state": "Open",
+        "manualTransaction": false,
+        "groupLineItems": true,
+        "testMode": false,
+        "createdTime": 1785134955000,
+        "clientCreatedTime": 1785134955000,
+        "modifiedTime": 1785134955000
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4",
+        "editable": true,
+        "label": "MCM",
+        "opensCashDrawer": false,
+        "enabled": true,
+        "visible": true,
+        "supportsCashDiscount": false
+      },
+      "amount": 1000,
+      "tipAmount": 200,
+      "externalPaymentId": "CERT-F01-TIP",
+      "createdTime": 1785134955000,
+      "clientCreatedTime": 1785134955000,
+      "modifiedTime": 1785134955000,
+      "result": "SUCCESS"
+    }
+  },
+  "order_read": {
+    "status": 200,
+    "body": {
+      "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/CWJGNTTNSW7BC",
+      "id": "CWJGNTTNSW7BC",
+      "currency": "USD",
+      "total": 1000,
+      "externalReferenceId": "CERTF01TIP",
+      "paymentState": "PAID",
+      "title": "CERT-F01-TIP",
+      "note": "certificacion tip semantics",
+      "orderType": {
+        "id": "E409NQ4X4RQ0T"
+      },
+      "taxRemoved": false,
+      "isVat": false,
+      "state": "Open",
+      "manualTransaction": false,
+      "groupLineItems": true,
+      "testMode": false,
+      "createdTime": 1785134955000,
+      "clientCreatedTime": 1785134955000,
+      "modifiedTime": 1785134955000,
+      "lineItems": {
+        "elements": [
+          {
+            "id": "SNDJW4VXVTCRA",
+            "orderRef": {
+              "id": "CWJGNTTNSW7BC"
+            },
+            "name": "CERT item $10",
+            "price": 1000,
+            "printed": false,
+            "createdTime": 1785134955000,
+            "orderClientCreatedTime": 1785134955000,
+            "exchanged": false,
+            "refunded": false,
+            "isRevenue": true,
+            "isOrderFee": false
+          }
+        ]
+      },
+      "payments": {
+        "elements": [
+          {
+            "id": "Q8RSQ4WQGEP94",
+            "order": {
+              "id": "CWJGNTTNSW7BC"
+            },
+            "tender": {
+              "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+              "id": "4QPPVE0NFNBN4"
+            },
+            "amount": 1000,
+            "tipAmount": 200,
+            "externalPaymentId": "CERT-F01-TIP",
+            "createdTime": 1785134955000,
+            "clientCreatedTime": 1785134955000,
+            "modifiedTime": 1785134955000,
+            "result": "SUCCESS"
+          }
+        ]
+      }
+    }
+  }
+}

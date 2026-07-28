@@ -1,0 +1,347 @@
+{
+  "caso": "F10 · edición durante el cobro",
+  "pasos": [
+    {
+      "paso": "B1",
+      "ticket": "20260726-1010020",
+      "mcm": "10055",
+      "clover": "NNH7QVZ0JX3WT",
+      "total": 2054
+    },
+    {
+      "paso": "B2",
+      "pago": "JVEGK2BC13QA8",
+      "parcial": 1027,
+      "paymentState": "PARTIALLY_PAID",
+      "mcm_paid": "10.27",
+      "mcm_pay_status": "partially_fulfilled"
+    },
+    {
+      "paso": "B4-B8",
+      "mcm_total": "25.95",
+      "manifest": {
+        "primary": {
+          "billed_keys": {
+            "Elote||": 1,
+            "Chips & Salsa||": 1,
+            "Maintenance & Entertainment Fee||": 1
+          },
+          "clover_order_id": "NNH7QVZ0JX3WT"
+        },
+        "supplements": [
+          {
+            "delta_keys": {
+              "Arroz Verde||": 1
+            },
+            "total_cents": 535,
+            "clover_order_id": "FWN70520R1MH2",
+            "delta_signature": "3bf7a357afc5",
+            "external_reference_id": "msb63e70753f"
+          }
+        ]
+      },
+      "pos_injection_error": null
+    },
+    {
+      "paso": "job_suplemento",
+      "status": "completed",
+      "error": null,
+      "idem": "clover_supp_inject:10055:3bf7a357afc5"
+    },
+    {
+      "paso": "B9-B10",
+      "pagos": [
+        {
+          "id": "10035",
+          "total": "10.27",
+          "pos_id": "JVEGK2BC13QA8"
+        },
+        {
+          "id": "10036",
+          "total": "5.35",
+          "pos_id": "FJXREPFKND6F6"
+        }
+      ],
+      "suma": 15.62,
+      "mcm_total": "25.95",
+      "mcm_paid": "15.62"
+    }
+  ],
+  "clover_primaria": {
+    "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/NNH7QVZ0JX3WT",
+    "id": "NNH7QVZ0JX3WT",
+    "currency": "USD",
+    "total": 2054,
+    "externalReferenceId": "m7lpyr1",
+    "paymentState": "PARTIALLY_PAID",
+    "title": "MCM #10055",
+    "note": "",
+    "orderType": {
+      "id": "E409NQ4X4RQ0T"
+    },
+    "taxRemoved": false,
+    "isVat": false,
+    "state": "Open",
+    "manualTransaction": false,
+    "groupLineItems": true,
+    "testMode": false,
+    "createdTime": 1785137417000,
+    "clientCreatedTime": 1785137417000,
+    "modifiedTime": 1785137432000,
+    "lineItems": {
+      "elements": [
+        {
+          "id": "G6XQMFP2G9AJW",
+          "orderRef": {
+            "id": "NNH7QVZ0JX3WT"
+          },
+          "name": "Chips & Salsa",
+          "price": 600,
+          "printed": false,
+          "createdTime": 1785137418000,
+          "orderClientCreatedTime": 1785137417000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "G6XQMFP2G9AJW"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 36
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "G6XQMFP2G9AJW"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 6
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "DA7NM4M6FEN8Y",
+          "orderRef": {
+            "id": "NNH7QVZ0JX3WT"
+          },
+          "name": "Elote",
+          "price": 1300,
+          "printed": false,
+          "createdTime": 1785137418000,
+          "orderClientCreatedTime": 1785137417000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "DA7NM4M6FEN8Y"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 78
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "DA7NM4M6FEN8Y"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 13
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "ZCP67WC0DFXJT",
+          "orderRef": {
+            "id": "NNH7QVZ0JX3WT"
+          },
+          "name": "Maintenance & Entertainment Fee",
+          "price": 19,
+          "printed": false,
+          "createdTime": 1785137418000,
+          "orderClientCreatedTime": 1785137417000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "348P6Q73G0JX8",
+                "lineItemRef": {
+                  "id": "ZCP67WC0DFXJT"
+                },
+                "name": "estatal",
+                "rate": 1050000,
+                "isDefault": false,
+                "taxAmount": 2
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "ZCP67WC0DFXJT"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false
+              }
+            ]
+          },
+          "isOrderFee": false
+        }
+      ]
+    },
+    "payments": {
+      "elements": [
+        {
+          "id": "JVEGK2BC13QA8",
+          "order": {
+            "id": "NNH7QVZ0JX3WT"
+          },
+          "tender": {
+            "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+            "id": "4QPPVE0NFNBN4"
+          },
+          "amount": 1027,
+          "tipAmount": 0,
+          "externalPaymentId": "CERT-PXFL-F10-P1",
+          "createdTime": 1785137432000,
+          "clientCreatedTime": 1785137432000,
+          "modifiedTime": 1785137432000,
+          "result": "SUCCESS"
+        }
+      ]
+    }
+  },
+  "clover_suplemento": {
+    "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/FWN70520R1MH2",
+    "id": "FWN70520R1MH2",
+    "currency": "USD",
+    "total": 535,
+    "externalReferenceId": "msb63e70753f",
+    "paymentState": "OPEN",
+    "title": "MCM #10055 (add'l)",
+    "taxRemoved": false,
+    "isVat": false,
+    "state": "open",
+    "manualTransaction": false,
+    "groupLineItems": true,
+    "testMode": false,
+    "createdTime": 1785137464000,
+    "clientCreatedTime": 1785137464000,
+    "modifiedTime": 1785137464000,
+    "lineItems": {
+      "elements": [
+        {
+          "id": "XFKR3SWCQMWSR",
+          "orderRef": {
+            "id": "FWN70520R1MH2"
+          },
+          "name": "Arroz Verde",
+          "price": 500,
+          "printed": false,
+          "createdTime": 1785137465000,
+          "orderClientCreatedTime": 1785137464000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "XFKR3SWCQMWSR"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 30
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "XFKR3SWCQMWSR"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 5
+              }
+            ]
+          },
+          "isOrderFee": false
+        }
+      ]
+    }
+  },
+  "omnivore_final": {
+    "discounts": 0,
+    "due": 2595,
+    "items": 2400,
+    "paid": 0,
+    "service_charges": 24,
+    "sub_total": 2400,
+    "tax": 171,
+    "tips": 0,
+    "total": 2595
+  },
+  "neighbors": {
+    "label": "F10",
+    "ok": true,
+    "detalle": [
+      {
+        "site_id": 25512412,
+        "orders_antes": "28",
+        "payments_antes": "23",
+        "orders_ahora": "28",
+        "payments_ahora": "23"
+      },
+      {
+        "site_id": 25612612,
+        "orders_antes": "299",
+        "payments_antes": "258",
+        "orders_ahora": "299",
+        "payments_ahora": "258"
+      },
+      {
+        "site_id": 48372619,
+        "orders_antes": "78",
+        "payments_antes": "271",
+        "orders_ahora": "78",
+        "payments_ahora": "271"
+      },
+      {
+        "site_id": 51021421,
+        "orders_antes": "7307",
+        "payments_antes": "7095",
+        "orders_ahora": "7307",
+        "payments_ahora": "7095"
+      },
+      {
+        "site_id": 99990001,
+        "orders_antes": "0",
+        "payments_antes": "0",
+        "orders_ahora": "0",
+        "payments_ahora": "0"
+      }
+    ],
+    "violaciones": []
+  }
+}

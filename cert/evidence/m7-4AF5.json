@@ -1,0 +1,759 @@
+{
+  "caso": "M7 · cheque pagado en efectivo en Aloha",
+  "pago_cash": {
+    "status": 201,
+    "body": {
+      "_embedded": {
+        "ticket": {
+          "_embedded": {
+            "discounts": [],
+            "employee": {
+              "_links": {
+                "clock_entries": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/clock_entries/?where=eq(@employee.id,'975')",
+                  "type": "application/json; name=clock_entry_list"
+                },
+                "open_tickets": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/?where=and(eq(open,true),eq(@employee.id,'975'))",
+                  "type": "application/json; name=ticket_list"
+                },
+                "pay_rates": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/employees/975/pay_rates/",
+                  "type": "application/json; name=pay_rate_list"
+                },
+                "self": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/employees/975/",
+                  "type": "application/json; name=employee"
+                }
+              },
+              "check_name": "POS",
+              "first_name": "POS",
+              "id": "975",
+              "last_name": "API",
+              "login": "975",
+              "middle_name": null,
+              "pos_id": "975",
+              "start_date": null
+            },
+            "items": [
+              {
+                "_embedded": {
+                  "discounts": [],
+                  "item_order_mode": {
+                    "_links": {
+                      "self": {
+                        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/item_order_modes/1/",
+                        "type": "application/json; name=item_order_mode"
+                      }
+                    },
+                    "available": true,
+                    "id": "1",
+                    "name": "Order",
+                    "pos_id": "1"
+                  },
+                  "menu_item": {
+                    "_embedded": {
+                      "menu_categories": [
+                        {
+                          "_links": {
+                            "menu_category_type": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/category_types/general/",
+                              "type": "application/json; name=menu_category_type"
+                            },
+                            "self": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/categories/1000/",
+                              "type": "application/json; name=menu_category"
+                            }
+                          },
+                          "id": "1000",
+                          "level": 0,
+                          "name": "ALL",
+                          "pos_id": "1000"
+                        },
+                        {
+                          "_links": {
+                            "menu_category_type": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/category_types/sales/",
+                              "type": "application/json; name=menu_category_type"
+                            },
+                            "self": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/categories/1001/",
+                              "type": "application/json; name=menu_category"
+                            }
+                          },
+                          "id": "1001",
+                          "level": 0,
+                          "name": "FOOD",
+                          "pos_id": "1001"
+                        },
+                        {
+                          "_links": {
+                            "menu_category_type": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/category_types/general/",
+                              "type": "application/json; name=menu_category_type"
+                            },
+                            "self": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/categories/1004/",
+                              "type": "application/json; name=menu_category"
+                            }
+                          },
+                          "id": "1004",
+                          "level": 0,
+                          "name": "ALL FOOD & BEV",
+                          "pos_id": "1004"
+                        },
+                        {
+                          "_links": {
+                            "menu_category_type": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/category_types/general/",
+                              "type": "application/json; name=menu_category_type"
+                            },
+                            "self": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/categories/2018/",
+                              "type": "application/json; name=menu_category"
+                            }
+                          },
+                          "id": "2018",
+                          "level": 0,
+                          "name": "ALL -GC",
+                          "pos_id": "2018"
+                        }
+                      ],
+                      "price_levels": [
+                        {
+                          "_links": {
+                            "self": {
+                              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/items/300015/price_levels/i0/",
+                              "type": "application/json; name=price_level"
+                            }
+                          },
+                          "barcodes": [],
+                          "id": "i0",
+                          "name": "Antojitos",
+                          "price_per_unit": 600
+                        }
+                      ]
+                    },
+                    "_links": {
+                      "menu_categories": {
+                        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/items/300015/categories/",
+                        "type": "application/json; name=menu_category_list"
+                      },
+                      "option_sets": {
+                        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/items/300015/option_sets/",
+                        "type": "application/json; name=option_set_list"
+                      },
+                      "price_levels": {
+                        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/items/300015/price_levels/",
+                        "type": "application/json; name=price_level_list"
+                      },
+                      "self": {
+                        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/items/300015/",
+                        "type": "application/json; name=menu_item"
+                      }
+                    },
+                    "barcodes": [],
+                    "id": "300015",
+                    "in_stock": null,
+                    "name": "Chips & Salsa",
+                    "open": false,
+                    "open_name": false,
+                    "pos_id": "300015",
+                    "price_per_unit": 600
+                  },
+                  "modifiers": []
+                },
+                "_links": {
+                  "discounts": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/items/105906230/discounts/",
+                    "type": "application/json; name=item_discount_list"
+                  },
+                  "item_order_mode": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/item_order_modes/1/",
+                    "type": "application/json; name=item_order_mode"
+                  },
+                  "menu_item": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/items/300015/",
+                    "type": "application/json; name=menu_item"
+                  },
+                  "modifiers": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/items/105906230/modifiers/",
+                    "type": "application/json; name=item_modifier_list"
+                  },
+                  "self": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/items/105906230/",
+                    "type": "application/json; name=item"
+                  }
+                },
+                "comment": null,
+                "id": "105906230",
+                "included_tax": null,
+                "name": "Chips & Salsa",
+                "price": 600,
+                "quantity": 1,
+                "seat": null,
+                "sent": true,
+                "sent_at": 1785138083,
+                "split": 1
+              }
+            ],
+            "order_type": {
+              "_links": {
+                "self": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/order_types/1/",
+                  "type": "application/json; name=order_type"
+                }
+              },
+              "available": true,
+              "id": "1",
+              "name": "Order",
+              "pos_id": "1"
+            },
+            "payments": [
+              {
+                "_embedded": {
+                  "tender_type": {
+                    "_links": {
+                      "self": {
+                        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/1/",
+                        "type": "application/json; name=tender_type"
+                      }
+                    },
+                    "allows_tips": false,
+                    "id": "1",
+                    "name": "CASH",
+                    "pos_id": "1"
+                  }
+                },
+                "_links": {
+                  "self": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/payments/105906179/",
+                    "type": "application/json; name=payment"
+                  },
+                  "tender_type": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/1/",
+                    "type": "application/json; name=tender_type"
+                  }
+                },
+                "amount": 649,
+                "change": 0,
+                "comment": null,
+                "full_name": null,
+                "gift_card_balance": null,
+                "id": "105906179",
+                "last4": null,
+                "status": null,
+                "tip": 0,
+                "type": "cash"
+              }
+            ],
+            "revenue_center": {
+              "_links": {
+                "open_tickets": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/?where=and(eq(open,true),eq(@revenue_center.id,'20'))",
+                  "type": "application/json; name=ticket_list"
+                },
+                "self": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/revenue_centers/20/",
+                  "type": "application/json; name=revenue_center"
+                },
+                "tables": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tables/?where=eq(@revenue_center.id,'20')",
+                  "type": "application/json; name=table_list"
+                }
+              },
+              "default": false,
+              "id": "20",
+              "name": "Salon",
+              "pos_id": "20"
+            },
+            "service_charges": [
+              {
+                "_links": {
+                  "self": {
+                    "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/service_charges/1/",
+                    "type": "application/json; name=ticket_service_charge"
+                  }
+                },
+                "comment": null,
+                "id": "1",
+                "included_tax": null,
+                "name": "Service Charge",
+                "price": 6
+              }
+            ],
+            "table": {
+              "_links": {
+                "open_tickets": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/?where=and(eq(open,true),eq(@table.id,'78'))",
+                  "type": "application/json; name=ticket_list"
+                },
+                "self": {
+                  "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tables/78/",
+                  "type": "application/json; name=table"
+                }
+              },
+              "available": true,
+              "id": "78",
+              "name": "CERT-4AF5-M7",
+              "number": 78,
+              "pos_id": "78",
+              "seats": null
+            },
+            "voided_items": []
+          },
+          "_links": {
+            "discounts": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/discounts/",
+              "type": "application/json; name=ticket_discount_list"
+            },
+            "employee": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/employees/975/",
+              "type": "application/json; name=employee"
+            },
+            "items": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/items/",
+              "type": "application/json; name=item_list"
+            },
+            "order_type": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/order_types/1/",
+              "type": "application/json; name=order_type"
+            },
+            "payments": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/payments/",
+              "type": "application/json; name=payment_list"
+            },
+            "revenue_center": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/revenue_centers/20/",
+              "type": "application/json; name=revenue_center"
+            },
+            "self": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/",
+              "type": "application/json; name=ticket"
+            },
+            "service_charges": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/service_charges/",
+              "type": "application/json; name=ticket_service_charge_list"
+            },
+            "subscriptions": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/subscriptions/",
+              "type": "application/json; name=subscription_list"
+            },
+            "table": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tables/78/",
+              "type": "application/json; name=table"
+            },
+            "voided_items": {
+              "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/voided_items/",
+              "type": "application/json; name=voided_item_list"
+            }
+          },
+          "auto_send": false,
+          "closed_at": 1785138084,
+          "correlation": {
+            "sequence": "1",
+            "source": "105906198"
+          },
+          "fire_date": null,
+          "fire_time": null,
+          "guest_count": 1,
+          "id": "20260726-1010023",
+          "kitchen": null,
+          "name": null,
+          "open": false,
+          "opened_at": 1785138082,
+          "pos_id": null,
+          "ready_date": null,
+          "ready_time": null,
+          "ticket_number": 1010023,
+          "totals": {
+            "discounts": 0,
+            "due": 0,
+            "exclusive_tax": null,
+            "inclusive_tax": null,
+            "items": 600,
+            "other_charges": 0,
+            "paid": 649,
+            "service_charges": 6,
+            "sub_total": 600,
+            "tax": 43,
+            "tips": 0,
+            "total": 649
+          },
+          "void": false
+        }
+      },
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/payments/105906179/",
+          "type": "application/json; name=payment"
+        },
+        "tender_type": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/13/",
+          "type": "application/json; name=tender_type"
+        },
+        "ticket": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010023/",
+          "type": "application/json; name=ticket"
+        }
+      },
+      "amount": 649,
+      "change": 0,
+      "comment": null,
+      "full_name": null,
+      "gift_card_balance": null,
+      "id": "105906179",
+      "last4": null,
+      "status": null,
+      "tip": 0,
+      "type": "cash"
+    }
+  },
+  "aloha": {
+    "discounts": 0,
+    "due": 0,
+    "items": 600,
+    "paid": 649,
+    "service_charges": 6,
+    "sub_total": 600,
+    "tax": 43,
+    "tips": 0,
+    "total": 649
+  },
+  "mcm": {
+    "orden": {
+      "id": "10058",
+      "site_id": "99990003",
+      "status": "check-closed",
+      "payment_status": "fulfilled",
+      "total": "6.49",
+      "subtotal": "6.00",
+      "total_tax": "0.43",
+      "paid": "6.49",
+      "discount_total": "0.00",
+      "fee_total": "0.06",
+      "pos_id": "20260726-1010023",
+      "omnivore_pos_id": "20260726-1010023",
+      "clover_pos_id": "EV6D0G374PGQY",
+      "clover_ticket_id": "EV6D0G374PGQY",
+      "clover_payment_id": null,
+      "clover_line_items_hash": "1nmvzds",
+      "check_number": 1,
+      "table_id": "5398f5c0-9e3f-41d8-88f9-d1a3ccab393d",
+      "channel": "pos",
+      "experience": "qe",
+      "line_items": [
+        {
+          "id": "lineitem-0",
+          "sku": "",
+          "tax": "0.00",
+          "name": "Chips & Salsa",
+          "paid": 0,
+          "notes": "",
+          "price": "6.00",
+          "total": "6.00",
+          "status": "sent",
+          "sent_at": "2026-07-27T07:41:23.000Z",
+          "quantity": 1,
+          "tax_class": "reduced",
+          "thumbnail": "",
+          "total_tax": "0",
+          "attributes": [],
+          "product_id": 10001,
+          "variation_id": "",
+          "product_price": "6.00",
+          "variation_name": "",
+          "additional_properties": {
+            "omnivore": {
+              "sent": true,
+              "origin": "pos",
+              "item_id": "105906230"
+            }
+          }
+        }
+      ],
+      "tax_lines": [
+        {
+          "id": "taxline-0",
+          "rate": "10.5",
+          "label": "Tax Estatal",
+          "rate_id": "10001",
+          "compound": false,
+          "subtotal": 0.06,
+          "rate_code": "estatal-tax",
+          "tax_total": "0.01",
+          "additional_properties": {}
+        },
+        {
+          "id": "taxline-1",
+          "rate": "6",
+          "label": "Tax Reducido",
+          "rate_id": "10002",
+          "compound": false,
+          "subtotal": 6,
+          "rate_code": "reduced-tax",
+          "tax_total": "0.36",
+          "additional_properties": {}
+        },
+        {
+          "id": "taxline-2",
+          "rate": "1",
+          "label": "Tax Municipal",
+          "rate_id": "10004",
+          "compound": false,
+          "subtotal": 6.06,
+          "rate_code": "municipal-tax",
+          "tax_total": "0.06",
+          "additional_properties": {}
+        }
+      ],
+      "fee_lines": [
+        {
+          "id": "feeline-0",
+          "name": "Maintenance & Entertainment Fee",
+          "total": "0.06",
+          "tax_class": "standard",
+          "total_tax": "0.01",
+          "is_taxable": false,
+          "additional_properties": {}
+        }
+      ],
+      "additional_properties": {},
+      "issues": null,
+      "pos_injection_error": null,
+      "date_created": {},
+      "date_updated": {},
+      "closed_at": {}
+    },
+    "pagos": [
+      {
+        "id": "10037",
+        "site_id": "99990003",
+        "status": "completed",
+        "method": "ecr-card",
+        "source": "Omnivore POS",
+        "total": "6.49",
+        "tip": "0.00",
+        "total_refunded": "0.00",
+        "pos_id": null,
+        "reference": "omnivore:20260726-1010023",
+        "orders_ids": [
+          "10058"
+        ],
+        "additional_properties": {
+          "origin": "omnivore-sync",
+          "external_pos_payment": true
+        },
+        "pos_request_payload": null,
+        "date_created": {}
+      }
+    ]
+  },
+  "mcm_tras_push": {
+    "id": "10058",
+    "site_id": "99990003",
+    "status": "check-closed",
+    "payment_status": "fulfilled",
+    "total": "6.49",
+    "subtotal": "6.00",
+    "total_tax": "0.43",
+    "paid": "6.49",
+    "discount_total": "0.00",
+    "fee_total": "0.06",
+    "pos_id": "20260726-1010023",
+    "omnivore_pos_id": "20260726-1010023",
+    "clover_pos_id": "EV6D0G374PGQY",
+    "clover_ticket_id": "EV6D0G374PGQY",
+    "clover_payment_id": null,
+    "clover_line_items_hash": "1nmvzds",
+    "check_number": 1,
+    "table_id": "5398f5c0-9e3f-41d8-88f9-d1a3ccab393d",
+    "channel": "pos",
+    "experience": "qe",
+    "line_items": [
+      {
+        "id": "lineitem-0",
+        "sku": "",
+        "tax": "0.00",
+        "name": "Chips & Salsa",
+        "paid": 0,
+        "notes": "",
+        "price": "6.00",
+        "total": "6.00",
+        "status": "sent",
+        "sent_at": "2026-07-27T07:41:23.000Z",
+        "quantity": 1,
+        "tax_class": "reduced",
+        "thumbnail": "",
+        "total_tax": "0",
+        "attributes": [],
+        "product_id": 10001,
+        "variation_id": "",
+        "product_price": "6.00",
+        "variation_name": "",
+        "additional_properties": {
+          "omnivore": {
+            "sent": true,
+            "origin": "pos",
+            "item_id": "105906230"
+          }
+        }
+      }
+    ],
+    "tax_lines": [
+      {
+        "id": "taxline-0",
+        "rate": "10.5",
+        "label": "Tax Estatal",
+        "rate_id": "10001",
+        "compound": false,
+        "subtotal": 0.06,
+        "rate_code": "estatal-tax",
+        "tax_total": "0.01",
+        "additional_properties": {}
+      },
+      {
+        "id": "taxline-1",
+        "rate": "6",
+        "label": "Tax Reducido",
+        "rate_id": "10002",
+        "compound": false,
+        "subtotal": 6,
+        "rate_code": "reduced-tax",
+        "tax_total": "0.36",
+        "additional_properties": {}
+      },
+      {
+        "id": "taxline-2",
+        "rate": "1",
+        "label": "Tax Municipal",
+        "rate_id": "10004",
+        "compound": false,
+        "subtotal": 6.06,
+        "rate_code": "municipal-tax",
+        "tax_total": "0.06",
+        "additional_properties": {}
+      }
+    ],
+    "fee_lines": [
+      {
+        "id": "feeline-0",
+        "name": "Maintenance & Entertainment Fee",
+        "total": "0.06",
+        "tax_class": "standard",
+        "total_tax": "0.01",
+        "is_taxable": false,
+        "additional_properties": {}
+      }
+    ],
+    "additional_properties": {},
+    "issues": null,
+    "pos_injection_error": null,
+    "date_created": {},
+    "date_updated": {},
+    "closed_at": {}
+  },
+  "clover": {
+    "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/EV6D0G374PGQY",
+    "id": "EV6D0G374PGQY",
+    "currency": "USD",
+    "total": 649,
+    "externalReferenceId": "m7lpyqo",
+    "paymentState": "OPEN",
+    "title": "MCM #10058",
+    "note": "",
+    "orderType": {
+      "id": "E409NQ4X4RQ0T"
+    },
+    "taxRemoved": false,
+    "isVat": false,
+    "state": "Open",
+    "manualTransaction": false,
+    "groupLineItems": true,
+    "testMode": false,
+    "createdTime": 1785138120000,
+    "clientCreatedTime": 1785138120000,
+    "modifiedTime": 1785138120000,
+    "lineItems": {
+      "elements": [
+        {
+          "id": "WVWEVW1587PNM",
+          "orderRef": {
+            "id": "EV6D0G374PGQY"
+          },
+          "name": "Chips & Salsa",
+          "price": 600,
+          "printed": false,
+          "createdTime": 1785138121000,
+          "orderClientCreatedTime": 1785138120000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "WVWEVW1587PNM"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 36
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "WVWEVW1587PNM"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 6
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "VV93M8N4VTV84",
+          "orderRef": {
+            "id": "EV6D0G374PGQY"
+          },
+          "name": "Maintenance & Entertainment Fee",
+          "price": 6,
+          "printed": false,
+          "createdTime": 1785138121000,
+          "orderClientCreatedTime": 1785138120000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "348P6Q73G0JX8",
+                "lineItemRef": {
+                  "id": "VV93M8N4VTV84"
+                },
+                "name": "estatal",
+                "rate": 1050000,
+                "isDefault": false,
+                "taxAmount": 1
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "VV93M8N4VTV84"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false
+              }
+            ]
+          },
+          "isOrderFee": false
+        }
+      ]
+    }
+  }
+}

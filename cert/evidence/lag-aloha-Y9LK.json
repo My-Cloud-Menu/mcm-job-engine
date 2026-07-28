@@ -1,0 +1,26 @@
+[
+  {
+    "n": 1,
+    "ticket": "20260726-1010009",
+    "http_ms": 897,
+    "lag_ms": 1501,
+    "items_antes": 0,
+    "items_despues": 1300
+  },
+  {
+    "n": 2,
+    "ticket": "20260726-1010010",
+    "http_ms": 902,
+    "lag_ms": 1460,
+    "items_antes": 0,
+    "items_despues": 1300
+  },
+  {
+    "n": 3,
+    "ticket": "20260726-1010011",
+    "http_ms": 929,
+    "lag_ms": 1680,
+    "items_antes": 0,
+    "items_despues": 1300
+  }
+]

@@ -1,0 +1,286 @@
+[
+  {
+    "label": "GET ticket inexistente",
+    "status": 404,
+    "body": {
+      "errors": [
+        {
+          "description": "Ticket or related item was not found.",
+          "error": "not_found"
+        }
+      ]
+    }
+  },
+  {
+    "label": "POST ticket sin employee (requerido)",
+    "status": 400,
+    "body": {
+      "errors": [
+        {
+          "description": "Missing required value for employee",
+          "error": "invalid_input",
+          "fields": [
+            "$.employee"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "label": "POST ticket con employee inválido",
+    "status": 400,
+    "body": {
+      "errors": [
+        {
+          "description": "Invalid input.",
+          "error": "invalid_input",
+          "fields": [
+            "$.$.name"
+          ],
+          "metadata": {
+            "tabs_require_name": true
+          }
+        },
+        {
+          "description": "Employee does not exist.",
+          "error": "reference_not_found",
+          "fields": [
+            "$.employee"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "label": "POST pago a ticket inexistente",
+    "status": 404,
+    "body": {
+      "errors": [
+        {
+          "description": "Payment or related item was not found.",
+          "error": "not_found"
+        }
+      ]
+    }
+  },
+  {
+    "label": "GET con where inválido (name)",
+    "status": 400,
+    "body": {
+      "errors": [
+        {
+          "description": "Unacceptable search fields: name.",
+          "error": "bad_query"
+        }
+      ]
+    }
+  },
+  {
+    "label": "GET modifier_groups limit 25 (max 20)",
+    "status": 400,
+    "body": {
+      "errors": [
+        {
+          "description": "Max pagination limit of 20",
+          "error": "bad_query"
+        }
+      ]
+    }
+  },
+  {
+    "label": "GET orden inexistente",
+    "status": 404,
+    "body": {
+      "details": "Order not found",
+      "message": "Not Found"
+    }
+  },
+  {
+    "label": "POST line_item a orden inexistente",
+    "status": 404,
+    "body": {
+      "details": "The requested resource could not be found.",
+      "message": "Not Found"
+    }
+  },
+  {
+    "label": "GET sin User-Agent",
+    "status": 200,
+    "body": {
+      "elements": [
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/QV0654SVQF9RW",
+          "id": "QV0654SVQF9RW",
+          "editable": false,
+          "labelKey": "com.clover.tender.cash",
+          "label": "Cash",
+          "opensCashDrawer": true,
+          "enabled": true,
+          "visible": true,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/BX9GRVH6Q6HXW",
+          "id": "BX9GRVH6Q6HXW",
+          "editable": false,
+          "labelKey": "com.clover.tender.credit_card",
+          "label": "Credit Card",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": true,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/SNFV72DT4FGYT",
+          "id": "SNFV72DT4FGYT",
+          "editable": false,
+          "labelKey": "com.clover.tender.check",
+          "label": "Check",
+          "opensCashDrawer": true,
+          "enabled": true,
+          "visible": true,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/H8EDKEVXEPC7R",
+          "id": "H8EDKEVXEPC7R",
+          "editable": false,
+          "labelKey": "com.clover.tender.external_gift_card",
+          "label": "External Gift Card",
+          "opensCashDrawer": true,
+          "enabled": false,
+          "visible": true,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/EKBSE2W25CAX6",
+          "id": "EKBSE2W25CAX6",
+          "editable": false,
+          "labelKey": "com.clover.tender.level_up",
+          "label": "LevelUp",
+          "opensCashDrawer": false,
+          "enabled": false,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/83BVTM1R6W0GT",
+          "id": "83BVTM1R6W0GT",
+          "editable": false,
+          "labelKey": "com.clover.tender.external_payment",
+          "label": "External Payment",
+          "opensCashDrawer": false,
+          "enabled": false,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/XE6EF3FN5ME1M",
+          "id": "XE6EF3FN5ME1M",
+          "editable": false,
+          "labelKey": "com.clover.tender.external_pin_debit",
+          "label": "External PIN Debit",
+          "opensCashDrawer": false,
+          "enabled": false,
+          "visible": true,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/P111W186KJV0J",
+          "id": "P111W186KJV0J",
+          "editable": false,
+          "labelKey": "com.clover.tender.debit_card",
+          "label": "Debit Card",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": true,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/VZ6WS2KMZ9E0M",
+          "id": "VZ6WS2KMZ9E0M",
+          "editable": false,
+          "labelKey": "com.clover.tender.eat24_clover_integration",
+          "label": "Eat24 Clover Integration",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/NHR2955HCQA1C",
+          "id": "NHR2955HCQA1C",
+          "editable": false,
+          "labelKey": "com.clover.tender.clover_eat24_integration",
+          "label": "Clover Eat24 Integration",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/97GVCN9RPNK62",
+          "id": "97GVCN9RPNK62",
+          "editable": false,
+          "labelKey": "com.clover.tender.eat24_integration",
+          "label": "Eat24 Integration",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/J94VBXM1ZH3KY",
+          "id": "J94VBXM1ZH3KY",
+          "editable": false,
+          "labelKey": "com.clover.tender.tapmango_wallet",
+          "label": "TapMango Wallet",
+          "opensCashDrawer": true,
+          "enabled": true,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/5S7D7SW69EQET",
+          "id": "5S7D7SW69EQET",
+          "editable": false,
+          "labelKey": "com.clover.tender.mytab",
+          "label": "MyTab",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/GXJE4DNFGRZXR",
+          "id": "GXJE4DNFGRZXR",
+          "editable": false,
+          "labelKey": "com.clover.tender.kosher24",
+          "label": "Kosher24",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": false,
+          "supportsCashDiscount": false
+        },
+        {
+          "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+          "id": "4QPPVE0NFNBN4",
+          "editable": true,
+          "label": "MCM",
+          "opensCashDrawer": false,
+          "enabled": true,
+          "visible": true,
+          "supportsCashDiscount": false
+        }
+      ],
+      "href": "http://apisandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders?limit=100"
+    }
+  },
+  {
+    "label": "GET con token inválido",
+    "status": 401,
+    "body": {
+      "message": "401 Unauthorized"
+    }
+  }
+]

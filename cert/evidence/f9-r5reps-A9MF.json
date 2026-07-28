@@ -1,0 +1,10 @@
+[
+  {
+    "tag": "R5b",
+    "error": "open:[{\"description\":\"Table does not exist.\",\"error\":\"reference_not_found\",\"fields\":[\"$.table\"]}]"
+  },
+  {
+    "tag": "R5c",
+    "error": "open:[{\"description\":\"Table does not exist.\",\"error\":\"reference_not_found\",\"fields\":[\"$.table\"]}]"
+  }
+]

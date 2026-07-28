@@ -1,0 +1,140 @@
+{
+  "location": {
+    "_links": {
+      "auth": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/auth/",
+        "type": "application/hal+json; name=location_auth"
+      },
+      "clock_entries": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/clock_entries/",
+        "type": "application/hal+json; name=clock_entry_list"
+      },
+      "configuration": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/configuration/",
+        "type": "application/hal+json; name=configuration"
+      },
+      "discounts": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/discounts/",
+        "type": "application/hal+json; name=discount_list"
+      },
+      "employees": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/employees/",
+        "type": "application/hal+json; name=employee_list"
+      },
+      "item_order_modes": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/item_order_modes/",
+        "type": "application/hal+json; name=item_order_mode_list"
+      },
+      "jobs": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/jobs/",
+        "type": "application/hal+json; name=job_list"
+      },
+      "menu": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/menu/",
+        "type": "application/hal+json; name=menu"
+      },
+      "notifications": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/notifications/",
+        "type": "application/hal+json; name=location_notifications"
+      },
+      "order_types": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/order_types/",
+        "type": "application/hal+json; name=order_type_list"
+      },
+      "price_check": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/price_check/",
+        "type": "application/hal+json; name=price_check"
+      },
+      "reports": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/reports/",
+        "type": "application/hal+json; name=reports"
+      },
+      "revenue_centers": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/revenue_centers/",
+        "type": "application/hal+json; name=revenue_center_list"
+      },
+      "self": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/",
+        "type": "application/hal+json; name=location"
+      },
+      "shifts": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/shifts/",
+        "type": "application/hal+json; name=shift_list"
+      },
+      "tables": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tables/",
+        "type": "application/hal+json; name=table_list"
+      },
+      "tender_types": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/",
+        "type": "application/hal+json; name=tender_type_list"
+      },
+      "terminals": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/terminals/",
+        "type": "application/hal+json; name=terminal_list"
+      },
+      "tickets": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/",
+        "type": "application/hal+json; name=ticket_list"
+      },
+      "transfers": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/transfers/",
+        "type": "application/hal+json; name=transfer_list"
+      },
+      "void_types": {
+        "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/void_types/",
+        "type": "application/hal+json; name=void_type_list"
+      }
+    },
+    "address": {
+      "city": null,
+      "country": null,
+      "state": null,
+      "street1": null,
+      "street2": null,
+      "zip": null
+    },
+    "agent_version": "24.7.8",
+    "concept_name": "Kleshik LLC",
+    "created": 1728322130,
+    "custom_id": null,
+    "development": false,
+    "display_name": "Kleshik DEMO",
+    "google_place_id": null,
+    "health": {
+      "agent": {
+        "average_cpu": 12.661666666666667,
+        "average_memory": 2.0083333333333333,
+        "healthy": false,
+        "processes": 6
+      },
+      "healthy": false,
+      "pos": {
+        "ordering": {
+          "healthy": null
+        }
+      },
+      "system": {
+        "average_cpu": 18.385,
+        "average_memory": 48.46333333333334,
+        "healthy": true
+      },
+      "tickets": {
+        "response_time": null,
+        "status": "functional"
+      }
+    },
+    "id": "cx9oRBRi",
+    "latitude": null,
+    "longitude": null,
+    "modified": 1749921451,
+    "name": "Kleshik DEMO",
+    "owner": "Kleshik LLC",
+    "phone": null,
+    "pos_type": "aloha",
+    "status": "online",
+    "timezone": "America/La_Paz",
+    "updater_version": "24.7.8",
+    "website": null
+  }
+}

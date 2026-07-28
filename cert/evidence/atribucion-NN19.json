@@ -1,0 +1,122 @@
+{
+  "ordenes": [
+    {
+      "id": 10006,
+      "pos": 7264,
+      "mcm": 7264,
+      "clover": 7365,
+      "delta": 101,
+      "anuladas": [],
+      "anuladasEnClover": 0,
+      "posDesc": 0,
+      "desc": 0,
+      "causas": [
+        "sin causa conocida — requiere inspección manual"
+      ]
+    },
+    {
+      "id": 10017,
+      "pos": 5896,
+      "mcm": 5896,
+      "clover": 6271,
+      "delta": 375,
+      "anuladas": [],
+      "anuladasEnClover": 0,
+      "posDesc": 350,
+      "desc": 350,
+      "causas": [
+        "R5 · descuento (POS 350¢ / MCM 350¢) que Clover no aplica"
+      ]
+    },
+    {
+      "id": 10048,
+      "pos": 4021,
+      "mcm": 4021,
+      "clover": 5014,
+      "delta": 993,
+      "anuladas": [],
+      "anuladasEnClover": 0,
+      "posDesc": 920,
+      "desc": 920,
+      "causas": [
+        "R5 · descuento (POS 920¢ / MCM 920¢) que Clover no aplica"
+      ]
+    },
+    {
+      "id": 10049,
+      "pos": 1647,
+      "mcm": 1647,
+      "clover": 2054,
+      "delta": 407,
+      "anuladas": [],
+      "anuladasEnClover": 0,
+      "posDesc": 380,
+      "desc": 380,
+      "causas": [
+        "R5 · descuento (POS 380¢ / MCM 380¢) que Clover no aplica"
+      ]
+    },
+    {
+      "id": 10050,
+      "pos": 17,
+      "mcm": 17,
+      "clover": 1663,
+      "delta": 1646,
+      "anuladas": [],
+      "anuladasEnClover": 0,
+      "posDesc": 1500,
+      "desc": 1500,
+      "causas": [
+        "R5 · descuento (POS 1500¢ / MCM 1500¢) que Clover no aplica"
+      ]
+    },
+    {
+      "id": 10052,
+      "pos": 2054,
+      "mcm": 2054,
+      "clover": 2696,
+      "delta": 642,
+      "anuladas": [
+        "Refritos Small"
+      ],
+      "anuladasEnClover": 1,
+      "posDesc": 0,
+      "desc": 0,
+      "causas": [
+        "M8 · 1 línea(s) anulada(s) aún cobradas en Clover (≈600¢)"
+      ]
+    },
+    {
+      "id": 10056,
+      "pos": 1662,
+      "mcm": 1662,
+      "clover": 3054,
+      "delta": 1392,
+      "anuladas": [
+        "Elote"
+      ],
+      "anuladasEnClover": 1,
+      "posDesc": 0,
+      "desc": 0,
+      "causas": [
+        "M8 · 1 línea(s) anulada(s) aún cobradas en Clover (≈1300¢)"
+      ]
+    },
+    {
+      "id": 10057,
+      "pos": 649,
+      "mcm": 649,
+      "clover": 1653,
+      "delta": 1004,
+      "anuladas": [
+        "Codorniu Cuvee Brut CP"
+      ],
+      "anuladasEnClover": 1,
+      "posDesc": 0,
+      "desc": 0,
+      "causas": [
+        "M8 · 1 línea(s) anulada(s) aún cobradas en Clover (≈900¢)"
+      ]
+    }
+  ]
+}

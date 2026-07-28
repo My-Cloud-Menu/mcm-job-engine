@@ -2,7 +2,12 @@ import './omnivore/inject/create-order';
 import './omnivore/inject/add-items';
 import './omnivore/inject/create-payment';
 import './omnivore/inject/payment';
+// Sync de órdenes en 2 carriles: fetch_open_orders (20s, solo abiertas) + fetch_closed_orders
+// (90s, barrido completo que detecta los cierres). `fetch-recent-orders` (el schedule anterior,
+// ahora disabled) se conserva registrado para los jobs en vuelo y para el rollback.
 import './omnivore/sync/fetch-recent-orders';
+import './omnivore/sync/fetch-open-orders';
+import './omnivore/sync/fetch-closed-orders';
 import './omnivore/sync/fetch-tables';
 import './omnivore/sync/fetch-products';
 import './omnivore/sync/fetch-employees';

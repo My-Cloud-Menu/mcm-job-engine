@@ -1,0 +1,952 @@
+<title>Certificación Omnivore POS × Clover Flex</title>
+<style>
+  /* Documento de una sola cara: papel claro siempre, como un informe impreso.
+     Neutros sesgados hacia el petróleo del acento; severidad va aparte del acento. */
+  :root {
+    color-scheme: light;
+    --paper:      #EEF1F1;
+    --surface:    #FFFFFF;
+    --surface-2:  #F6F8F8;
+    --ink:        #12181A;
+    --ink-soft:   #4E5C61;
+    --ink-faint:  #7C8B90;
+    --line:       #D3DBDB;
+    --line-soft:  #E3E9E9;
+    --accent:     #0D5F6E;
+    --accent-dim: #0D5F6E1A;
+    --crit:       #C0392F;
+    --crit-bg:    #C0392F14;
+    --warn:       #9C6410;
+    --warn-bg:    #9C641014;
+    --ok:         #1F7A57;
+    --ok-bg:      #1F7A5714;
+    --neutral-tag:#5A686D;
+    --shadow: 0 1px 2px #12181A0A, 0 8px 24px -12px #12181A1F;
+    --f-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --f-body: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --f-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--f-body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+  p { margin: 0; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  code, .mono { font-family: var(--f-mono); font-size: .86em; font-variant-ligatures: none; }
+
+  .masthead { border-bottom: 1px solid var(--line); background: var(--surface);
+    padding: clamp(28px,5vw,56px) clamp(20px,5vw,48px) clamp(24px,3.5vw,36px); }
+  .masthead-inner { max-width: 1180px; margin: 0 auto; }
+  .eyebrow { font-family: var(--f-display); font-size: 11.5px; font-weight: 650; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+  .eyebrow::after { content:""; height:1px; flex:1; background: var(--line); }
+  .masthead h1 { font-size: clamp(30px,5.2vw,50px); font-weight: 700; letter-spacing: -.025em; margin: 14px 0 0; }
+  .masthead .sub { font-size: clamp(16px,2vw,19px); color: var(--ink-soft); margin-top: 10px; max-width: 62ch; }
+  .stamp { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px 26px; font-family: var(--f-display);
+    font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .stamp b { color: var(--ink-soft); font-weight: 600; }
+
+  .layout { max-width: 1180px; margin: 0 auto; padding: 0 clamp(20px,5vw,48px) 96px;
+    display: grid; grid-template-columns: 216px minmax(0,1fr); gap: clamp(28px,4vw,56px); align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: minmax(0,1fr); } .rail { display: none; } }
+
+  .rail { position: sticky; top: 24px; padding-top: 40px; font-family: var(--f-display); }
+  .rail h4 { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint);
+    font-weight: 650; margin-bottom: 12px; }
+  .rail ol { list-style: none; margin: 0 0 26px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .rail a { display: flex; align-items: baseline; gap: 9px; padding: 5px 8px; border-radius: 5px;
+    font-size: 13.5px; color: var(--ink-soft); text-decoration: none; transition: background .12s, color .12s; }
+  .rail a:hover { background: var(--accent-dim); color: var(--ink); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+  .dot.c { background: var(--crit); } .dot.w { background: var(--warn); } .dot.o { background: var(--ok); }
+  .rail .id { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-faint); }
+
+  main { padding-top: 40px; display: flex; flex-direction: column; gap: 52px; min-width: 0; }
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
+  .sec-head { display: flex; flex-direction: column; gap: 8px; }
+  .sec-head h2 { font-size: clamp(22px,3vw,29px); font-weight: 680; letter-spacing: -.02em; }
+  .sec-head .lede { color: var(--ink-soft); max-width: 68ch; }
+
+  .verdict { border: 1px solid var(--line); border-left: 4px solid var(--crit); background: var(--surface);
+    border-radius: 3px; padding: 24px 26px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+  .verdict .tag { font-family: var(--f-display); font-size: 11px; font-weight: 700; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--crit); }
+  .verdict h3 { font-size: clamp(19px,2.4vw,24px); font-weight: 660; letter-spacing: -.015em; }
+  .verdict p { color: var(--ink-soft); max-width: 70ch; }
+
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px,1fr)); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .metric { background: var(--surface); padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 5px; }
+  .metric .k { font-family: var(--f-display); font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 650; }
+  .metric .v { font-family: var(--f-display); font-size: 27px; font-weight: 700; letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums; }
+  .metric .v.bad { color: var(--crit); } .metric .v.good { color: var(--ok); }
+  .metric .n { font-size: 13px; color: var(--ink-faint); font-family: var(--f-display); }
+
+  .recon { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 3px; overflow: hidden; font-family: var(--f-display); }
+  .recon > div { background: var(--surface); padding: 13px 15px; display: flex; flex-direction: column; gap: 3px; }
+  .recon .src { font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--ink-faint); font-weight: 650; }
+  .recon .val { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .recon .off { background: var(--crit-bg); }
+  .recon .off .val, .recon .off .src { color: var(--crit); }
+
+  .finding { background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    box-shadow: var(--shadow); overflow: hidden; }
+  .finding > .stripe { height: 3px; }
+  .finding.c > .stripe { background: var(--crit); }
+  .finding.w > .stripe { background: var(--warn); }
+  .fbody { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .fhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 12px; }
+  .fid { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; padding: 2px 7px; border-radius: 3px;
+    background: var(--surface-2); border: 1px solid var(--line-soft); color: var(--ink-soft); }
+  .fhead h3 { font-size: clamp(17px,2.1vw,21px); font-weight: 660; letter-spacing: -.015em; flex: 1 1 320px; }
+  .pill { font-family: var(--f-display); font-size: 10.5px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.c { background: var(--crit-bg); color: var(--crit); }
+  .pill.w { background: var(--warn-bg); color: var(--warn); }
+  .pill.n { background: var(--surface-2); color: var(--neutral-tag); border: 1px solid var(--line-soft); }
+  .finding p { color: var(--ink-soft); max-width: 72ch; }
+  .finding p strong { color: var(--ink); font-weight: 600; }
+
+  .evidence { border-left: 2px solid var(--accent); background: var(--surface-2); padding: 12px 16px;
+    border-radius: 0 3px 3px 0; font-family: var(--f-display); font-size: 14px; color: var(--ink-soft); }
+  .evidence .lbl { font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--accent);
+    font-weight: 700; display: block; margin-bottom: 4px; }
+  .evidence.decision { border-left-color: var(--ok); }
+  .evidence.decision .lbl { color: var(--ok); }
+
+  pre { margin: 0; background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: 3px;
+    padding: 14px 16px; overflow-x: auto; font-family: var(--f-mono); font-size: 12.8px; line-height: 1.62;
+    color: var(--ink-soft); tab-size: 2; }
+  pre .del { color: var(--crit); } pre .add { color: var(--ok); } pre .cm { color: var(--ink-faint); }
+  pre b { color: var(--ink); font-weight: 600; }
+
+  .tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-family: var(--f-display); font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  th { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+    font-weight: 650; background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.bad { color: var(--crit); font-weight: 600; }
+  td.good { color: var(--ok); font-weight: 600; }
+  tr.total td { font-weight: 700; background: var(--surface-2); }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 8px; }
+  .card h4 { font-size: 15px; font-weight: 650; }
+  .card p { font-size: 14.5px; color: var(--ink-soft); }
+  .card.ok { border-left: 3px solid var(--ok); }
+  .card.warn { border-left: 3px solid var(--warn); }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .steps li { background: var(--surface); padding: 15px 18px; display: flex; gap: 15px; align-items: baseline; }
+  .steps .rank { font-family: var(--f-display); font-size: 12px; font-weight: 700; color: var(--accent);
+    min-width: 18px; font-variant-numeric: tabular-nums; }
+  .steps .txt { flex: 1; }
+  .steps .txt b { font-family: var(--f-display); font-weight: 650; }
+  .steps .txt span { display: block; font-size: 14.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 22px; font-family: var(--f-display);
+    font-size: 13px; color: var(--ink-faint); display: flex; flex-direction: column; gap: 6px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Certificación técnica · loop de dinero</div>
+    <h1>Omnivore POS × Clover Flex</h1>
+    <p class="sub">Certificación del ciclo completo: la orden nace en el terminal Aloha, se sincroniza a MCM,
+      se empuja a Clover, el cliente paga en el Flex y el pago vuelve al POS. 186 órdenes, tres sistemas,
+      cada número leído de la fuente que lo produjo.</p>
+    <div class="stamp">
+      <span><b>Sitio</b> 99990003 · Clover x Aloha</span>
+      <span><b>Location</b> cx9oRBRi</span>
+      <span><b>Merchant</b> 7ES0TRRRYJCY1</span>
+      <span><b>Fecha</b> 27 jul 2026</span>
+      <span><b>Evidencia</b> 45 archivos · 41 scripts</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="rail" aria-label="Índice de hallazgos">
+    <h4>Rompen el cobro</h4>
+    <ol>
+      <li><a href="#m1"><span class="dot c"></span><span class="id">M1</span> Convención de total</a></li>
+      <li><a href="#n1"><span class="dot w"></span><span class="id">N1</span> Pagos divididos <span style="font-size:10px">(por location)</span></a></li>
+      <li><a href="#h2"><span class="dot c"></span><span class="id">H2</span> Colisión entre tenants</a></li>
+      <li><a href="#n2"><span class="dot c"></span><span class="id">N2</span> Inyección sin reintento</a></li>
+      <li><a href="#n4"><span class="dot c"></span><span class="id">N4</span> Dinero invisible</a></li>
+    </ol>
+    <h4>Cobran de más</h4>
+    <ol>
+      <li><a href="#r5"><span class="dot c"></span><span class="id">R5</span> Descuentos</a></li>
+      <li><a href="#m8"><span class="dot w"></span><span class="id">M8</span> Ítem anulado <span style="font-size:10px">(no aplica)</span></a></li>
+      <li><a href="#tax"><span class="dot c"></span><span class="id">IVU</span> Base imponible</a></li>
+    </ol>
+    <h4>Ensucian la operación</h4>
+    <ol>
+      <li><a href="#m7"><span class="dot w"></span><span class="id">M7</span> Órdenes fantasma</a></li>
+      <li><a href="#n3"><span class="dot w"></span><span class="id">N3</span> Tender y propina</a></li>
+      <li><a href="#r10"><span class="dot w"></span><span class="id">R10</span> Marcas de tarjeta</a></li>
+    </ol>
+    <h4>Arquitectura</h4>
+    <ol>
+      <li><a href="#f8"><span class="dot c"></span><span class="id">F8</span> Latencia 99 s</a></li>
+      <li><a href="#h1"><span class="dot w"></span><span class="id">H1</span> Sync que no revive</a></li>
+      <li><a href="#kill"><span class="dot w"></span><span class="id">KILL</span> Palancas de apagado</a></li>
+      <li><a href="#n5"><span class="dot w"></span><span class="id">N5</span> Lost-ACK del POS</a></li>
+      <li><a href="#mt"><span class="dot w"></span><span class="id">MT</span> Multi-tenant</a></li>
+    </ol>
+    <h4>Contexto</h4>
+    <ol>
+      <li><a href="#bien"><span class="dot o"></span> Verificado correcto</a></li>
+      <li><a href="#rever"><span class="dot o"></span> Re-verificación</a></li>
+      <li><a href="#plan"><span class="dot o"></span> Orden de arreglo</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="verdicto">
+      <div class="verdict">
+        <span class="tag">Veredicto</span>
+        <h3>No está lista para producción. El cobro con propina —que es casi todo cobro— no cierra el cheque en el POS.</h3>
+        <p>La integración está bien construida contra duplicados: cero órdenes y cero pagos duplicados tras
+          cientos de ciclos de sincronización. Lo que falla es otra cosa, y falla en silencio: sin error visible,
+          sin alerta, y con MCM reportando la orden como cobrada.</p>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><span class="k">Pagos que llegaron al POS</span><span class="v bad">2 / 8</span><span class="n">los 2 fueron sin propina</span></div>
+        <div class="metric"><span class="k">Órdenes fantasma en Clover</span><span class="v bad">105</span><span class="n">$3,340.86 sin cobrar jamás</span></div>
+        <div class="metric"><span class="k">Sobrecobro al cliente</span><span class="v bad">$79.51</span><span class="n">en 10 órdenes</span></div>
+        <div class="metric"><span class="k">Latencia p95 al Flex</span><span class="v bad">98.7 s</span><span class="n">criterio: 30 s</span></div>
+        <div class="metric"><span class="k">Desvío de base imponible</span><span class="v bad">+1.5 %</span><span class="n">$4.81 sobre $323.35</span></div>
+        <div class="metric"><span class="k">Órdenes duplicadas</span><span class="v good">0</span><span class="n">idempotencia sólida</span></div>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Pago MCM</th><th class="num">Cheque real</th><th class="num">Enviado a Aloha</th><th class="num">Propina</th><th>Resultado</th><th>Causa</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">10028</td><td class="num">1662</td><td class="num bad">1362</td><td class="num">300</td><td class="bad">dead_letter</td><td>M1</td></tr>
+            <tr><td class="mono">10029</td><td class="num">2419</td><td class="num bad">1944</td><td class="num">475</td><td class="bad">dead_letter</td><td>M1</td></tr>
+            <tr><td class="mono">10030</td><td class="num">649</td><td class="num bad">399</td><td class="num">250</td><td class="bad">dead_letter</td><td>M1</td></tr>
+            <tr><td class="mono">10031</td><td class="num">649</td><td class="num good">649</td><td class="num">0</td><td class="good">completado</td><td>—</td></tr>
+            <tr><td class="mono">10032</td><td class="num">1405</td><td class="num">—</td><td class="num">—</td><td class="bad">nunca se encoló</td><td>H2</td></tr>
+            <tr><td class="mono">10033</td><td class="num">649</td><td class="num good">649</td><td class="num">0</td><td class="good">completado</td><td>—</td></tr>
+            <tr><td class="mono">10034</td><td class="num">2054</td><td class="num">1027</td><td class="num">0</td><td class="bad">dead_letter</td><td>N1</td></tr>
+            <tr><td class="mono">10035</td><td class="num">2054</td><td class="num">1027</td><td class="num">0</td><td class="bad">dead_letter</td><td>N1</td></tr>
+            <tr><td class="mono">10036</td><td class="num">2595</td><td class="num">535</td><td class="num">0</td><td class="bad">dead_letter</td><td>N1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="color:var(--ink-soft);max-width:70ch">El único escenario en que un cobro de Clover cierra el cheque
+        en Aloha es <strong>pago completo y sin propina</strong>. Y en este restaurante
+        <strong>la propina siempre se captura al momento de pagar</strong>, así que ese caso es casi inexistente.</p>
+    </section>
+
+    <section id="cobro">
+      <div class="sec-head">
+        <h2>Rompen el cobro</h2>
+        <p class="lede">El dinero se cobra en Clover, pero el cheque nunca se cierra en el POS. La mesa se va,
+          y en Aloha sigue debiendo.</p>
+      </div>
+
+      <article class="finding c" id="m1">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">M1</span>
+            <h3>El pull de Clover rompe la convención de <code>payments.total</code></h3>
+            <span class="pill c">Confirmado</span><span class="pill n">A/B + convención verificada en producción</span>
+          </div>
+          <p>En todo MCM, <code>payments.total</code> guarda <strong>lo cobrado al cliente, propina incluida</strong>,
+            y <code>orders.total</code> guarda el cheque sin propina. Por eso el envío a Aloha resta la propina: así
+            recupera la base. <strong>El pull de Clover es el único origen que rompe esa convención</strong> — guarda
+            la base en vez de lo cobrado. La resta posterior deja el monto corto y Aloha lo rechaza.</p>
+
+          <div class="recon">
+            <div><span class="src">Cliente pagó</span><span class="val">$19.62</span></div>
+            <div><span class="src">Cheque en Aloha</span><span class="val">$16.62</span></div>
+            <div class="off"><span class="src">MCM envió</span><span class="val">$13.62</span></div>
+          </div>
+
+          <div class="tw">
+            <table>
+              <thead><tr><th>Origen del pago</th><th class="num">Cheque</th><th class="num"><code>payments.total</code></th><th class="num">tip</th><th class="num">total − tip</th><th>Envío a Aloha</th></tr></thead>
+              <tbody>
+                <tr><td>ECR producción</td><td class="num">6667</td><td class="num">7747</td><td class="num">1080</td><td class="num good">6667 ✓</td><td class="good">aceptado</td></tr>
+                <tr><td>ECR producción</td><td class="num">13123</td><td class="num">14923</td><td class="num">1800</td><td class="num good">13123 ✓</td><td class="good">aceptado</td></tr>
+                <tr class="total"><td>Pull de Clover</td><td class="num">1662</td><td class="num bad">1662</td><td class="num">300</td><td class="num bad">1362 ✗</td><td class="bad">rechazado</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="evidence decision">
+            <span class="lbl">Decisión del dueño · el envío de pago NO se toca</span>
+            Es el camino que hoy inyecta los pagos de MCM a Omnivore y funciona bien.
+            <code>build-payment-body.ts</code> queda intacto, byte a byte.<br><br>
+            Verificado que la decisión es segura: <strong>Arena Medalla no tiene integración Clover</strong> — solo
+            <code>ecr-card</code>, <code>ecr-cash</code> y <code>omnivore</code>. Sus <strong>223 pagos con
+            propina</strong> los crea el flujo ECR propio y nunca pasan por el pull. Y el pull de Clover
+            <strong>no lleva tráfico vivo</strong>: solo Pala Pizza (último pago el 8 de junio, 7 órdenes de
+            Omnivore en total) y el sitio de certificación.
+          </div>
+
+          <pre><span class="cm">// upsert-payments.ts — el arreglo va AQUÍ, en el pull</span>
+<span class="del">- const totalInDollars = (p.amount / 100).toFixed(2);</span>
+<span class="add">+ const totalInDollars = ((p.amount + p.tip) / 100).toFixed(2);</span>
+
+<span class="cm">// y su propia suma de cumplimiento pasa a restar las propinas,</span>
+<span class="cm">// igual que ya hace el resto del sistema</span></pre>
+
+          <p>Con esto el pull de Clover pasa a comportarse como cualquier otro origen de pago, y el envío
+            —que ya es correcto— empieza a recibir el valor que espera.</p>
+
+          <div class="evidence">
+            <span class="lbl">Prueba A/B contra Aloha · confirma el síntoma</span>
+            <strong>A</strong> · <code>amount: 1405 + tip: 300</code> → <strong style="color:var(--ok)">201 aceptado</strong>, cheque cerrado con <code>tips=300</code><br>
+            <strong>B</strong> · <code>amount: 1105 + tip: 300</code> → <strong style="color:var(--crit)">400 insufficient_amount</strong>, cheque intacto
+          </div>
+        </div>
+      </article>
+
+      <article class="finding w" id="n1">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">N1</span>
+            <h3>Los pagos divididos dependen de la location, no de la integración</h3>
+            <span class="pill w">Corregido</span><span class="pill n">contrastado contra producción</span>
+          </div>
+
+          <div class="evidence decision">
+            <span class="lbl">Corrección · no hay nada que arreglar aquí</span>
+            Escribí que «la API de Omnivore no admite parciales». <strong>Es falso como regla general.</strong>
+            En producción, Arena Medalla (<code>cjgALEriXXX</code>) cobró un cheque de <strong>$463.64 en 4 pagos
+            parciales</strong> y Aloha aceptó los cuatro — cada uno con su propina y hasta con tenders distintos:<br><br>
+            <code>{amount:11591, tip:3409, tender:979}</code> · <code>{…, tender:976}</code> ·
+            <code>{…, tender:975}</code> · <code>{…, tender:975}</code> → los 4 <strong>completed</strong><br>
+            4 × 115.91 = 463.64 ✓<br><br>
+            <strong>La estrategia de la integración es correcta y funciona.</strong> Lo que hay que hacer es
+            <strong>verificar la location real antes de desplegar</strong>: si se comporta como la de certificación,
+            haría falta acumular en MCM; si se comporta como la de producción, funciona tal cual.
+          </div>
+
+          <p>En la location de certificación (<code>cx9oRBRi</code>, «Kleshik DEMO») el endpoint exige que
+            <code>amount</code> cubra el <code>due</code> completo. Mismo código, mismo shape de payload; lo único
+            distinto es la location:</p>
+
+          <div class="tw">
+            <table>
+              <thead><tr><th>Variante probada</th><th class="num">due</th><th class="num">amount enviado</th><th>Resultado</th></tr></thead>
+              <tbody>
+                <tr><td>25 % del due</td><td class="num">2054</td><td class="num">514</td><td class="bad">insufficient_amount</td></tr>
+                <tr><td>50 % del due</td><td class="num">2054</td><td class="num">1027</td><td class="bad">insufficient_amount</td></tr>
+                <tr><td><strong>due − 1 centavo</strong></td><td class="num">2054</td><td class="num">2053</td><td class="bad">insufficient_amount</td></tr>
+                <tr><td>50 % + <code>auto_close:false</code></td><td class="num">2054</td><td class="num">1027</td><td class="bad">insufficient_amount</td></tr>
+                <tr><td>50 % con <code>type:'cash'</code></td><td class="num">2054</td><td class="num">1027</td><td class="bad">insufficient_amount</td></tr>
+                <tr class="total"><td>due exacto (control)</td><td class="num">1405</td><td class="num">1405</td><td class="good">201 aceptado · cerrado</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p><strong>Distinción importante:</strong> en el terminal físico de Aloha sí se puede pagar parcialmente —
+            el cajero divide, cobra por asiento, aplica pagos sucesivos. Lo que no admite parciales es la superficie
+            de API por la que MCM aplica los pagos. La limitación es de cómo Aloha se expone a través de Omnivore,
+            no del POS.</p>
+          <p><strong>Qué implica para el arreglo:</strong> hay que <strong>acumular en MCM los pagos de una misma
+            orden hasta cubrir el <code>due</code> y enviar entonces uno solo</strong>. Es un cambio de diseño.
+            <code>full: true</code> tampoco es salida — el endpoint lo rechaza con <code>invalid_input</code>.</p>
+        </div>
+      </article>
+
+      <article class="finding c" id="h2">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">H2</span>
+            <h3>Colisión de idempotencia entre negocios distintos</h3>
+            <span class="pill c">Confirmado</span><span class="pill n">aislado sobre 11 pagos</span>
+          </div>
+          <p>La llave de idempotencia se arma <strong>sin el <code>site_id</code></strong>, y es única global. Como
+            <code>payments.id</code> es una secuencia <em>por sitio</em>, dos negocios distintos generan la misma
+            llave — y el segundo pago <strong>nunca llega a encolarse</strong>. Sin error, sin dead-letter, sin rastro.</p>
+          <pre><span class="cm">// enqueue/helpers.ts:87</span>
+const idempotencyKey = `pos_pay:${params.posProvider}:${params.paymentId}`;
+<span class="cm">//                                 ↑ falta el site_id</span></pre>
+          <div class="evidence">
+            <span class="lbl">Evidencia · los 11 pagos del sitio de certificación</span>
+            10 de 11 tienen su propio job (completado o muerto). El único sin job es el
+            <strong>10032 ($14.05)</strong>: su llave <code>pos_pay:omnivore:10032</code> la ocupa el sitio
+            <strong>55126712</strong>, un tenant distinto, desde hace semanas.
+          </div>
+          <p>Cuál pago se pierde es azar: depende de qué negocio llegó primero a ese número de secuencia.</p>
+        </div>
+      </article>
+
+      <article class="finding c" id="n2">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">N2</span>
+            <h3>Una inyección que falla no vuelve a intentarse nunca</h3>
+            <span class="pill c">Confirmado</span><span class="pill n">3 órdenes · 15 h después</span>
+          </div>
+          <p>Tres fallos que se componen: la inyección muere en 8 segundos por un rate limit de Clover, el
+            auto-retry no la rescata porque el texto del error no matchea su patrón, y el barrido periódico tampoco
+            — porque <strong>la llave de idempotencia sigue ocupada por el job muerto</strong>. El enqueue devuelve
+            el job muerto y el llamador reporta éxito.</p>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Orden</th><th class="num">Total</th><th>Creada</th><th>Estado en Clover</th><th class="num">Intentos desde entonces</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">10008</td><td class="num">$192.36</td><td>04:05</td><td class="bad">nunca llegó</td><td class="num">1</td></tr>
+                <tr><td class="mono">10013</td><td class="num">$30.27</td><td>02:42</td><td class="bad">nunca llegó</td><td class="num">1</td></tr>
+                <tr><td class="mono">10035</td><td class="num">$25.95</td><td>16:26 (día previo)</td><td class="bad">nunca llegó</td><td class="num">1</td></tr>
+                <tr class="total"><td>Total perdido</td><td class="num bad">$248.58</td><td colspan="3">tras ~600 ciclos de <code>push_orders</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>El patrón que une H2 y N2:</strong> el enqueue devuelve el job existente, y quien lo llama no
+            puede distinguir «encolé uno nuevo» de «ya había uno». Está bien cuando el job existente es propio y
+            está vivo; es un agujero cuando es de otro tenant o cuando está muerto.</p>
+        </div>
+      </article>
+
+      <article class="finding c" id="n4">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">N4</span>
+            <h3>Si el POS hipa durante el cobro, el dinero queda invisible</h3>
+            <span class="pill c">Confirmado</span><span class="pill n">repro determinista + 2 controles</span>
+          </div>
+          <p>MCM decide si una orden está pagada mirando <strong>un solo campo</strong>: el <code>due</code> del POS.
+            Nunca compara lo cobrado contra el total. Si el terminal deja el cheque descuadrado —cobrado pero con
+            <code>due</code> sin liquidar— MCM lo marca como pago parcial y <strong>no crea la fila de pago</strong>.</p>
+          <div class="recon">
+            <div><span class="src">Aloha · total</span><span class="val">$24.19</span></div>
+            <div><span class="src">Aloha · cobrado</span><span class="val">$24.19</span></div>
+            <div class="off"><span class="src">Pagos en MCM</span><span class="val">0</span></div>
+          </div>
+          <div class="evidence">
+            <span class="lbl">No es hipotético · ocurrió solo durante la certificación</span>
+            El ticket recibió su pago tras un <code>pos_not_responding_retry</code>. El agente aplicó el cobro pero
+            dejó el cheque violando su propia fórmula: <code>total=2419 · paid=2419 · due=2419</code>. MCM registró
+            <code>partially_fulfilled</code> y cero pagos.
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Entrada al mapeador</th><th>Estado en MCM</th><th>¿Registra el pago?</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">paid=2419 total=2419 <b>due=2419</b> ← observado</td><td class="bad">partially_fulfilled</td><td class="bad">no</td></tr>
+                <tr><td class="mono">paid=2419 total=2419 <b>due=0</b> ← control</td><td class="good">fulfilled</td><td class="good">sí</td></tr>
+                <tr><td class="mono">paid=1200 total=2419 due=1219 ← parcial real</td><td>partially_fulfilled</td><td>no (correcto)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Los controles aíslan la variable: con los mismos <code>paid</code> y <code>total</code>, cambiar solo el
+            <code>due</code> invierte el resultado. Y encima la orden se empuja a Clover como cobrable.</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="sobrecobro">
+      <div class="sec-head">
+        <h2>Le cobran de más al cliente</h2>
+        <p class="lede">En los tres casos el patrón es idéntico: <strong>POS = MCM ≠ Clover</strong>. La ingesta
+          desde Aloha cuadra al centavo en las 186 órdenes; lo que se rompe siempre es el empuje a Clover.</p>
+      </div>
+
+      <article class="finding c" id="r5">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">R5</span>
+            <h3>Los descuentos no viajan a Clover</h3>
+            <span class="pill c">Confirmado</span><span class="pill n">4 rep · vigentes hoy</span>
+          </div>
+          <p>El constructor de líneas de Clover tiene <strong>cero referencias a <code>discount</code></strong> en sus
+            135 líneas. El descuento se aplica en el POS y en MCM, pero el cheque que ve el cliente en el Flex lleva
+            el precio sin descontar.</p>
+          <div class="recon">
+            <div><span class="src">POS tras el comp</span><span class="val">$0.14</span></div>
+            <div><span class="src">MCM</span><span class="val">$0.14</span></div>
+            <div class="off"><span class="src">Clover cobra</span><span class="val">$14.05</span></div>
+          </div>
+          <div class="evidence">
+            <span class="lbl">Cortesía del 100 % · el caso más vívido</span>
+            El gerente comp'ea un plato de $13.00. El POS deja el cheque en $0.14 (solo el fee y su impuesto).
+            <strong>Clover le cobra al cliente $14.05</strong> — la comida que se le regaló.
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Orden</th><th class="num">POS</th><th class="num">Clover</th><th class="num">Sobrecobro</th><th class="num">Descuento aplicado</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">10050</td><td class="num">17</td><td class="num">1663</td><td class="num bad">+1646</td><td class="num">1500</td></tr>
+                <tr><td class="mono">10048</td><td class="num">4021</td><td class="num">5014</td><td class="num bad">+993</td><td class="num">920</td></tr>
+                <tr><td class="mono">10049</td><td class="num">1647</td><td class="num">2054</td><td class="num bad">+407</td><td class="num">380</td></tr>
+                <tr><td class="mono">10017</td><td class="num">5896</td><td class="num">6271</td><td class="num bad">+375</td><td class="num">350</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+
+      <article class="finding w" id="m8">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">M8</span>
+            <h3>El ítem anulado se sigue cobrando</h3>
+            <span class="pill w">No aplica</span><span class="pill n">descartado por configuración</span>
+          </div>
+          <p>El mesero anula un plato en el terminal. La línea queda en MCM marcada como <code>voided</code>, pero el
+            constructor de Clover recorre las líneas <strong>sin filtrar por estado</strong> — cero referencias a
+            <code>voided</code> en todo el builder. El cliente paga el plato que se anuló.</p>
+
+          <div class="evidence decision">
+            <span class="lbl">Decisión del dueño · no hay que arreglarlo</span>
+            La integración Clover × Omnivore corre con <strong><code>omnivoreTableServiceEnabled</code>
+            apagado</strong>, que es el camino donde M8 <strong>no se reproduce</strong>.<br><br>
+            Verificado en F9: con el flag apagado el void se comporta limpio en los tres sistemas — el POS baja de
+            4700 a 4100, MCM pasa de 5 a 4 líneas, y la línea desaparece de Clover. Las tres reproducciones de abajo
+            se obtuvieron <strong>encendiendo el flag a propósito</strong> y restaurándolo después.<br><br>
+            <strong>Cuándo volvería:</strong> si algún día se enciende el table-service para esta integración. El
+            defecto de código sigue ahí; simplemente ese camino no se ejercita.
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Orden</th><th>Ítem anulado</th><th class="num">POS</th><th class="num">Clover</th><th class="num">Sobrecobro</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">10056</td><td>Elote</td><td class="num">1662</td><td class="num">3054</td><td class="num bad">+1392</td></tr>
+                <tr><td class="mono">10057</td><td>Codorniu Cuvee Brut</td><td class="num">649</td><td class="num">1653</td><td class="num bad">+1004</td></tr>
+                <tr><td class="mono">10052</td><td>Refritos Small</td><td class="num">2054</td><td class="num">2696</td><td class="num bad">+642</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Solo ocurre con <code>omnivoreTableServiceEnabled</code> encendido: ese camino conserva la línea anulada
+            en el arreglo. Sin table-service, el camino de sobrescritura la borra limpiamente.</p>
+        </div>
+      </article>
+
+      <article class="finding c" id="tax">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">IVU</span>
+            <h3>El impuesto declarado no es el que cobró el POS</h3>
+            <span class="pill c">Confirmado</span><span class="pill n">8 de 183 · 2 mecanismos</span>
+          </div>
+          <p>Las <code>tax_lines</code> alimentan la planilla de IVU y <strong>no reconcilian</strong> contra el
+            <code>totals.tax</code> del POS. Sobre la corrida: <strong>+$4.81 sobre $323.35</strong>.</p>
+          <div class="grid2">
+            <div class="card warn">
+              <h4>MCM grava el service charge; Omnivore no</h4>
+              <p>La fila del fee se contradice sola: declara <code>is_taxable: false</code> y trae
+                <code>total_tax: 0.99</code>. Omnivore documenta que los service charges no se gravan.</p>
+            </div>
+            <div class="card warn">
+              <h4>La clase fiscal la reconstruye MCM</h4>
+              <p>Decide <em>standard</em> o <em>reduced</em> con una lista de 7 ids de categoría en la
+                configuración, no con lo que el POS reporta. El reparto difiere ítem por ítem.</p>
+            </div>
+          </div>
+          <div class="evidence">
+            <span class="lbl">El hallazgo dentro del hallazgo · la divergencia se esconde en la tolerancia</span>
+            El reconciliador absorbe residuos de hasta <strong>$1.00</strong> ajustando la línea del fee — para eso
+            fue diseñado, y su comentario lo dice. Pero la divergencia del impuesto <strong>cabe dentro de esa
+            tolerancia</strong>: 7 de las 8 se absorbieron en silencio. Verificado al centavo en 5 de ellas.
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Orden</th><th class="num">Fee en el POS</th><th class="num">Fee en Clover</th><th class="num">Ajuste</th><th class="num">Δ impuesto</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">10002</td><td class="num">864</td><td class="num bad">771</td><td class="num">−93</td><td class="num">+93</td><td class="good">cuadra</td></tr>
+                <tr><td class="mono">10005</td><td class="num">576</td><td class="num bad">514</td><td class="num">−62</td><td class="num">+62</td><td class="good">cuadra</td></tr>
+                <tr><td class="mono">10007</td><td class="num">448</td><td class="num bad">400</td><td class="num">−48</td><td class="num">+48</td><td class="good">cuadra</td></tr>
+                <tr><td class="mono">10010</td><td class="num">832</td><td class="num bad">743</td><td class="num">−89</td><td class="num">+89</td><td class="good">cuadra</td></tr>
+                <tr><td class="mono">10026</td><td class="num">576</td><td class="num bad">514</td><td class="num">−62</td><td class="num">+62</td><td class="good">cuadra</td></tr>
+                <tr class="total"><td class="mono">10006</td><td class="num">944</td><td class="num">944</td><td class="num">—</td><td class="num bad">+101</td><td class="bad">se pasó por 1¢</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El cliente ve en el recibo un <em>Maintenance &amp; Entertainment Fee</em> de <strong>$7.71</strong> cuando
+            el POS cobró <strong>$8.64</strong>, y paga más impuesto del que el POS calculó. El total cuadra, así que
+            nadie se entera. La orden 10006 se pasó del guard <strong>por un centavo</strong> y ahí sí se cobró de
+            más. El arreglo va aguas arriba, no en la tolerancia.</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="operacion">
+      <div class="sec-head">
+        <h2>Ensucian la operación y los reportes</h2>
+        <p class="lede">No pierden dinero directamente, pero dejan los números del negocio inservibles.</p>
+      </div>
+
+      <article class="finding w" id="m7">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">M7</span>
+            <h3>Cada cheque cobrado en el POS deja una orden fantasma en Clover</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">4 rep + medición completa</span>
+          </div>
+          <p>La consulta que decide qué órdenes empujar a Clover incluye el estado <code>check-closed</code> y
+            <strong>no filtra por <code>payment_status</code></strong>. Un cheque ya cobrado en el terminal Aloha se
+            empuja igual como orden <strong>abierta</strong> que nadie va a pagar nunca.</p>
+          <div class="metrics">
+            <div class="metric"><span class="k">Órdenes abiertas para siempre</span><span class="v bad">105</span><span class="n">de las empujadas</span></div>
+            <div class="metric"><span class="k">Monto acumulado</span><span class="v bad">$3,340.86</span><span class="n">en una sola corrida</span></div>
+            <div class="metric"><span class="k">Órdenes sin total</span><span class="v bad">12</span><span class="n">el Register muestra $0.00</span></div>
+          </div>
+          <p>En un negocio con 20–40 % de efectivo, esa proporción de basura se genera <strong>cada servicio</strong>.
+            Toda métrica del lado Clover queda inflada por dinero que ya se cobró en el otro sistema, y como quedan
+            abiertas indefinidamente, se acumula día tras día.</p>
+        </div>
+      </article>
+
+      <article class="finding w" id="n3">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">N3</span>
+            <h3>El tender real y la propina del terminal se pierden</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">3 rep + literales en código</span>
+          </div>
+          <p>Cuando un cheque se cobra en el POS, MCM le fabrica una fila de pago con <strong>valores
+            literales</strong>, no con los datos del cobro real:</p>
+          <pre><span class="cm">// upsert-orders.ts</span>
+method: <b>'ecr-card'</b>,   <span class="cm">// constante — no mira el tender</span>
+tip:    <b>'0.00'</b>,       <span class="cm">// constante — no mira totals.tips</span></pre>
+          <p>Y es más profundo que una sobrescritura: <strong>los datos nunca se piden</strong>. El campo
+            <code>FIELDS</code> con el que el sync consulta el ticket no incluye <code>tips</code> ni
+            <code>payments</code>.</p>
+          <div class="evidence">
+            <span class="lbl">Resultado sobre los 119 pagos de la corrida</span>
+            Un solo <code>method</code> para todo: <code>ecr-card</code>. Los <strong>31 pagos nacidos en el POS
+            ($2,074.71)</strong> perdieron su tender real. El arqueo de caja no puede cerrar contra MCM porque el
+            efectivo no se distingue de la tarjeta.
+          </div>
+        </div>
+      </article>
+
+      <article class="finding w" id="r10">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">R10</span>
+            <h3>Solo 3 de 18 marcas de tarjeta llegan a su tender</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">repro determinista</span>
+          </div>
+          <p>El mapa de marca → tender tiene 5 claves contra las 18 del enum de Clover. Todo lo que no matchea cae al
+            tender genérico.</p>
+          <pre>VISA  → 975 (SPC VISA)   <span class="add">✓</span>      DISCOVER, DINERS_CLUB, JCB, MAESTRO, SOLO,
+MC    → 976 (SPC M/C)    <span class="add">✓</span>      LASER, CHINA_UNION_PAY, CARTE_BLANCHE, UNKNOWN,
+AMEX  → 978 (SPC AMEX)   <span class="add">✓</span>      GIFT_CARD, EBT, GIROCARD, INTERAC, OTHER, RUPAY
+                                     <span class="del">→ 979 (SPC OTHER) — todas al genérico</span></pre>
+          <p>Lo que lo vuelve un defecto y no una limitación: la location <strong>sí tiene</strong> tenders dedicados
+            que MCM nunca usa — <code>30 Discover</code> y <code>977 SPC DISC</code> existen en el POS. Sumado a N3,
+            el cuadre por tender queda roto por los dos lados.</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="arquitectura">
+      <div class="sec-head">
+        <h2>Arquitectura y operación</h2>
+        <p class="lede">Decisiones de diseño que hoy limitan el caso de uso, y las señales que el sistema emite
+          cuando algo se rompe.</p>
+      </div>
+
+      <article class="finding c" id="f8">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">F8</span>
+            <h3>Cobrar en la mesa no es viable: 99 segundos de espera</h3>
+            <span class="pill c">Confirmado</span><span class="pill n">3 jornadas · 20 ciclos medidos</span>
+          </div>
+          <p>El mesero cierra la mesa en Aloha y camina hacia el cliente con el Flex. La orden tarda
+            <strong>minuto y medio</strong> en ser cobrable. Y empeora según se llena el restaurante.</p>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Jornada</th><th class="num">Órdenes</th><th class="num">Aloha → MCM p95</th><th class="num">Aloha → Clover p95</th><th class="num">Máximo</th></tr></thead>
+              <tbody>
+                <tr><td>Ligera</td><td class="num">13</td><td class="num">45.4 s</td><td class="num">54.3 s</td><td class="num">54.3 s</td></tr>
+                <tr><td>Media</td><td class="num">20</td><td class="num">57.9 s</td><td class="num">73.1 s</td><td class="num">73.1 s</td></tr>
+                <tr class="total"><td>Rush sostenido</td><td class="num">41</td><td class="num">86.6 s</td><td class="num bad">98.7 s</td><td class="num">102.9 s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="evidence">
+            <span class="lbl">La causa · el pull tarda más que su propio intervalo</span>
+            El sync está programado <strong>cada 25 s</strong> y cada ciclo real tarda entre
+            <strong>37 y 329 segundos</strong>. Ni un solo ciclo cabe en su intervalo. Como el pase de cheques
+            abiertos relee <em>todos</em> los tickets en cada vuelta, mientras más mesas ocupadas, más lento.
+          </div>
+          <p>Es el mismo patrón del incidente en producción de Arena Medalla, donde con <strong>1013 cheques
+            abiertos</strong> el ciclo llegó a 166 s sobre un intervalo de 60 s.</p>
+          <p><strong>Lo que sí funciona bajo carga:</strong> de las 41 órdenes de la jornada grande, 41 llegaron a
+            Clover, cero descuadres, cero dead-letters, cero duplicados. El problema de volumen es de latencia, no
+            de correctitud.</p>
+        </div>
+      </article>
+
+      <article class="finding w" id="h1">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">H1</span>
+            <h3>El sync muerto no revive, y la alerta no dice qué se rompió</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">reproducción controlada</span>
+          </div>
+          <p>Se invalidó la credencial a propósito y se cronometró todo. Tras <strong>5 fallos consecutivos</strong>
+            (4 min 45 s) el sync queda apagado y no vuelve solo.</p>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Intento de recuperación</th><th>Resultado</th></tr></thead>
+              <tbody>
+                <tr><td>Restaurar la credencial y esperar 90 s</td><td class="bad">sigue apagado</td></tr>
+                <tr><td><code>trigger_sync_now()</code> — el botón «Sincronizar ahora»</td><td class="bad">tampoco lo revive</td></tr>
+                <tr class="total"><td><code>ensure_sync_schedules()</code> — re-guardar el formulario</td><td class="good">única salida</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Sobre las alertas, la predicción era falsa y la evidencia manda: <strong>sí llegan correos</strong>. El
+            problema es su contenido y su agrupación — la llave de deduplicación es por integración y sitio, no por
+            orden ni por tipo de error. En la corrida, <strong>9 pagos muertos por 3 causas distintas colapsaron en
+            2 alertas</strong>, con texto de infraestructura en vez de «3 cheques quedaron sin pagar en el POS».</p>
+          <p>Y cuando el sync se apaga, las alertas también: dejan de morir jobs, dejan de llegar correos. El
+            silencio posterior es indistinguible de «todo bien».</p>
+        </div>
+      </article>
+
+      <article class="finding w" id="kill">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">KILL</span>
+            <h3>La palanca de apagado que un operador usaría no apaga nada</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">3 palancas probadas</span>
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Palanca</th><th>Efecto medido</th></tr></thead>
+              <tbody>
+                <tr><td><code>sync_schedules.status = 'disabled'</code></td><td class="good">inmediato · corte quirúrgico</td></tr>
+                <tr><td><code>site_integrations.active = false</code></td><td class="bad">no apaga el schedule: los jobs se siguen encolando y solo se vuelven errores</td></tr>
+                <tr><td><code>config.sync_orders_to_clover = false</code></td><td>sin efecto hasta re-ejecutar <code>ensure_sync_schedules()</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Verificado de paso: <code>invalid_api_key</code> no está clasificado en el mapa de errores, así que cae
+            en el default <em>reintentable</em>. Una credencial permanentemente mala se trata como fallo transitorio.</p>
+        </div>
+      </article>
+
+      <article class="finding w" id="n5">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">N5</span>
+            <h3>Aloha ignora la llave de idempotencia y duplica la propina</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">2 rep (×4 y ×2)</span>
+          </div>
+          <p>Dos <code>POST</code> con <strong>body idéntico y la misma <code>Idempotency-Id</code></strong> crean
+            <strong>dos pagos distintos</strong>. Y el patrón de la autocorrección es lo peligroso: Aloha ajusta el
+            principal con un pago compensatorio pero <strong>deja las propinas sumadas</strong>.</p>
+          <pre>pagos: [{amount:649, tip:450}, {amount:649, tip:450},
+        {amount:649, tip:450}, {amount:<b>-1298</b>, tip:450}]
+
+totals: paid=649 <span class="add">(correcto)</span>   tips=<b>1800</b> <span class="del">(4 × 450)</span></pre>
+          <p><strong>La defensa existe y está bien hecha:</strong> el handler de reenvío no se apoya en el header —
+            en cada reintento consulta los pagos del ticket y busca coincidencia por <code>comment</code> +
+            <code>amount</code> antes de re-postear, y si esa consulta falla, <strong>no postea</strong>. Esta prueba
+            justifica empíricamente por qué ese código existe.</p>
+        </div>
+      </article>
+
+      <article class="finding w" id="mt">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">MT</span>
+            <h3>Dos consultas sin <code>site_id</code>, fuera del loop certificado</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">304 archivos barridos</span>
+          </div>
+          <p>El barrido se hizo dirigido: se derivaron de la base las <strong>212 tablas</strong> con columna
+            <code>site_id</code>, se aislaron las <strong>39 donde <code>site_id</code> forma parte de la clave
+            primaria</strong> y se escanearon 304 archivos.
+            <strong>12 candidatos, 2 reales, 10 descartados con motivo escrito.</strong></p>
+          <div class="grid2">
+            <div class="card warn">
+              <h4>Historial de órdenes de un cliente</h4>
+              <p>El endpoint <strong>exige <code>site_id</code>, lo valida… y nunca lo usa</strong>. La función ni
+                siquiera acepta el parámetro, y corre con permisos que saltan RLS. Un cliente con órdenes en dos
+                negocios recibe las de ambos.</p>
+            </div>
+            <div class="card warn">
+              <h4>Calculador de cupones</h4>
+              <p>Lee las categorías de los productos del carrito sin acotar el sitio, teniendo el
+                <code>site_id</code> a trece líneas de distancia. Categorías de otros negocios entran en la decisión
+                de si un cupón aplica.</p>
+            </div>
+          </div>
+          <p><strong>El aislamiento sí se probó activamente:</strong> con dos negocios sobre la misma location, el
+            mismo ticket entró a los dos con filas totalmente independientes — ids distintos, mesas propias, cero
+            jobs cruzados.</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="bien">
+      <div class="sec-head">
+        <h2>Verificado como correcto</h2>
+        <p class="lede">No todo son defectos. Estas piezas se probaron a fondo y aguantan.</p>
+      </div>
+      <div class="grid2">
+        <div class="card ok">
+          <h4>Inyección de pagos a Omnivore</h4>
+          <p>El camino que MCM usa hoy en producción funciona bien: 223 pagos con propina en Arena Medalla, 12
+            reenviados a Omnivore con tres tenders distintos. <strong>Se deja intacto.</strong></p>
+        </div>
+        <div class="card ok">
+          <h4>Idempotencia · cero duplicados</h4>
+          <p>Tras cientos de ciclos de pull, solapes y reintentos: 0 órdenes duplicadas, 0 pagos duplicados,
+            0 órdenes de Clover reusadas por dos órdenes de MCM.</p>
+        </div>
+        <div class="card ok">
+          <h4>Cuadre de impuestos hacia Clover</h4>
+          <p>Con dos clases fiscales, cantidades múltiples, anulaciones y service charge, el ciclo de vida completo
+            cuadra al centavo paso a paso.</p>
+        </div>
+        <div class="card ok">
+          <h4>Reconciliación anti lost-ACK</h4>
+          <p>Tres capas independientes en el reenvío: marcador persistente, reconciliación antes de re-postear, y
+            <em>fail-closed</em> si la consulta falla. Nunca arriesga un doble cobro.</p>
+        </div>
+        <div class="card ok">
+          <h4>Orden suplementaria</h4>
+          <p>Agregar un ítem tras un pago parcial genera correctamente una segunda orden en Clover con solo el
+            delta, sin tocar la primaria, y el pago se re-atribuye a la misma orden de MCM.</p>
+        </div>
+        <div class="card ok">
+          <h4>Multi-check, fire selectivo y meseros</h4>
+          <p>Tres cheques en una mesa producen <code>check_number</code> únicos. Firear 1 de 3 ítems se refleja
+            exactamente. Las 186 órdenes tienen empleado asignado.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="rever">
+      <div class="sec-head">
+        <h2>Re-verificación: cazando falsos positivos</h2>
+        <p class="lede">Terminadas las pruebas, cada hallazgo se pasó por un segundo filtro contra el código vivo y
+          el estado actual de los tres sistemas. Resultado: <strong>4 correcciones, 8 falsos positivos descartados,
+          0 hallazgos retirados.</strong></p>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Lo que decía</th><th>Lo que encontré al re-verificar</th></tr></thead>
+          <tbody>
+            <tr><td><strong>«El arreglo de M1 es quitar la resta de la propina»</strong></td><td class="bad">Habría roto producción. La resta es correcta bajo la convención de MCM, verificada sobre 5 pagos ECR reales. El defecto está en el pull de Clover, que guarda la base en vez de lo cobrado.</td></tr>
+            <tr><td>«El reconciliador enmascara el error de impuesto»</td><td>Injusto con el código: su comentario ya advertía que un delta grande <em>no</em> se enmascara. El defecto real es que la divergencia <strong>cabe dentro</strong> de la tolerancia.</td></tr>
+            <tr><td>«<code>trigger_sync_now</code> recupera el sync»</td><td>Falso. Probado en vivo: no lo revive. Solo <code>ensure_sync_schedules</code>.</td></tr>
+            <tr><td>«MCM sobrescribe el tender y la propina»</td><td>Es peor: la petición <strong>ni siquiera los pide</strong> a Aloha.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Candidato descartado</th><th>Por qué no era un hallazgo</th></tr></thead>
+          <tbody>
+            <tr><td>«El contador de fallos no se resetea»</td><td>Un ciclo exitoso lo pone en 0.</td></tr>
+            <tr><td>«Hay 6 schedules duplicados»</td><td>El índice único incluye la integración: son schedules legítimamente distintos.</td></tr>
+            <tr><td>«105 órdenes fantasma» (primer conteo)</td><td>Un cheque vacío también tiene <code>due=0</code>. Re-medido con <code>paid&gt;0</code>: los 105 son reales.</td></tr>
+            <tr><td>«12 dead-letters de inyección»</td><td>Un <em>join</em> multiplicaba filas. Son 3.</td></tr>
+            <tr><td>«Σ tax_lines = 0 en todas»</td><td>El campo es <code>tax_total</code>, no <code>total_tax</code>.</td></tr>
+            <tr><td>«Las RPC expuestas son explotables»</td><td>No son <code>SECURITY DEFINER</code>: RLS las contiene.</td></tr>
+            <tr><td>«Los INSERT no llevan <code>site_id</code>»</td><td>Sí lo llevan, en el objeto de fila.</td></tr>
+            <tr><td>«Búsqueda de sucursal sin <code>site_id</code>»</td><td>Hardening deliberado y documentado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="plan">
+      <div class="sec-head">
+        <h2>Orden de arreglo</h2>
+        <p class="lede">Ordenado por lo que le cuesta dinero al negocio hoy, no por dificultad técnica. No se tocó
+          una sola línea de código durante la certificación.</p>
+      </div>
+      <ol class="steps">
+        <li><span class="rank">1</span><span class="txt"><b>M1 · en el pull de Clover, no en el envío</b>
+          <span>Guardar lo cobrado (con propina) en <code>payments.total</code> y restar propinas en su suma de
+            cumplimiento. <strong>El envío de pago no se toca</strong>: sostiene la inyección de pagos de MCM a
+            Omnivore en producción.</span></span></li>
+        <li><span class="rank">2</span><span class="txt"><b>R5 · los descuentos no viajan</b>
+          <span>El cliente paga de más — hasta $13.91 en una cortesía del 100 %. Verificado vigente en las 4 órdenes. Aplicar el descuento en el constructor de líneas. <em>M8 sale de esta lista: no aplica con el table-service apagado.</em></span></span></li>
+        <li><span class="rank">3</span><span class="txt"><b>H2 · la llave sin <code>site_id</code></b>
+          <span>Un pago cobrado que nunca llega al POS, al azar. Agregar el sitio a la llave de idempotencia.</span></span></li>
+        <li><span class="rank">4</span><span class="txt"><b>N2 · la llave retenida por el job muerto</b>
+          <span>$248.58 que nunca llegaron a Clover. Liberar la llave al morir el job, o incluir el intento en ella.</span></span></li>
+        <li><span class="rank">5</span><span class="txt"><b>N1 · verificar la location, no cambiar código</b>
+          <span>Producción acepta parciales; la location de certificación no. Antes de desplegar, probar un pago
+            parcial contra la location real del cliente. Solo si la rechaza haría falta acumular en MCM.</span></span></li>
+        <li><span class="rank">6</span><span class="txt"><b>M7 · dejar de empujar cheques ya cobrados</b>
+          <span>Filtrar por <code>payment_status</code>. Limpia $3,340 de basura por corrida.</span></span></li>
+        <li><span class="rank">7</span><span class="txt"><b>N3 y R10 · tender y propina reales</b>
+          <span>Pedir <code>tips</code> y <code>payments</code> en la consulta, y completar el mapa de marcas.</span></span></li>
+        <li><span class="rank">8</span><span class="txt"><b>IVU · dejar de gravar el service charge</b>
+          <span>Aguas arriba del reconciliador. Es exposición fiscal, no un dato feo.</span></span></li>
+        <li><span class="rank">9</span><span class="txt"><b>F8 · la latencia</b>
+          <span>Decisión de arquitectura: disparar el empuje por evento, o que el pase de abiertos deje de releer el
+            backlog.</span></span></li>
+      </ol>
+    </section>
+
+    <section id="alcance">
+      <div class="sec-head"><h2>Alcance y límites de esta certificación</h2></div>
+      <div class="grid2">
+        <div class="card">
+          <h4>Diferido por decisión</h4>
+          <p><strong>Ajuste de propina post-captura</strong> — no aplica: la propina siempre se captura al pagar.
+            <strong>Void y refund</strong> — fuera de alcance de esta sesión.</p>
+        </div>
+        <div class="card">
+          <h4>No probable con esta superficie</h4>
+          <p>Tarjetas de rechazo, pago offline del Flex, pre-autorización de bar y cierre de lote necesitan un
+            terminal físico. El sandbox de Clover rechaza refunds y ajustes de propina.</p>
+        </div>
+        <div class="card">
+          <h4>Límites del catálogo</h4>
+          <p>La location no tiene ítems de precio abierto (0 de 535) ni nombres acentuados, y solo 6 de 44 descuentos
+            están disponibles. Mover mesa y anular un ticket completo los rechaza el propio POS.</p>
+        </div>
+        <div class="card">
+          <h4>Huecos reconocidos</h4>
+          <p>Modificadores anidados (solo se alcanzó 1 nivel de 5), sobrepago, modificador de precio negativo, ítem
+            de $0, y el lote de más de 100 líneas. Los cuatro primeros son casos de dinero sin cubrir.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div><strong>Informe completo:</strong> <code>mcm-job-engine/cert/HALLAZGOS.md</code> · 45 archivos de evidencia · 41 scripts re-ejecutables</div>
+      <div><strong>Para re-validar un arreglo:</strong> <code>final.cjs</code> (reconciliación completa) · <code>m1-ab.cjs</code> (la propina) · <code>f6.cjs</code> (latencia) · <code>atribuir.cjs</code> (descuadres)</div>
+      <div>Certificación ejecutada sobre el sitio desechable 99990003. Vecinos verificados sin cambios; entorno restaurado. Cero cambios en código de producción.</div>
+    </footer>
+  </main>
+</div>

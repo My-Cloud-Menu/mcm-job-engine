@@ -1,0 +1,118 @@
+[
+  {
+    "tag": "CERTF01R2",
+    "total": 2500,
+    "amount": 2500,
+    "tip": 375,
+    "desc": "rep2: $25.00 + $3.75 propina",
+    "order_id": "RD39ZN9WT3VAP",
+    "order_total": 2500,
+    "payment_amount": 2500,
+    "payment_tip": 375,
+    "paymentState": "PAID",
+    "payment_raw": {
+      "id": "W0ZYP4FFDBZQ0",
+      "order": {
+        "id": "RD39ZN9WT3VAP"
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4"
+      },
+      "amount": 2500,
+      "tipAmount": 375,
+      "externalPaymentId": "CERTF01R2",
+      "createdTime": 1785134993000,
+      "clientCreatedTime": 1785134993000,
+      "modifiedTime": 1785134992000,
+      "result": "SUCCESS"
+    }
+  },
+  {
+    "tag": "CERTF01R3",
+    "total": 4763,
+    "amount": 4763,
+    "tip": 900,
+    "desc": "rep3: $47.63 + $9.00 propina",
+    "order_id": "RPKHD20RF82G2",
+    "order_total": 4763,
+    "payment_amount": 4763,
+    "payment_tip": 900,
+    "paymentState": "PAID",
+    "payment_raw": {
+      "id": "ZZXM97J54SQS4",
+      "order": {
+        "id": "RPKHD20RF82G2"
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4"
+      },
+      "amount": 4763,
+      "tipAmount": 900,
+      "externalPaymentId": "CERTF01R3",
+      "createdTime": 1785134994000,
+      "clientCreatedTime": 1785134994000,
+      "modifiedTime": 1785134993000,
+      "result": "SUCCESS"
+    }
+  },
+  {
+    "tag": "CERTF01C1",
+    "total": 1500,
+    "amount": 1500,
+    "tip": 0,
+    "desc": "control: sin propina",
+    "order_id": "4RYV5Q9B5NT1W",
+    "order_total": 1500,
+    "payment_amount": 1500,
+    "payment_tip": 0,
+    "paymentState": "PAID",
+    "payment_raw": {
+      "id": "WNR6Z023QEP1Y",
+      "order": {
+        "id": "4RYV5Q9B5NT1W"
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4"
+      },
+      "amount": 1500,
+      "tipAmount": 0,
+      "externalPaymentId": "CERTF01C1",
+      "createdTime": 1785134994000,
+      "clientCreatedTime": 1785134994000,
+      "modifiedTime": 1785134994000,
+      "result": "SUCCESS"
+    }
+  },
+  {
+    "tag": "CERTF01C2",
+    "total": 3000,
+    "amount": 1200,
+    "tip": 180,
+    "desc": "control: PAGO PARCIAL 1200 de 3000",
+    "order_id": "88CGFEA9MBA6W",
+    "order_total": 3000,
+    "payment_amount": 1200,
+    "payment_tip": 180,
+    "paymentState": "PARTIALLY_PAID",
+    "payment_raw": {
+      "id": "KY9ZYZWWVS5XG",
+      "order": {
+        "id": "88CGFEA9MBA6W"
+      },
+      "tender": {
+        "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+        "id": "4QPPVE0NFNBN4"
+      },
+      "amount": 1200,
+      "tipAmount": 180,
+      "externalPaymentId": "CERTF01C2",
+      "createdTime": 1785134995000,
+      "clientCreatedTime": 1785134995000,
+      "modifiedTime": 1785134995000,
+      "result": "SUCCESS"
+    }
+  }
+]

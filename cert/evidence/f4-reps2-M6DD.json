@@ -1,0 +1,50 @@
+[
+  {
+    "tag": "R2",
+    "ticket": "20260726-1010005",
+    "mcm": "10040",
+    "clover": "NDJ7XW4GSMXVW",
+    "cheque_total": 649,
+    "tip_cobrado": 250,
+    "pago_enviado_a_clover": 649,
+    "clover_pay": "A1WCYRTNA0JBE",
+    "mcm_pay_total": "6.49",
+    "mcm_pay_tip": "2.50",
+    "enviado_amount": 399,
+    "enviado_tip": 250,
+    "job": "dead_letter",
+    "idem": "pos_pay:omnivore:10030",
+    "error": "Omnivore insufficient_amount: Insufficient amount applied to payment or discount.",
+    "omni_pay_id": null,
+    "due_final": 649,
+    "paid_final": 0,
+    "tips_final": 0,
+    "open_final": true
+  },
+  {
+    "tag": "C0",
+    "ticket": "20260726-1010006",
+    "mcm": "10041",
+    "clover": "NN8MZ9QH1VB76",
+    "cheque_total": 649,
+    "tip_cobrado": 0,
+    "pago_enviado_a_clover": 649,
+    "clover_pay": "PPSC5EX469D02",
+    "mcm_pay_total": "6.49",
+    "mcm_pay_tip": "0.00",
+    "enviado_amount": 649,
+    "enviado_tip": 0,
+    "job": "completed",
+    "idem": "pos_pay:omnivore:10031",
+    "omni_pay_id": "105906177",
+    "due_final": 0,
+    "paid_final": 649,
+    "tips_final": 0,
+    "open_final": false
+  },
+  {
+    "tag": "C1",
+    "fase": "open",
+    "error": "[{\"description\":\"Table does not exist.\",\"error\":\"reference_not_found\",\"fields\":[\"$.table\"]}]"
+  }
+]

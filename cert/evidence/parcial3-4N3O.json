@@ -1,0 +1,129 @@
+{
+  "casos": [
+    {
+      "variante": "25 % del due",
+      "ticket": "20260727-1010069",
+      "due_antes": 2054,
+      "amount": 514,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "despues": {
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "total": 2054,
+        "open": true
+      }
+    },
+    {
+      "variante": "50 % del due",
+      "ticket": "20260727-1010068",
+      "due_antes": 2054,
+      "amount": 1027,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "despues": {
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "total": 2054,
+        "open": true
+      }
+    },
+    {
+      "variante": "due − 1 centavo",
+      "ticket": "20260727-1010067",
+      "due_antes": 2054,
+      "amount": 2053,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "despues": {
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "total": 2054,
+        "open": true
+      }
+    },
+    {
+      "variante": "50 % + auto_close:false",
+      "ticket": "20260727-1010066",
+      "due_antes": 2054,
+      "amount": 1027,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "despues": {
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "total": 2054,
+        "open": true
+      }
+    },
+    {
+      "variante": "50 % en efectivo (type cash)",
+      "ticket": "20260727-1010065",
+      "due_antes": 2054,
+      "amount": 1027,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "despues": {
+        "due": 2054,
+        "paid": 0,
+        "tips": 0,
+        "total": 2054,
+        "open": true
+      }
+    },
+    {
+      "variante": "due EXACTO (control)",
+      "ticket": "20260727-1010064",
+      "due_antes": 1405,
+      "amount": 1405,
+      "ok": true,
+      "status": 201,
+      "despues": {
+        "due": 0,
+        "paid": 1405,
+        "tips": 0,
+        "total": 1405,
+        "open": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "caso": "F10 · edición durante el cobro",
+  "pasos": [
+    {
+      "paso": "B1",
+      "ticket": "20260726-1010019",
+      "mcm": "10054",
+      "clover": "WX9MGCNKQYR1J",
+      "total": 2054
+    },
+    {
+      "paso": "B2",
+      "pago": "J11D73NP3MDMA",
+      "parcial": 1027,
+      "paymentState": "PARTIALLY_PAID",
+      "mcm_paid": "10.27",
+      "mcm_pay_status": "partially_fulfilled"
+    },
+    {
+      "paso": "B4-B8",
+      "mcm_total": "20.54",
+      "pos_injection_error": null
+    },
+    {
+      "paso": "job_suplemento"
+    }
+  ],
+  "clover_primaria": {
+    "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/orders/WX9MGCNKQYR1J",
+    "id": "WX9MGCNKQYR1J",
+    "currency": "USD",
+    "total": 2054,
+    "externalReferenceId": "m7lpyr0",
+    "paymentState": "PARTIALLY_PAID",
+    "title": "MCM #10054",
+    "note": "",
+    "orderType": {
+      "id": "E409NQ4X4RQ0T"
+    },
+    "taxRemoved": false,
+    "isVat": false,
+    "state": "Open",
+    "manualTransaction": false,
+    "groupLineItems": true,
+    "testMode": false,
+    "createdTime": 1785137310000,
+    "clientCreatedTime": 1785137310000,
+    "modifiedTime": 1785137312000,
+    "lineItems": {
+      "elements": [
+        {
+          "id": "HC3SSHV4Z7ECP",
+          "orderRef": {
+            "id": "WX9MGCNKQYR1J"
+          },
+          "name": "Chips & Salsa",
+          "price": 600,
+          "printed": false,
+          "createdTime": 1785137311000,
+          "orderClientCreatedTime": 1785137310000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "HC3SSHV4Z7ECP"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 36
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "HC3SSHV4Z7ECP"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 6
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "9ZTEBYCASGVF2",
+          "orderRef": {
+            "id": "WX9MGCNKQYR1J"
+          },
+          "name": "Elote",
+          "price": 1300,
+          "printed": false,
+          "createdTime": 1785137311000,
+          "orderClientCreatedTime": 1785137310000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "AEYTXX25NKZKE",
+                "lineItemRef": {
+                  "id": "9ZTEBYCASGVF2"
+                },
+                "name": "reduced",
+                "rate": 600000,
+                "isDefault": false,
+                "taxAmount": 78
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "9ZTEBYCASGVF2"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false,
+                "taxAmount": 13
+              }
+            ]
+          },
+          "isOrderFee": false
+        },
+        {
+          "id": "2JWEZKW86N21J",
+          "orderRef": {
+            "id": "WX9MGCNKQYR1J"
+          },
+          "name": "Maintenance & Entertainment Fee",
+          "price": 19,
+          "printed": false,
+          "createdTime": 1785137311000,
+          "orderClientCreatedTime": 1785137310000,
+          "exchanged": false,
+          "refunded": false,
+          "isRevenue": true,
+          "taxRates": {
+            "elements": [
+              {
+                "id": "348P6Q73G0JX8",
+                "lineItemRef": {
+                  "id": "2JWEZKW86N21J"
+                },
+                "name": "estatal",
+                "rate": 1050000,
+                "isDefault": false,
+                "taxAmount": 2
+              },
+              {
+                "id": "BHNNEH2NBTGHA",
+                "lineItemRef": {
+                  "id": "2JWEZKW86N21J"
+                },
+                "name": "municipal",
+                "rate": 100000,
+                "isDefault": false
+              }
+            ]
+          },
+          "isOrderFee": false
+        }
+      ]
+    },
+    "payments": {
+      "elements": [
+        {
+          "id": "J11D73NP3MDMA",
+          "order": {
+            "id": "WX9MGCNKQYR1J"
+          },
+          "tender": {
+            "href": "https://sandbox.dev.clover.com/v3/merchants/7ES0TRRRYJCY1/tenders/4QPPVE0NFNBN4",
+            "id": "4QPPVE0NFNBN4"
+          },
+          "amount": 1027,
+          "tipAmount": 0,
+          "externalPaymentId": "CERT-N4RU-F10-P1",
+          "createdTime": 1785137313000,
+          "clientCreatedTime": 1785137313000,
+          "modifiedTime": 1785137312000,
+          "result": "SUCCESS"
+        }
+      ]
+    }
+  },
+  "omnivore_final": {
+    "discounts": 0,
+    "due": 2054,
+    "items": 1900,
+    "paid": 0,
+    "service_charges": 19,
+    "sub_total": 1900,
+    "tax": 135,
+    "tips": 0,
+    "total": 2054
+  },
+  "neighbors": {
+    "label": "F10",
+    "ok": true,
+    "detalle": [
+      {
+        "site_id": 25512412,
+        "orders_antes": "28",
+        "payments_antes": "23",
+        "orders_ahora": "28",
+        "payments_ahora": "23"
+      },
+      {
+        "site_id": 25612612,
+        "orders_antes": "299",
+        "payments_antes": "258",
+        "orders_ahora": "299",
+        "payments_ahora": "258"
+      },
+      {
+        "site_id": 48372619,
+        "orders_antes": "78",
+        "payments_antes": "271",
+        "orders_ahora": "78",
+        "payments_ahora": "271"
+      },
+      {
+        "site_id": 51021421,
+        "orders_antes": "7307",
+        "payments_antes": "7095",
+        "orders_ahora": "7307",
+        "payments_ahora": "7095"
+      },
+      {
+        "site_id": 99990001,
+        "orders_antes": "0",
+        "payments_antes": "0",
+        "orders_ahora": "0",
+        "payments_ahora": "0"
+      }
+    ],
+    "violaciones": []
+  }
+}

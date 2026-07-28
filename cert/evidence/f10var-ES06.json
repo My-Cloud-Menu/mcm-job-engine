@@ -1,0 +1,34 @@
+{
+  "casos": [
+    {
+      "tag": "7.12",
+      "titulo": "comp / cortesía 100 % (formato de descuento correcto)",
+      "ticket": "20260726-1010086",
+      "mcm": "10097",
+      "pos_total": 14,
+      "clover_total": 1405,
+      "sobrecobro": 1391
+    },
+    {
+      "tag": "10.4",
+      "titulo": "quitar un ítem después del pago (delta negativo)",
+      "ticket": "20260726-1010087",
+      "mcm": "10098",
+      "pos_antes": 2054,
+      "pos_despues": 2054,
+      "clover_total": 2054,
+      "error_visible": false,
+      "manifiesto": null
+    },
+    {
+      "tag": "10.2",
+      "titulo": "agregar dos veces el mismo ítem tras el pago",
+      "ticket": "20260726-1010088",
+      "mcm": "10099",
+      "pos_final": 649,
+      "suplementos": 0,
+      "clover_total": 649,
+      "ok": true
+    }
+  ]
+}

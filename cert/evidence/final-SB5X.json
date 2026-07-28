@@ -1,0 +1,1838 @@
+{
+  "detalle": [
+    {
+      "id": "10001",
+      "posTotal": 4432,
+      "mcmTotal": 4432,
+      "cloverTotal": 4432,
+      "posTax": 291,
+      "mcmTax": 291,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10002",
+      "posTotal": 6649,
+      "mcmTotal": 6649,
+      "cloverTotal": 6649,
+      "posTax": 385,
+      "mcmTax": 478,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10003",
+      "posTotal": 13613,
+      "mcmTotal": 13613,
+      "cloverTotal": 13613,
+      "posTax": 1146,
+      "mcmTax": 1146,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10004",
+      "posTotal": 2595,
+      "mcmTotal": 2595,
+      "cloverTotal": 2595,
+      "posTax": 171,
+      "mcmTax": 171,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10005",
+      "posTotal": 4432,
+      "mcmTotal": 4432,
+      "cloverTotal": 4432,
+      "posTax": 256,
+      "mcmTax": 318,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10006",
+      "posTotal": 7264,
+      "mcmTotal": 7264,
+      "cloverTotal": 7365,
+      "posTax": 420,
+      "mcmTax": 521,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10007",
+      "posTotal": 3447,
+      "mcmTotal": 3447,
+      "cloverTotal": 3447,
+      "posTax": 199,
+      "mcmTax": 247,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10008",
+      "posTotal": 19236,
+      "mcmTotal": 19236,
+      "cloverTotal": null,
+      "posTax": 1472,
+      "mcmTax": 1472,
+      "due": 0
+    },
+    {
+      "id": "10009",
+      "posTotal": 13306,
+      "mcmTotal": 13306,
+      "cloverTotal": 13306,
+      "posTax": 1106,
+      "mcmTax": 1070,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10010",
+      "posTotal": 6402,
+      "mcmTotal": 6402,
+      "cloverTotal": 6402,
+      "posTax": 370,
+      "mcmTax": 459,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10011",
+      "posTotal": 20747,
+      "mcmTotal": 20747,
+      "cloverTotal": 20747,
+      "posTax": 1588,
+      "mcmTax": 1588,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10012",
+      "posTotal": 6379,
+      "mcmTotal": 6379,
+      "cloverTotal": 6379,
+      "posTax": 420,
+      "mcmTax": 420,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10013",
+      "posTotal": 3027,
+      "mcmTotal": 3027,
+      "cloverTotal": null,
+      "posTax": 199,
+      "mcmTax": 199,
+      "due": 0
+    },
+    {
+      "id": "10014",
+      "posTotal": 6487,
+      "mcmTotal": 6487,
+      "cloverTotal": 6487,
+      "posTax": 427,
+      "mcmTax": 427,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10015",
+      "posTotal": 3892,
+      "mcmTotal": 3892,
+      "cloverTotal": 3892,
+      "posTax": 256,
+      "mcmTax": 256,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10016",
+      "posTotal": 5081,
+      "mcmTotal": 5081,
+      "cloverTotal": 5081,
+      "posTax": 334,
+      "mcmTax": 334,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10017",
+      "posTotal": 5896,
+      "mcmTotal": 5896,
+      "cloverTotal": 6271,
+      "posTax": 388,
+      "mcmTax": 388,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10018",
+      "posTotal": 3892,
+      "mcmTotal": 3892,
+      "cloverTotal": 3892,
+      "posTax": 256,
+      "mcmTax": 256,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10019",
+      "posTotal": 6271,
+      "mcmTotal": 6271,
+      "cloverTotal": 6271,
+      "posTax": 413,
+      "mcmTax": 413,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10020",
+      "posTotal": 6271,
+      "mcmTotal": 6271,
+      "cloverTotal": 6271,
+      "posTax": 413,
+      "mcmTax": 413,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10021",
+      "posTotal": 5731,
+      "mcmTotal": 5731,
+      "cloverTotal": 5731,
+      "posTax": 378,
+      "mcmTax": 378,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10022",
+      "posTotal": 4757,
+      "mcmTotal": 4757,
+      "cloverTotal": 4757,
+      "posTax": 313,
+      "mcmTax": 313,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10023",
+      "posTotal": 5406,
+      "mcmTotal": 5406,
+      "cloverTotal": 5406,
+      "posTax": 356,
+      "mcmTax": 356,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10024",
+      "posTotal": 22235,
+      "mcmTotal": 22235,
+      "cloverTotal": 22235,
+      "posTax": 2035,
+      "mcmTax": 2035,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10025",
+      "posTotal": 3892,
+      "mcmTotal": 3892,
+      "cloverTotal": 3892,
+      "posTax": 256,
+      "mcmTax": 256,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10026",
+      "posTotal": 4432,
+      "mcmTotal": 4432,
+      "cloverTotal": 4432,
+      "posTax": 256,
+      "mcmTax": 318,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10027",
+      "posTotal": 4432,
+      "mcmTotal": 4432,
+      "cloverTotal": 4432,
+      "posTax": 256,
+      "mcmTax": 318,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10028",
+      "posTotal": 6379,
+      "mcmTotal": 6379,
+      "cloverTotal": 6379,
+      "posTax": 420,
+      "mcmTax": 420,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10029",
+      "posTotal": 12059,
+      "mcmTotal": 12059,
+      "cloverTotal": 12059,
+      "posTax": 961,
+      "mcmTax": 961,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10030",
+      "posTotal": 4649,
+      "mcmTotal": 4649,
+      "cloverTotal": 4649,
+      "posTax": 306,
+      "mcmTax": 306,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10031",
+      "posTotal": 3676,
+      "mcmTotal": 3676,
+      "cloverTotal": 3676,
+      "posTax": 242,
+      "mcmTax": 242,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10032",
+      "posTotal": 8974,
+      "mcmTotal": 8974,
+      "cloverTotal": 8974,
+      "posTax": 591,
+      "mcmTax": 591,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10033",
+      "posTotal": 3027,
+      "mcmTotal": 3027,
+      "cloverTotal": 3027,
+      "posTax": 199,
+      "mcmTax": 199,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10034",
+      "posTotal": 3892,
+      "mcmTotal": 3892,
+      "cloverTotal": 3892,
+      "posTax": 256,
+      "mcmTax": 256,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10035",
+      "posTotal": 2595,
+      "mcmTotal": 2595,
+      "cloverTotal": null,
+      "posTax": 171,
+      "mcmTax": 171,
+      "due": 0
+    },
+    {
+      "id": "10036",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10037",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10038",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10039",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10040",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10041",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10042",
+      "posTotal": 2959,
+      "mcmTotal": 2959,
+      "cloverTotal": 2959,
+      "posTax": 232,
+      "mcmTax": 232,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10043",
+      "posTotal": 2959,
+      "mcmTotal": 2959,
+      "cloverTotal": 2959,
+      "posTax": 232,
+      "mcmTax": 232,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10044",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10045",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10046",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10047",
+      "posTotal": 541,
+      "mcmTotal": 541,
+      "cloverTotal": 541,
+      "posTax": 36,
+      "mcmTax": 36,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10048",
+      "posTotal": 4021,
+      "mcmTotal": 4021,
+      "cloverTotal": 5014,
+      "posTax": 295,
+      "mcmTax": 295,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10049",
+      "posTotal": 1647,
+      "mcmTotal": 1647,
+      "cloverTotal": 2054,
+      "posTax": 108,
+      "mcmTax": 108,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10050",
+      "posTotal": 17,
+      "mcmTotal": 17,
+      "cloverTotal": 1663,
+      "posTax": 2,
+      "mcmTax": 2,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10051",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10052",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2696,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10053",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10054",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "PARTIALLY_PAID"
+    },
+    {
+      "id": "10055",
+      "posTotal": 2595,
+      "mcmTotal": 2595,
+      "cloverTotal": 2054,
+      "posTax": 171,
+      "mcmTax": 171,
+      "due": 0,
+      "paymentState": "PARTIALLY_PAID"
+    },
+    {
+      "id": "10056",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 3054,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10057",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 1653,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10058",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10062",
+      "posTotal": 757,
+      "mcmTotal": 757,
+      "cloverTotal": 757,
+      "posTax": 50,
+      "mcmTax": 50,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10063",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10064",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10065",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10066",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10067",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10068",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10069",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10070",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10071",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10072",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10073",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10074",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10075",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10076",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10077",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10078",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10079",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10080",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10081",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10082",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10083",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10084",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10085",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10086",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10087",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10088",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10089",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10090",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10091",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10092",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10093",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10094",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10095",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10096",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10097",
+      "posTotal": 14,
+      "mcmTotal": 14,
+      "cloverTotal": 1405,
+      "posTax": 1,
+      "mcmTax": 1,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10098",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10099",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "PAID"
+    },
+    {
+      "id": "10100",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10101",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10102",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10103",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10104",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10105",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10106",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10107",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10108",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10109",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10110",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10111",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10112",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10113",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10114",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10115",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10116",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10117",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10118",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10119",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10120",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10121",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10122",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10123",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10124",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10125",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10126",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0
+    },
+    {
+      "id": "10127",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10128",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10129",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10130",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10131",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10132",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10133",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10135",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10137",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0
+    },
+    {
+      "id": "10139",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 2419,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10141",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10143",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10145",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0
+    },
+    {
+      "id": "10146",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0
+    },
+    {
+      "id": "10147",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10148",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10149",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10150",
+      "posTotal": 3067,
+      "mcmTotal": 3067,
+      "cloverTotal": 3067,
+      "posTax": 239,
+      "mcmTax": 239,
+      "due": 3067,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10151",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 649,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10152",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10153",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10154",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10155",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10156",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10157",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10158",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10159",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 2419,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10160",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 649,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10161",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10162",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10163",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10164",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 2419,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10165",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10166",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10167",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10168",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10169",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10170",
+      "posTotal": 3067,
+      "mcmTotal": 3067,
+      "cloverTotal": 3067,
+      "posTax": 239,
+      "mcmTax": 239,
+      "due": 3067,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10171",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 649,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10172",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10173",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10174",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10175",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10176",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10177",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10178",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 2419,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10179",
+      "posTotal": 0,
+      "mcmTotal": 0,
+      "cloverTotal": null,
+      "posTax": 0,
+      "mcmTax": 0,
+      "due": 0,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10180",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10181",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10182",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10183",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10184",
+      "posTotal": 2419,
+      "mcmTotal": 2419,
+      "cloverTotal": 2419,
+      "posTax": 197,
+      "mcmTax": 197,
+      "due": 2419,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10185",
+      "posTotal": 1662,
+      "mcmTotal": 1662,
+      "cloverTotal": 1662,
+      "posTax": 147,
+      "mcmTax": 147,
+      "due": 1662,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10186",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10187",
+      "posTotal": 649,
+      "mcmTotal": 649,
+      "cloverTotal": 649,
+      "posTax": 43,
+      "mcmTax": 43,
+      "due": 649,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10188",
+      "posTotal": 3067,
+      "mcmTotal": 3067,
+      "cloverTotal": 3067,
+      "posTax": 239,
+      "mcmTax": 239,
+      "due": 3067,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10189",
+      "posTotal": 1013,
+      "mcmTotal": 1013,
+      "cloverTotal": 1013,
+      "posTax": 104,
+      "mcmTax": 104,
+      "due": 1013,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10190",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10191",
+      "posTotal": 2054,
+      "mcmTotal": 2054,
+      "cloverTotal": 2054,
+      "posTax": 135,
+      "mcmTax": 135,
+      "due": 2054,
+      "paymentState": "OPEN"
+    },
+    {
+      "id": "10192",
+      "posTotal": 1405,
+      "mcmTotal": 1405,
+      "cloverTotal": 1405,
+      "posTax": 92,
+      "mcmTax": 92,
+      "due": 1405,
+      "paymentState": "OPEN"
+    }
+  ],
+  "resumen": {
+    "leidas": 183,
+    "descuadres": 10,
+    "sobrecobro": 7951,
+    "fantasmas": 105,
+    "montoFantasma": 334086,
+    "taxDiv": 8,
+    "taxDelta": 481,
+    "sumTaxPos": 32335,
+    "sumTaxMcm": 32816
+  }
+}

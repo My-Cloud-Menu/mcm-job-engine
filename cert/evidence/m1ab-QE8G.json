@@ -1,0 +1,74 @@
+{
+  "casos": [
+    {
+      "caso": "A",
+      "desc": "amount = due COMPLETO + propina  (lo que MCM debería enviar)",
+      "ticket": "20260727-1010058",
+      "due": 1405,
+      "amount": 1405,
+      "tip": 300,
+      "ok": true,
+      "status": 201,
+      "totals": {
+        "discounts": 0,
+        "due": 0,
+        "items": 1300,
+        "paid": 1405,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 300,
+        "total": 1405
+      }
+    },
+    {
+      "caso": "B",
+      "desc": "amount = due − propina + propina (lo que MCM envía HOY)",
+      "ticket": "20260727-1010059",
+      "due": 1405,
+      "amount": 1105,
+      "tip": 300,
+      "ok": false,
+      "status": 400,
+      "error": {
+        "description": "Insufficient amount applied to payment or discount.",
+        "error": "insufficient_amount",
+        "fields": [
+          "$.amount"
+        ]
+      },
+      "totals": {
+        "discounts": 0,
+        "due": 1405,
+        "items": 1300,
+        "paid": 0,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    },
+    {
+      "caso": "C",
+      "desc": "amount = due COMPLETO, sin propina (control ya conocido)",
+      "ticket": "20260727-1010060",
+      "due": 1405,
+      "amount": 1405,
+      "tip": 0,
+      "ok": true,
+      "status": 201,
+      "totals": {
+        "discounts": 0,
+        "due": 0,
+        "items": 1300,
+        "paid": 1405,
+        "service_charges": 13,
+        "sub_total": 1300,
+        "tax": 92,
+        "tips": 0,
+        "total": 1405
+      }
+    }
+  ]
+}

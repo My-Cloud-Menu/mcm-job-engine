@@ -1,0 +1,188 @@
+{
+  "casos": [
+    {
+      "tag": "M7b",
+      "ticket": "20260726-1010024",
+      "aloha": {
+        "discounts": 0,
+        "due": 0,
+        "items": 0,
+        "paid": 0,
+        "service_charges": 0,
+        "sub_total": 0,
+        "tax": 0,
+        "tips": 0,
+        "total": 0
+      },
+      "mcm": {
+        "id": "10059",
+        "site_id": "99990003",
+        "status": "new-order",
+        "payment_status": "not_fulfilled",
+        "total": "0.00",
+        "subtotal": "0.00",
+        "total_tax": "0.00",
+        "paid": "0.00",
+        "discount_total": "0.00",
+        "fee_total": "0.00",
+        "pos_id": "20260726-1010024",
+        "omnivore_pos_id": "20260726-1010024",
+        "clover_pos_id": null,
+        "clover_ticket_id": null,
+        "clover_payment_id": null,
+        "clover_line_items_hash": null,
+        "check_number": 1,
+        "table_id": "84d04880-7775-48d5-8f2c-ae601932ed32",
+        "channel": "pos",
+        "experience": "qe",
+        "line_items": [],
+        "tax_lines": [
+          {
+            "id": "taxline-0",
+            "rate": "10.5",
+            "label": "Tax Estatal",
+            "rate_id": "10001",
+            "compound": false,
+            "subtotal": 0,
+            "rate_code": "estatal-tax",
+            "tax_total": "0.00",
+            "additional_properties": {}
+          },
+          {
+            "id": "taxline-1",
+            "rate": "6",
+            "label": "Tax Reducido",
+            "rate_id": "10002",
+            "compound": false,
+            "subtotal": 0,
+            "rate_code": "reduced-tax",
+            "tax_total": "0.00",
+            "additional_properties": {}
+          },
+          {
+            "id": "taxline-2",
+            "rate": "1",
+            "label": "Tax Municipal",
+            "rate_id": "10004",
+            "compound": false,
+            "subtotal": 0,
+            "rate_code": "municipal-tax",
+            "tax_total": "0.00",
+            "additional_properties": {}
+          }
+        ],
+        "fee_lines": [
+          {
+            "id": "feeline-0",
+            "name": "Maintenance & Entertainment Fee",
+            "total": "0.00",
+            "tax_class": "standard",
+            "total_tax": "0.00",
+            "is_taxable": false,
+            "additional_properties": {}
+          }
+        ],
+        "additional_properties": {},
+        "issues": null,
+        "pos_injection_error": null,
+        "date_created": {},
+        "date_updated": {},
+        "closed_at": null
+      },
+      "pagos": [],
+      "clover": null
+    },
+    {
+      "tag": "M7c",
+      "ticket": "20260726-1010025",
+      "aloha": {
+        "discounts": 0,
+        "due": 0,
+        "items": 0,
+        "paid": 0,
+        "service_charges": 0,
+        "sub_total": 0,
+        "tax": 0,
+        "tips": 0,
+        "total": 0
+      },
+      "mcm": {
+        "id": "10060",
+        "site_id": "99990003",
+        "status": "new-order",
+        "payment_status": "not_fulfilled",
+        "total": "0.00",
+        "subtotal": "0.00",
+        "total_tax": "0.00",
+        "paid": "0.00",
+        "discount_total": "0.00",
+        "fee_total": "0.00",
+        "pos_id": "20260726-1010025",
+        "omnivore_pos_id": "20260726-1010025",
+        "clover_pos_id": null,
+        "clover_ticket_id": null,
+        "clover_payment_id": null,
+        "clover_line_items_hash": null,
+        "check_number": 1,
+        "table_id": null,
+        "channel": "pos",
+        "experience": "pu",
+        "line_items": [],
+        "tax_lines": [
+          {
+            "id": "taxline-0",
+            "rate": "10.5",
+            "label": "Tax Estatal",
+            "rate_id": "10001",
+            "compound": false,
+            "subtotal": 0,
+            "rate_code": "estatal-tax",
+            "tax_total": "0.00",
+            "additional_properties": {}
+          },
+          {
+            "id": "taxline-1",
+            "rate": "6",
+            "label": "Tax Reducido",
+            "rate_id": "10002",
+            "compound": false,
+            "subtotal": 0,
+            "rate_code": "reduced-tax",
+            "tax_total": "0.00",
+            "additional_properties": {}
+          },
+          {
+            "id": "taxline-2",
+            "rate": "1",
+            "label": "Tax Municipal",
+            "rate_id": "10004",
+            "compound": false,
+            "subtotal": 0,
+            "rate_code": "municipal-tax",
+            "tax_total": "0.00",
+            "additional_properties": {}
+          }
+        ],
+        "fee_lines": [
+          {
+            "id": "feeline-0",
+            "name": "Maintenance & Entertainment Fee",
+            "total": "0.00",
+            "tax_class": "standard",
+            "total_tax": "0.00",
+            "is_taxable": false,
+            "additional_properties": {}
+          }
+        ],
+        "additional_properties": {},
+        "issues": null,
+        "pos_injection_error": null,
+        "date_created": {},
+        "date_updated": {},
+        "closed_at": null
+      },
+      "pagos": [],
+      "clover": null
+    }
+  ]
+}

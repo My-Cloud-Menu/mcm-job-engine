@@ -1,0 +1,58 @@
+{
+  "ticket": "20260726-1010035",
+  "idempotency_id": "cert-n5-N1EM",
+  "intentos": [
+    {
+      "intento": 1,
+      "status": 500,
+      "payment_id": null,
+      "errors": [
+        {
+          "description": "POS did not respond to the request, but is expected to next time.",
+          "error": "pos_not_responding_retry"
+        }
+      ]
+    },
+    {
+      "intento": 2,
+      "status": 500,
+      "payment_id": null,
+      "errors": [
+        {
+          "description": "POS did not respond to the request, but is expected to next time.",
+          "error": "pos_not_responding_retry"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "due": 649,
+    "paid": 649,
+    "tips": 200,
+    "total": 649
+  },
+  "pagos": [
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010035/payments/105906187/",
+          "type": "application/json; name=payment"
+        }
+      },
+      "amount": 649,
+      "id": "105906187",
+      "tip": 100
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tickets/20260726-1010035/payments/105906188/",
+          "type": "application/json; name=payment"
+        }
+      },
+      "amount": 0,
+      "id": "105906188",
+      "tip": 100
+    }
+  ]
+}

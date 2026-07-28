@@ -18,23 +18,36 @@ vi.mock('../../src/lib/credentials', () => ({
 vi.mock('../../src/lib/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), child: () => ({ info: vi.fn() }) },
 }));
+// Builder encadenable genérico: cualquier secuencia de filtros (.eq/.neq/.not/.lt/…) devuelve
+// el mismo builder, y el resultado se obtiene con await, .maybeSingle() o .single(). Modela el
+// PostgREST real lo bastante como para cubrir todas las queries del handler y de sus helpers
+// (`readOmnivoreApplied`, `writeOmnivoreApplied`, `reconcileOrderIssues`, la escalada de
+// `job_steps.max_attempts`) sin tener que enumerar cada cadena a mano.
+const FILTER_OPS = ['eq', 'neq', 'not', 'lt', 'lte', 'gt', 'gte', 'is', 'in', 'order', 'limit', 'select'];
+
+function makeChain(result: any) {
+  const builder: any = {
+    maybeSingle: async () => result,
+    single: async () => result,
+    then: (onOk: any, onErr: any) => Promise.resolve(result).then(onOk, onErr),
+  };
+  for (const op of FILTER_OPS) builder[op] = () => builder;
+  return builder;
+}
+
 vi.mock('../../src/lib/supabase', () => ({
   supabase: {
     from: (table: string) => ({
-      // payments.select('pos_id' | 'additional_properties').eq().eq().maybeSingle()
-      select: () => ({
-        eq: () => ({
-          eq: () => ({
-            maybeSingle: async () => ({
-              data: { pos_id: h.existingPosId, additional_properties: h.existingAdditionalProps },
-            }),
-          }),
-        }),
-      }),
-      // payments.update({pos_id}).eq().eq()  | orders.update({issues}).eq().eq()
+      select: () =>
+        makeChain(
+          table === 'payments'
+            ? { data: { pos_id: h.existingPosId, additional_properties: h.existingAdditionalProps }, error: null }
+            : // `integration_jobs` → reconcileOrderIssues busca hermanos pendientes: ninguno.
+              { data: [], error: null }
+        ),
       update: (patch: any) => {
         h.paymentUpdates.push({ table, patch });
-        return { eq: () => ({ eq: async () => ({ error: null }) }) };
+        return makeChain({ data: [{ id: 'x' }], error: null });
       },
     }),
   },
@@ -127,5 +140,85 @@ describe('omnivore payment_injection handler', () => {
 
     expect(out).toMatchObject({ skipped: 'already_applied', omnivore_payment_id: 'ALREADY-OMNI' });
     expect(h.post).not.toHaveBeenCalled();
+  });
+
+  // ── Contención: el mesero tiene el ticket abierto en el terminal ───────────────
+  // Omnivore responde `ticket_locked`, que `error-map.ts` clasifica como error de NEGOCIO
+  // (no-retryable). Para ESTE handler standalone lo tratamos como contención y reintentamos.
+
+  /** Error tal como lo devuelve Omnivore: slug en el body, con HTTP no-5xx. */
+  const omnivoreError = (slug: string, status = 400) =>
+    Object.assign(new Error('Request failed with status code ' + status), {
+      isAxiosError: true,
+      response: { status, data: { errors: [{ error: slug, description: `${slug} description` }] } },
+    });
+
+  /** Step fresco por test: el handler MUTA `max_attempts`, así que no puede compartirse. */
+  const freshStep = () => ({ id: 'step-1', idempotency_key: 'k', attempt_count: 0, max_attempts: 5 }) as any;
+
+  function runWithStep(s: any) {
+    return handler({
+      stepInput: {},
+      jobPayload: { payment_id: 55, order_id: 123, ticket_id: 'TICKET-9', payment },
+      context: {},
+      job,
+      step: s,
+    });
+  }
+
+  it('ticket_locked: se vuelve retryable, sube el techo del step a 31 y espacia ~60s', async () => {
+    h.post.mockRejectedValue(omnivoreError('ticket_locked'));
+    const s = freshStep();
+
+    const err: any = await runWithStep(s).then(
+      () => { throw new Error('debió lanzar'); },
+      (e) => e
+    );
+
+    expect(err.code).toBe('OMNIVORE_TICKET_LOCKED');
+    expect(err.retryable).toBe(true);
+    // Ritmo plano de 60s ±10% de jitter — mantiene 1 fallo/min, lejos del umbral del breaker.
+    expect(err.retryAfterSeconds).toBeGreaterThanOrEqual(54);
+    expect(err.retryAfterSeconds).toBeLessThanOrEqual(66);
+
+    // Techo elevado en memoria (lo lee el executor en esta misma pasada) y persistido.
+    expect(s.max_attempts).toBe(31);
+    const stepUpdate = h.paymentUpdates.find((u) => u.table === 'job_steps');
+    expect(stepUpdate.patch).toMatchObject({ max_attempts: 31 });
+  });
+
+  it('ticket_locked: marca orders.issues desde el PRIMER fallo, sin esperar a agotarse', async () => {
+    h.post.mockRejectedValue(omnivoreError('ticket_locked'));
+    const s = freshStep();
+
+    await runWithStep(s).catch(() => {});
+
+    const issueUpdate = h.paymentUpdates.find((u) => u.table === 'orders' && u.patch.issues);
+    expect(issueUpdate).toBeTruthy();
+    expect(issueUpdate.patch.issues.friendly_error).toContain('ticket_locked');
+  });
+
+  it('ticket_locked: no vuelve a subir el techo si el step ya lo tiene', async () => {
+    h.post.mockRejectedValue(omnivoreError('ticket_locked'));
+    const s = { ...freshStep(), max_attempts: 31 };
+
+    await runWithStep(s).catch(() => {});
+
+    expect(h.paymentUpdates.find((u) => u.table === 'job_steps')).toBeUndefined();
+  });
+
+  it('ticket_closed sigue siendo terminal (no se contagia de la excepción de ticket_locked)', async () => {
+    h.post.mockRejectedValue(omnivoreError('ticket_closed'));
+    const s = freshStep();
+
+    const err: any = await runWithStep(s).then(
+      () => { throw new Error('debió lanzar'); },
+      (e) => e
+    );
+
+    expect(err.code).toBe('OMNIVORE_TICKET_CLOSED');
+    expect(err.retryable).toBe(false);
+    expect(s.max_attempts).toBe(5);
+    expect(h.paymentUpdates.find((u) => u.table === 'job_steps')).toBeUndefined();
   });
 });

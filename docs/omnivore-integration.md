@@ -21,8 +21,10 @@ buildOmnivorePaymentBody(payment)           handlers/omnivore/inject/
 enqueueOmnivorePaymentInjection(payment)      payment_injection → POST /tickets/:id/payments
   → enqueue_job(pos_injection, 1 step)
 
-sync_schedules (omnivore/fetch_recent_orders) handlers/omnivore/sync/
-  ← ensure_sync_schedules RPC (dashboard)      fetch_recent_orders → fetch today + upsert
+sync_schedules (omnivore/fetch_open_orders)  handlers/omnivore/sync/
+  ← ensure_sync_schedules RPC (dashboard)      fetch_open_orders   → 20s · eq(open,true)
+sync_schedules (omnivore/fetch_closed_orders)  fetch_closed_orders → 90s · ventana 24h + open
+                                              (fetch_recent_orders → retirado, ver §4)
 ```
 
 La construcción del payload **no se reescribió**; vive en
@@ -117,15 +119,60 @@ el pago, y persiste `payments.pos_id`. Fallo terminal → `orders.issues`.
   `receive-omnivore-order-webhook`. **Requiere redeploy del worker** para activar el
   guard en el camino recurrente (las funciones edge ya se desplegaron). NO se usa un
   trigger global de DB porque rompería el `reopen-check` legítimo (manager PIN).
-- `fetch-recent-orders.ts`: handler `omnivore.fetch_recent_orders`. Trae los
-  tickets de **hoy** (abiertos **y** cerrados, ventana PR UTC-4) para capturar
-  los cierres **sin** el webhook, hace upsert y `complete_sync_schedule`.
+### Dos carriles (2026-07-27)
 
-**Scheduling**: el dashboard llama `ensure_sync_schedules(site, 'omnivore', enabled)`
-al guardar la integración con `syncOrdersAutomatically` → crea la fila
-`sync_schedules (omnivore, fetch_recent_orders, 60s)`. El scheduler
-(`claim_due_schedules`, leader-elected) encola un job `pos_sync` cada 60s;
-el leader lock evita doble corrida.
+Antes había **un solo** schedule, `fetch_recent_orders` (60s), cuyo handler hacía las dos
+pasadas juntas. Medido en Dev, ese ciclo tardaba **68–84 s** (la API son ~15 s; el resto es
+el `SELECT` por ticket del loop de upsert, ~162 ms × 197), así que una mesa lista para
+cobrar tardaba más de un minuto en aparecer. Ahora está partido:
+
+| `sync_type` | Intervalo | Query | Para qué |
+|---|---|---|---|
+| `fetch_open_orders` | **20 s** | `eq(open,true)` | Carril rápido. Una sola pasada, ~66 tickets, ciclo medido ~19 s. Es la MISMA query que `orderandpay-login` ya dispara en cada login de mesero. **No detecta cierres** (un ticket cerrado desaparece de `eq(open,true)`). |
+| `fetch_closed_orders` | **90 s** | `and(gte(opened_at,now-24h),lte(opened_at,now+60))` **+** `eq(open,true)`, dedup por id | Barrido completo — el cuerpo de `fetch_recent_orders` sin cambios. Es quien **detecta los cierres** sin el webhook: la ventana trae los tickets del período abiertos *y* cerrados. |
+
+- `fetch-open-orders.ts` / `fetch-closed-orders.ts`: los dos handlers. Ambos escriben por el
+  mismo `upsertOmnivoreOrders`, que ya es seguro ante ejecuciones concurrentes (UNIQUE
+  `(site_id, omnivore_pos_id)` + upsert `ignoreDuplicates`, freshness guard por
+  `omnivore_synced_at`, CAS sobre `date_updated`, guard `orderHasAppliedPayment`).
+- `fetch-recent-orders.ts`: **retirado pero NO borrado**. Su fila de schedule quedó
+  `disabled` y el handler sigue registrado, para los jobs en vuelo y para el rollback
+  (reactivar esa fila y desactivar las dos nuevas).
+- La ventana rodante bajó de **36 h a 24 h** (`order-mapper.ts::getTodayWindowUnix`). 24 h
+  siguen cubriendo el cruce de medianoche. Hueco conocido: un ticket abierto hace más de 24 h
+  que se cierra ahora sale del pase `open` y queda fuera de la ventana ⇒ su cierre no
+  sincroniza. Si hace falta cerrarlo, la vía verificada contra la API es
+  `and(eq(open,false),gte(closed_at,now-24h))`.
+
+**Los 20 s / 90 s son un objetivo, no una garantía.** Una página de `/tickets` cuesta 4–9 s
+aunque se pidan campos mínimos (la latencia es del agente Aloha, no del payload), y el loop de
+upsert suma ~162 ms por ticket. El gate de serialización de `claim_due_schedules` impide que se
+acumulen jobs: **se pierden ticks en vez de encolarse**.
+
+Medido en Dev el 2026-07-27, sobre 8 min de corrida real:
+
+| Site | Rápido (avg / cadencia real) | Lento (avg / cadencia real) | Antes (carril único) |
+|---|---|---|---|
+| 51021421 · 0 abiertas | 0.9 s / **20 s** | 96.9 s · 451 tickets / 184 s | — |
+| 25612612 · 69 abiertas | 18.2 s / **24 s** | 56.3 s · 201 tickets / 94 s | 44–55 s |
+| 99990003 · 69 abiertas | 24.5 s / **39 s** | 76.2 s · 201 tickets / 80 s | 68–84 s |
+
+O sea: lo abierto pasó de refrescarse cada 44–84 s a cada 20–39 s. La cadencia se degrada con
+el número de mesas abiertas simultáneas, y el carril lento se pasa de 90 s en los sites con
+muchos tickets en la ventana.
+
+**Timeouts conocidos (decisión consciente).** `client.ts` usa `timeout: 20_000` compartido con
+la inyección. En la corrida de arriba eso produjo **5 `timeout of 20000ms exceeded` en 20 min**
+(dos de ellos cortando el carril rápido justo a los 20003 ms, a mitad de la paginación). Los
+reintentos los absorben —0 dead-letters, todos los schedules en `consecutive_failures = 0`—
+pero se pierde ~1 de cada 12 ciclos. Se decidió NO subirlo para no tocar también el path de
+fire/void síncrono. Si algún día se quiere arreglar, la vía es un timeout opcional por cliente
+usado solo desde estos dos handlers (recomendación de `audits/2026-06-13`, 40 s).
+
+**Scheduling**: el dashboard llama `ensure_sync_schedules(site, 'omnivore', enabled)` al
+guardar la integración; el **mismo** flag de siempre (`syncOrdersAutomatically`) gobierna los
+dos carriles. El scheduler (`claim_due_schedules`, leader-elected) encola un job `pos_sync`
+por carril; el leader lock evita doble corrida.
 
 ## 5. Clasificación de errores (`error-map.ts`)
 
@@ -140,6 +187,33 @@ y a menudo con HTTP **no-5xx**. Por eso **el slug manda sobre el status HTTP**:
 
 `mapOmnivoreError` devuelve un `HandlerError` con el `retryable` correcto;
 `assertNoOmnivoreErrors` cubre el caso de HTTP 200 con `errors`.
+
+### Excepción: `ticket_locked` en `payment_injection` (2026-07-27)
+
+`ticket_locked` = el mesero tiene el ticket abierto en el terminal. Sigue siendo error de
+negocio terminal en todos lados **menos** en el job standalone `payment_injection`, donde el
+dinero ya se cobró en MCM y tiene que llegar al POS sí o sí. Ahí el handler
+(`inject/payment.ts`) lo trata como **contención** y no como fallo permanente:
+
+- Sube el techo del propio step a **31 intentos** (`UPDATE job_steps SET max_attempts`, más la
+  mutación en memoria para que el executor lo vea en la misma pasada). Se hace desde el worker
+  y no en el productor porque cambiar el `max_attempts: 5` del edge obligaría a redesplegar
+  ~20 edge functions del camino de cobro.
+- Reintenta con un ritmo **plano de 60 s** (±10 % de jitter) vía `HandlerError.retryAfterSeconds`,
+  que el executor honra por encima del perfil de backoff ⇒ el perfil compartido
+  `payment_injection: [30,30,30,30]` queda intacto para el resto de errores y para Clover.
+  **31 × 60 s ≈ 30 min** de cobertura.
+- El ritmo plano de 60 s es lo que hace innecesario tocar el circuit breaker: a 1 fallo por
+  minuto harían falta ~10 pagos trabados a la vez para acercarse al umbral (10 fallos/60 s), y
+  cualquier inyección exitosa limpia el contador.
+- Marca `orders.issues` **desde el primer fallo** (sin esperar a `willTerminate`) para que el
+  pago pendiente sea visible durante la espera. Es un slot JSONB único que se sobrescribe, y
+  `reconcileOrderIssues` lo pone en `null` cuando el pago finalmente entra.
+
+Reintentar no duplica el tender: el guard de reconcile-before-repost (`payment.ts`, activo con
+`attempt_count > 0`) corre en cada reintento y, si un intento previo llegó a aplicar el pago,
+lo detecta por `comment` + `amount` y sale sin re-postear. Si el mesero **cierra** el ticket
+durante la espera, el siguiente intento devuelve `ticket_closed` → terminal, como debe ser.
 
 ## 6. Máquina de estados (spec → job-engine)
 

@@ -23,14 +23,20 @@ const FIELDS =
   `${nestOmnivoreModifiers(5)},` +
   'menu_item(id,menu_categories(id)))';
 
-// WS-5/F17 (auditoría 2026-06-09): ventana RODANTE de 36h sobre `opened_at` (antes
-// era "hoy" calendario PR). Una mesa abierta ayer 11pm y cerrada hoy 12:30am tiene
-// opened_at=ayer y quedaba fuera de la ventana "hoy" → su cierre nunca sincronizaba.
-// 36h cubre el cruce de medianoche; el pase `open` (fetch-recent-orders) cubre mesas
-// aún abiertas más viejas.
+// WS-5/F17 (auditoría 2026-06-09): ventana RODANTE sobre `opened_at` (antes era "hoy"
+// calendario PR). Una mesa abierta ayer 11pm y cerrada hoy 12:30am tiene opened_at=ayer
+// y quedaba fuera de la ventana "hoy" → su cierre nunca sincronizaba. La ventana rodante
+// cubre el cruce de medianoche; el pase `open` cubre las mesas aún abiertas más viejas.
+//
+// 2026-07-27: 36h → 24h (decisión del usuario). 24h rodantes siguen cubriendo el cruce de
+// medianoche (la mesa de ayer 11pm sigue dentro hasta esta noche); lo que se pierde es el
+// margen extra. Consecuencia conocida: un ticket abierto hace MÁS de 24h que se cierra
+// ahora sale del pase `open` y queda fuera de esta ventana → su cierre no sincroniza.
+// Solo afecta mesas dejadas abiertas más de un día. Si hiciera falta cerrar ese hueco, la
+// vía verificada es filtrar por `closed_at`: and(eq(open,false),gte(closed_at,now-24h)).
 function getTodayWindowUnix(): { startUnix: number; endUnix: number } {
   const nowMs = Date.now();
-  const LOOKBACK_MS = 36 * 60 * 60 * 1000;
+  const LOOKBACK_MS = 24 * 60 * 60 * 1000;
   return {
     startUnix: Math.floor((nowMs - LOOKBACK_MS) / 1000),
     endUnix: Math.floor(nowMs / 1000) + 60, // +60s de holgura por skew de reloj
@@ -39,9 +45,12 @@ function getTodayWindowUnix(): { startUnix: number; endUnix: number } {
 
 /**
  * Fetches Omnivore tickets, following HAL `_links.next` pagination. Mirrors the
- * legacy `getOmnivoreOrders`. `mode='today'` returns today's opened tickets
- * (open AND closed — replaces the webhook's close detection); `mode='open'`
- * returns only open tickets.
+ * legacy `getOmnivoreOrders`. `mode='today'` returns the tickets opened inside the
+ * rolling window (open AND closed — replaces the webhook's close detection);
+ * `mode='open'` returns only open tickets, sin cota de tiempo.
+ *
+ * Consumidores: `fetch_closed_orders` usa AMBOS modos (barrido completo, 90s) y
+ * `fetch_open_orders` usa solo `'open'` (carril rápido, 20s).
  */
 export async function fetchOmnivoreOrders(
   client: AxiosInstance,

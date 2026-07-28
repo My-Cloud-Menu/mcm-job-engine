@@ -1,0 +1,487 @@
+{
+  "tenders": [
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/1/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "1",
+      "name": "CASH",
+      "pos_id": "1"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/10/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "10",
+      "name": "Pax Termin",
+      "pos_id": "10"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/102/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "102",
+      "name": "Lock Bday",
+      "pos_id": "102"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/18/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "18",
+      "name": "Gift Card",
+      "pos_id": "18"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/2/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "2",
+      "name": "Tar AMEX",
+      "pos_id": "2"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/21/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "21",
+      "name": "AR",
+      "pos_id": "21"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/22/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "22",
+      "name": "UVA",
+      "pos_id": "22"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/23/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "23",
+      "name": "DoorDash 2",
+      "pos_id": "23"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/26/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "26",
+      "name": "Pay@Table",
+      "pos_id": "26"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/27/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "27",
+      "name": "AMEX",
+      "pos_id": "27"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/28/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "28",
+      "name": "VISA",
+      "pos_id": "28"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/29/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "29",
+      "name": "MasterCard",
+      "pos_id": "29"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/3/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "3",
+      "name": "Tar Visa",
+      "pos_id": "3"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/30/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "30",
+      "name": "Discover",
+      "pos_id": "30"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/300/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "300",
+      "name": "UBER EATS",
+      "pos_id": "300"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/33/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "33",
+      "name": "GC DTMO",
+      "pos_id": "33"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/4/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "4",
+      "name": "Tar M/C",
+      "pos_id": "4"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/5/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "5",
+      "name": "CC OFFLINE",
+      "pos_id": "5"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/501/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "501",
+      "name": "Declinado",
+      "pos_id": "501"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/502/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "502",
+      "name": "Fallido",
+      "pos_id": "502"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/6/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "6",
+      "name": "DISCOVER",
+      "pos_id": "6"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/7/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "7",
+      "name": "ATH",
+      "pos_id": "7"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/8/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "8",
+      "name": "DinersClub",
+      "pos_id": "8"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/800/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "800",
+      "name": "CpTM $30",
+      "pos_id": "800"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/9/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "9",
+      "name": "ATH Mob\\QR",
+      "pos_id": "9"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/900/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "900",
+      "name": "CP Card",
+      "pos_id": "900"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/901/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "901",
+      "name": "PP NYE Tin",
+      "pos_id": "901"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/902/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "902",
+      "name": "DTMO HW200",
+      "pos_id": "902"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/903/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "903",
+      "name": "DTMO HW150",
+      "pos_id": "903"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/904/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "904",
+      "name": "DTMO HW100",
+      "pos_id": "904"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/905/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "905",
+      "name": "DTMO GA50",
+      "pos_id": "905"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/906/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "906",
+      "name": "TMOB SV25",
+      "pos_id": "906"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/907/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "907",
+      "name": "PRISA DirB",
+      "pos_id": "907"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/908/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": false,
+      "id": "908",
+      "name": "DTMO DirB",
+      "pos_id": "908"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/975/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "975",
+      "name": "SPC VISA",
+      "pos_id": "975"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/976/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "976",
+      "name": "SPC M/C",
+      "pos_id": "976"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/977/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "977",
+      "name": "SPC DISC",
+      "pos_id": "977"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/978/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "978",
+      "name": "SPC AMEX",
+      "pos_id": "978"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/979/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "979",
+      "name": "SPC OTHER",
+      "pos_id": "979"
+    },
+    {
+      "_links": {
+        "self": {
+          "href": "https://api.omnivore.io/1.0/locations/cx9oRBRi/tender_types/980/",
+          "type": "application/hal+json; name=tender_type"
+        }
+      },
+      "allows_tips": true,
+      "id": "980",
+      "name": "SPC EMV",
+      "pos_id": "980"
+    }
+  ],
+  "itemsWithPrice": 0,
+  "std": [],
+  "red": []
+}

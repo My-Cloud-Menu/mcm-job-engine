@@ -1,0 +1,30 @@
+[
+  {
+    "tag": "R5b",
+    "ticket": "20260726-1010014",
+    "mcm": "10049",
+    "discount": "c39",
+    "sin_descuento": 2054,
+    "pos_total": 1647,
+    "pos_disc": 380,
+    "mcm_total": "16.47",
+    "clover_total": 2054,
+    "delta": 407,
+    "pos_injection_error": null,
+    "cuadra": false
+  },
+  {
+    "tag": "R5c",
+    "ticket": "20260726-1010015",
+    "mcm": "10050",
+    "discount": "c83",
+    "sin_descuento": 1662,
+    "pos_total": 17,
+    "pos_disc": 1500,
+    "mcm_total": "0.17",
+    "clover_total": 1663,
+    "delta": 1646,
+    "pos_injection_error": null,
+    "cuadra": false
+  }
+]
