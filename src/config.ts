@@ -57,6 +57,15 @@ export const config = {
     enabled: optional('RESEND_API_KEY', '') !== '',
   },
 
+  // Cierre automático de lote (auto_settle_dispatch). `onlineWindowMin` = antigüedad máxima de
+  // `devices.op_last_seen_at` para considerar que al terminal vale la pena empujarle el comando. El
+  // heartbeat del handheld corre cada 60 s, así que 10 min separa con holgura "vivo" de "apagado".
+  // Se deja configurable por si aparece el caso del device en background con el socket vivo pero el
+  // heartbeat pausado, que esta ventana excluiría.
+  autoSettle: {
+    onlineWindowMin: Number(optional('AUTO_SETTLE_ONLINE_WINDOW_MIN', '10')),
+  },
+
   // Printing (cola 'printing'): el handler dispatch_qz delega el push al gateway WS del print-service;
   // dispatch_star postea al REST de Star. Creds de Star por sitio (printers.config) con fallback a env.
   printing: {
