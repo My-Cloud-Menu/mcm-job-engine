@@ -1,7 +1,7 @@
 import express from 'express';
 import { config } from './config';
 import { logger } from './lib/logger';
-import { getAllCircuitStates } from './core/circuit-breaker';
+import { getAllCircuitStates, isEnabled as circuitBreakerEnabled } from './core/circuit-breaker';
 
 interface WorkerStatus {
   active_jobs: number;
@@ -32,7 +32,8 @@ export function startServer(getStatus: () => WorkerStatus): void {
       version: process.env['npm_package_version'] ?? 'unknown',
       env: config.env,
       ...status,
-      circuit_breakers: getAllCircuitStates(),
+      circuit_breaker_enabled: circuitBreakerEnabled(),
+      circuit_breakers: circuitBreakerEnabled() ? getAllCircuitStates() : null,
       uptime_seconds: Math.floor(process.uptime()),
     });
   });

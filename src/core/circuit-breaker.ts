@@ -27,10 +27,19 @@ function getOrCreate(integration: string, queue: string): BreakerState {
   return state;
 }
 
+export function isEnabled(): boolean {
+  return config.circuitBreaker.enabled;
+}
+
 export function checkCircuit(
   integration: string,
   queue: string
 ): { allowed: boolean; reason?: string } {
+  // Apagado (CB_ENABLED=false, el default): nunca se bloquea un job. Un POS caído hace fallar
+  // sus propias llamadas y el backoff las espacia; el sync se reanuda solo al volver la
+  // integración, sin esperar cooldown ni intervención manual.
+  if (!config.circuitBreaker.enabled) return { allowed: true };
+
   const breaker = getOrCreate(integration, queue);
   const now = Date.now();
 
@@ -57,6 +66,8 @@ export function checkCircuit(
 }
 
 export function recordSuccess(integration: string, queue: string): void {
+  if (!config.circuitBreaker.enabled) return;
+
   const breaker = getOrCreate(integration, queue);
 
   if (breaker.state === 'half_open') {
@@ -88,6 +99,8 @@ export function recordSuccess(integration: string, queue: string): void {
 }
 
 export function recordFailure(integration: string, queue: string): void {
+  if (!config.circuitBreaker.enabled) return;
+
   const breaker = getOrCreate(integration, queue);
   const now = Date.now();
   const windowMs = config.circuitBreaker.windowSeconds * 1000;

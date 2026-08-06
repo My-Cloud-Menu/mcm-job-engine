@@ -282,9 +282,19 @@ where integration = 'omnivore' and site_id is null and queue_name is null;
 - Look for jobs with `locked_until` in the past and `status = 'running'` — `recover_stuck_jobs()` runs every minute via pg_cron, but you can call it manually.
 
 **Circuit breaker open**
-- Check `GET /` on the worker container for `circuit_breakers` state.
-- Look at recent `job_step_attempts` for the integration to identify the root error.
-- After fixing the external API issue, the breaker auto-transitions to `half_open` after `CB_COOLDOWN_SECONDS`.
+- Since 2026-08-06 the breaker ships **disabled** (`CB_ENABLED=false`): a POS being down must never
+  stop the sync, and when it comes back the sync resumes on its own. `GET /` reports
+  `circuit_breaker_enabled: false` and `circuit_breakers: null`.
+- Only relevant with `CB_ENABLED=true`: check `GET /` for `circuit_breakers` state, look at recent
+  `job_step_attempts` for the integration to identify the root error, and note the breaker
+  auto-transitions to `half_open` after `CB_COOLDOWN_SECONDS`.
+- Do not re-enable it before keying it by `site_id` — today its key is `(integration, queue)`, so
+  one dead location blocks every site on that integration.
+
+**A sync stopped and never came back**
+- Check `sync_schedules.status`. `failing` no longer blocks the scheduler (migration 032): it keeps
+  retrying every 5 min minimum and returns to `active` on the first success.
+- `paused` / `disabled` are intentional off switches — those do need a manual flip.
 
 **Alerts not arriving**
 - Verify Resend domain is verified and `RESEND_API_KEY` is set.

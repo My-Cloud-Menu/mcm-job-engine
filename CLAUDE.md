@@ -221,6 +221,7 @@ supabase stop
 | `WORKER_HEARTBEAT_INTERVAL_MS` | — | `60000` | How often heartbeat extends lease |
 | `RUN_SCHEDULER` | — | `false` | Set `true` on exactly ONE replica |
 | `RUN_ALERT_DISPATCHER` | — | `false` | Set `true` on exactly ONE replica |
+| `CB_ENABLED` | — | `false` | **Breaker apagado por defecto** (2026-08-06). Las tres de abajo sólo aplican con `true` |
 | `CB_THRESHOLD` | — | `10` | Failures in window before breaker opens |
 | `CB_WINDOW_SECONDS` | — | `60` | Circuit breaker measurement window |
 | `CB_COOLDOWN_SECONDS` | — | `300` | Time in open state before half-open |
@@ -228,6 +229,9 @@ supabase stop
 | `RESEND_API_KEY` | — | — | Required for operational email alerts |
 | `ALERT_FROM_EMAIL` | — | `alerts@visionarysoft.com` | |
 | `ALERT_EMAILS` | — | `csantos@mycloudmenu.com` | Comma-separated recipients |
+| `ALERT_RATE_LIMIT_PER_HOUR` | — | `20` | Cupo horario de `warning`/`info` por destinatario |
+| `ALERT_RATE_LIMIT_CRITICAL_PER_HOUR` | — | `60` | Carril propio de `critical` — no lo consume el ruido |
+| `ALERT_RATE_LIMIT_PER_SITE_PER_HOUR` | — | `6` | Techo por site para `warning`/`info` |
 
 ---
 
@@ -276,7 +280,13 @@ SELECT * FROM alerts_recent_view;
 
 **Idempotency toward external POS APIs is the #1 risk.** `enqueue_job` is idempotent (DB level), and each step has an `idempotency_key` field — but handlers must actively use it when calling Omnivore/Clover. If a step succeeds at the API but fails before `complete_step()` is committed, the retry will re-call the POS. Verify each inject handler uses idempotency headers or does check-then-create.
 
-**Circuit breakers are in-memory per worker process.** Each worker tracks failure state independently. If you have 4 workers and Omnivore goes down, each worker opens its own breaker at its own threshold — not shared state. This is acceptable at current scale but would need a shared store (Redis/DB) at higher worker counts.
+**El circuit breaker está APAGADO (`CB_ENABLED=false`, default desde 2026-08-06).** La regla de negocio es: *el sync siempre corre*. Si una integración se cae 3 horas y vuelve, el sync la retoma solo, sin cooldown ni intervención. Encendido no cumplía eso: su llave es `(integration, queue)` **sin site**, así que un solo POS caído —incluido un sandbox de demo— bloqueaba el sync de todos los demás sites de esa integración. Incidente del 2026-08-06: Arena Medalla (site vivo, POS sano) estuvo 3h11m sin sincronizar en pleno servicio porque las locations muertas de certificación abrían el breaker compartido. Antes de volver a encenderlo hay que meter el `site_id` en la llave.
+
+**`sync_status.health` mide ÉXITO, no actividad del scheduler** (migración 033). Hasta entonces respondía "¿pasó el scheduler por aquí?": `claim_due_schedules` avanzaba `last_run_at` aunque el gate de serialización decidiera no encolar nada, y `consecutive_failures` sólo sube desde el handler —que con el breaker abierto nunca corría—, así que un apagón de 3h se veía `healthy`. Ahora `sync_schedules.last_success_at` lo escribe `complete_sync_schedule` y `stale` se calcula contra él, con un piso de 5 min para no dar falsos positivos en los syncs de 20s. `last_run_at` pasó a significar "último encolado real".
+
+**Las alertas no se tapan entre sí** (migración 034). El cupo era uno solo (20/h por destinatario contando todo) y `processAlert` suprimía sin mirar severidad: un `critical` se callaba igual que un `info`, y lo callaba el ruido de otro site. Ahora `critical` tiene carril propio, `warning`/`info` comparten el global más un techo por site, y `enqueue_alert` aplica un cool-down por `dedupe_key` (critical 5 min · warning 15 · info 30) agrupando en la fila ya enviada en vez de mandar otro email.
+
+**Un schedule en `failing` NO es un punto muerto** (migración 032). `fail_sync_schedule` marca `failing` a los 5 fallos seguidos, pero `claim_due_schedules` lo sigue tomando con la cadencia atenuada a mínimo 5 min; al primer éxito `complete_sync_schedule` lo devuelve a `active` con la cadencia normal. Antes de 032, `claim_due_schedules` exigía `status='active'` y un schedule que fallaba 5 veces no volvía nunca — había 8 syncs de Clover muertos desde hacía 17 días sin que nadie lo notara. `paused` y `disabled` sí siguen fuera: esos son apagados intencionales.
 
 **`RUN_SCHEDULER=true` and `RUN_ALERT_DISPATCHER=true` must be set on exactly one service.** Advisory lock (`LEADER_LOCK_KEY = 4815162342`) in `src/config.ts` prevents double-running if misconfigured, but the lock releases on crash — a second replica would then become leader. By convention only `worker-pos-sync` has these flags.
 

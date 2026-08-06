@@ -64,19 +64,27 @@ async function processAlert(alert: AlertRow): Promise<void> {
 
   const allowedRecipients: string[] = [];
   const blockedRecipients: string[] = [];
+  let blockedReason: string = 'unknown';
 
   for (const recipient of recipients) {
-    if (await canSend(recipient)) {
+    // 034: el cupo se evalúa por carril (severidad) y con techo por site, para que el ruido de
+    // un site no silencie el `critical` de otro.
+    const verdict = await canSend(recipient, alert.severity, alert.site_id);
+    if (verdict.allowed) {
       allowedRecipients.push(recipient);
     } else {
       blockedRecipients.push(recipient);
+      blockedReason = verdict.reason ?? 'unknown';
     }
   }
 
   if (allowedRecipients.length === 0) {
     await supabase.rpc('mark_alert_suppressed', {
       p_alert_id: alert.id,
-      p_reason: `Rate limit exceeded for all recipients: ${blockedRecipients.join(', ')}`,
+      p_reason:
+        `Rate limit (${blockedReason}, severity=${alert.severity}` +
+        `${alert.site_id != null ? `, site=${alert.site_id}` : ''}) ` +
+        `exceeded for all recipients: ${blockedRecipients.join(', ')}`,
     });
 
     trackEvent('alert_suppressed', {
@@ -95,7 +103,7 @@ async function processAlert(alert: AlertRow): Promise<void> {
     });
 
     for (const recipient of allowedRecipients) {
-      await recordSent(recipient);
+      await recordSent(recipient, alert.severity, alert.site_id, alert.integration);
     }
 
     await supabase.rpc('mark_alert_sent', { p_alert_id: alert.id });

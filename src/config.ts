@@ -36,6 +36,11 @@ export const config = {
   },
 
   circuitBreaker: {
+    // APAGADO por defecto (decisión de producto, 2026-08-06). El breaker frenaba el sync de
+    // TODOS los sites de una integración: si un POS se caía 3h, el sync no se reanudaba solo al
+    // volver. Un POS caído ya se defiende solo — el request falla rápido y el backoff espacia los
+    // reintentos. Poner `CB_ENABLED=true` lo reactiva sin tocar código.
+    enabled: optional('CB_ENABLED', 'false') === 'true',
     threshold: Number(optional('CB_THRESHOLD', '10')),
     windowSeconds: Number(optional('CB_WINDOW_SECONDS', '60')),
     cooldownSeconds: Number(optional('CB_COOLDOWN_SECONDS', '300')),
@@ -53,7 +58,13 @@ export const config = {
     recipients: optional('ALERT_EMAILS', 'csantos@mycloudmenu.com')
       .split(',')
       .map(s => s.trim()),
+    // Cupos POR CARRIL, no uno solo (034). Antes, el ruido de un site agotaba el único cupo y
+    // silenciaba los `critical` de todos los demás.
     rateLimitPerHour: Number(optional('ALERT_RATE_LIMIT_PER_HOUR', '20')),
+    // Carril propio para `critical`: no lo consume el ruido de warning/info.
+    rateLimitCriticalPerHour: Number(optional('ALERT_RATE_LIMIT_CRITICAL_PER_HOUR', '60')),
+    // Techo por site (sólo warning/info): un site ruidoso se autolimita y deja cupo a los demás.
+    rateLimitPerSitePerHour: Number(optional('ALERT_RATE_LIMIT_PER_SITE_PER_HOUR', '6')),
     enabled: optional('RESEND_API_KEY', '') !== '',
   },
 
