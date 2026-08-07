@@ -490,6 +490,22 @@ export async function upsertOmnivoreOrders(
               (order as any).check_number = nextCheckNumber(siblings);
             }
           }
+          // El mapper emite `additional_properties: {}` a nivel de orden (order-mapper.ts) y este
+          // UPDATE escribe `order` entero, así que TODO lo que viva ahí se borra cada ciclo (20 s).
+          // El manifiesto de suplementos de Clover NO es del sync: lo escribe
+          // `claim_clover_supplement` y es lo único que le permite al pago de una orden suplemental
+          // encontrar su orden padre (upsert-payments.ts:225-236) y, con ella, inyectarse a Omnivore
+          // (:399-406). Sin esto el pago se pierde. El path managed ya lo preserva (:311-315); esto
+          // es lo mismo para el path no-managed, acotado a esa clave (`omnivore_managed` y
+          // `omnivore_synced_at` sí son del sync y se dejan como vienen).
+          const supplementalManifest = (existing as any)?.additional_properties?.clover_supplemental;
+          if (supplementalManifest !== undefined) {
+            (order as any).additional_properties = {
+              ...((order as any).additional_properties ?? {}),
+              clover_supplemental: supplementalManifest,
+            };
+          }
+
           // Tras el merge, escribir solo si algo material cambió (evita churn: si el único "cambio"
           // era el ítem local que el merge ya preservó, el order resultante == existing → skip).
           if (verifyOrderHasRelevantChanges(existing, order)) {

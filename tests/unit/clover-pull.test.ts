@@ -132,9 +132,22 @@ describe('upsertCloverPayments', () => {
     expect(r.maxModifiedTime).toBe(1_700_000_500);
   });
 
-  it('forwards the payment (with tip) to Omnivore when the order has an Omnivore ticket', async () => {
+  /**
+   * El monto que llega al POS debe CUBRIR el cheque; la propina viaja aparte.
+   *
+   * Cheque de $23.00 cobrado en Clover con $3.00 de propina → el cliente paga $26.00.
+   * Clover reporta `amount: 2300` (el cheque, SIN propina) y `tipAmount: 300`.
+   * Al POS hay que enviarle `amount: 2300` + `tip: 300`.
+   *
+   * Antes esta prueba esperaba `amount: 2000` — o sea el cheque MENOS la propina, corto
+   * justo por su valor: `payments.total` se guardaba sin propina y `buildOmnivorePaymentBody`
+   * se la volvía a restar. Fijaba el bug como contrato. Ocurrió en producción el 2026-08-07
+   * (orden 10334: se envió 3189 en vez de 5189 y el cheque quedó debiendo $20.00).
+   */
+  it('reenvía a Omnivore el monto que CUBRE el cheque, con la propina aparte', async () => {
     h.order = { id: 123, total: '23.00', channel: 'pos', pos_id: 'OMNI-TICKET' };
-    h.completedPayments = [{ total: '23.00' }];
+    // `payments.total` incluye la propina; su aporte al cheque es `total − tip`.
+    h.completedPayments = [{ total: '26.00', tip: '3.00' }];
     await upsertCloverPayments(25, [cloverPayment({ amount: 2300, tipAmount: 300 })]);
 
     expect(enqueuePaymentInjection).toHaveBeenCalledTimes(1);
@@ -146,9 +159,21 @@ describe('upsertCloverPayments', () => {
         posProvider: 'omnivore',
         posIdField: 'additional_properties.omnivore_payment_id',
         maxAttempts: 4,
-        payment: expect.objectContaining({ amount: 2000, tip: 300, type: '3rd_party' }),
+        payment: expect.objectContaining({ amount: 2300, tip: 300, type: '3rd_party' }),
       })
     );
+  });
+
+  it('guarda en payments.total lo COBRADO al cliente (cheque + propina)', async () => {
+    h.order = { id: 123, total: '23.00', channel: 'pos' };
+    h.completedPayments = [{ total: '26.00', tip: '3.00' }];
+    await upsertCloverPayments(25, [cloverPayment({ amount: 2300, tipAmount: 300 })]);
+    const ins = h.upserts.find((i: any) => i.table === 'payments');
+    expect(ins.row).toMatchObject({ total: '26.00', tip: '3.00' });
+    // …y la orden se da por pagada con `Σ(total − tip)` = 23.00, que es su `orders.total`.
+    expect(h.updates.find((u: any) => u.table === 'orders')?.patch).toMatchObject({
+      paid: '23.00', payment_status: 'fulfilled',
+    });
   });
 
   it('does NOT forward to Omnivore when the order has no Omnivore ticket (pos_id)', async () => {

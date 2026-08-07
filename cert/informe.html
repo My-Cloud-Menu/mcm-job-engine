@@ -99,6 +99,13 @@
   .finding > .stripe { height: 3px; }
   .finding.c > .stripe { background: var(--crit); }
   .finding.w > .stripe { background: var(--warn); }
+  .finding.fixed > .stripe { background: var(--ok); }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .fixnote { border-left: 2px solid var(--ok); background: var(--ok-bg); padding: 12px 16px;
+    border-radius: 0 3px 3px 0; font-family: var(--f-display); font-size: 14px; color: var(--ink-soft); }
+  .fixnote .lbl { font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase; color: var(--ok);
+    font-weight: 700; display: block; margin-bottom: 4px; }
+  .fhead h3 s { color: var(--ink-faint); text-decoration-thickness: 1px; }
   .fbody { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
   .fhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 12px; }
   .fid { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; padding: 2px 7px; border-radius: 3px;
@@ -180,9 +187,9 @@
   <nav class="rail" aria-label="Índice de hallazgos">
     <h4>Rompen el cobro</h4>
     <ol>
-      <li><a href="#m1"><span class="dot c"></span><span class="id">M1</span> Convención de total</a></li>
+      <li><a href="#m1"><span class="dot o"></span><span class="id">M1</span> Convención de total <span style="font-size:10px">(resuelto)</span></a></li>
       <li><a href="#n1"><span class="dot w"></span><span class="id">N1</span> Pagos divididos <span style="font-size:10px">(por location)</span></a></li>
-      <li><a href="#h2"><span class="dot c"></span><span class="id">H2</span> Colisión entre tenants</a></li>
+      <li><a href="#h2"><span class="dot o"></span><span class="id">H2</span> Colisión entre tenants <span style="font-size:10px">(resuelto)</span></a></li>
       <li><a href="#n2"><span class="dot c"></span><span class="id">N2</span> Inyección sin reintento</a></li>
       <li><a href="#n4"><span class="dot c"></span><span class="id">N4</span> Dinero invisible</a></li>
     </ol>
@@ -194,7 +201,8 @@
     </ol>
     <h4>Ensucian la operación</h4>
     <ol>
-      <li><a href="#m7"><span class="dot w"></span><span class="id">M7</span> Órdenes fantasma</a></li>
+      <li><a href="#m7"><span class="dot w"></span><span class="id">M7</span> Cheques ya cobrados</a></li>
+      <li><a href="#n6"><span class="dot w"></span><span class="id">N6</span> Órdenes huérfanas</a></li>
       <li><a href="#n3"><span class="dot w"></span><span class="id">N3</span> Tender y propina</a></li>
       <li><a href="#r10"><span class="dot w"></span><span class="id">R10</span> Marcas de tarjeta</a></li>
     </ol>
@@ -218,15 +226,19 @@
     <section id="verdicto">
       <div class="verdict">
         <span class="tag">Veredicto</span>
-        <h3>No está lista para producción. El cobro con propina —que es casi todo cobro— no cierra el cheque en el POS.</h3>
-        <p>La integración está bien construida contra duplicados: cero órdenes y cero pagos duplicados tras
-          cientos de ciclos de sincronización. Lo que falla es otra cosa, y falla en silencio: sin error visible,
-          sin alerta, y con MCM reportando la orden como cobrada.</p>
+        <h3>Dos de los bloqueantes ya están resueltos. Lo que queda son sobrecobros al cliente y una latencia que impide cobrar en la mesa.</h3>
+        <p><strong>M1</strong> (la propina que dejaba el cheque sin saldar) y <strong>H2</strong> (el pago que
+          nunca llegaba al POS) se arreglaron el 7 de agosto y están verificados. Sigue pendiente lo que le cobra
+          de más al cliente —descuentos que no viajan, impuesto del service charge— y los 99 segundos que tarda
+          una orden en ser cobrable en el Flex.</p>
+        <p>Lo que sí está bien construido: cero órdenes y cero pagos duplicados tras cientos de ciclos. Lo que
+          falla, falla <strong>en silencio</strong> — sin error visible, sin alerta, y con MCM reportando la orden
+          como cobrada.</p>
       </div>
 
       <div class="metrics">
-        <div class="metric"><span class="k">Pagos que llegaron al POS</span><span class="v bad">2 / 8</span><span class="n">los 2 fueron sin propina</span></div>
-        <div class="metric"><span class="k">Órdenes fantasma en Clover</span><span class="v bad">105</span><span class="n">$3,340.86 sin cobrar jamás</span></div>
+        <div class="metric"><span class="k">Pagos que llegaban al POS</span><span class="v good">2 / 8 → resuelto</span><span class="n">M1 y H2 arreglados</span></div>
+        <div class="metric"><span class="k">Órdenes huérfanas en Clover</span><span class="v bad">108</span><span class="n">$3,303 · 35 por defecto + 73 por diseño</span></div>
         <div class="metric"><span class="k">Sobrecobro al cliente</span><span class="v bad">$79.51</span><span class="n">en 10 órdenes</span></div>
         <div class="metric"><span class="k">Latencia p95 al Flex</span><span class="v bad">98.7 s</span><span class="n">criterio: 30 s</span></div>
         <div class="metric"><span class="k">Desvío de base imponible</span><span class="v bad">+1.5 %</span><span class="n">$4.81 sobre $323.35</span></div>
@@ -261,13 +273,22 @@
           y en Aloha sigue debiendo.</p>
       </div>
 
-      <article class="finding c" id="m1">
+      <article class="finding fixed" id="m1">
         <div class="stripe"></div>
         <div class="fbody">
           <div class="fhead">
             <span class="fid">M1</span>
-            <h3>El pull de Clover rompe la convención de <code>payments.total</code></h3>
-            <span class="pill c">Confirmado</span><span class="pill n">A/B + convención verificada en producción</span>
+            <h3><s>El pull de Clover rompe la convención de <code>payments.total</code></s></h3>
+            <span class="pill ok">Arreglado</span><span class="pill n">verificado por el dueño</span>
+          </div>
+
+          <div class="fixnote">
+            <span class="lbl">Resuelto · 7 ago 2026</span>
+            El pull de Clover ahora guarda <strong>lo cobrado</strong> (<code>amount + tip</code>) y su suma de
+            cumplimiento resta las propinas (<code>Σ total − tip</code>), así que <code>orders.paid</code> sigue
+            cuadrando igual. <strong>El envío de pago no se tocó</strong> — es el que sostiene la inyección a
+            Omnivore en producción. Verificado end-to-end: el cheque cierra completo y la propina queda
+            registrada en el POS.
           </div>
           <p>En todo MCM, <code>payments.total</code> guarda <strong>lo cobrado al cliente, propina incluida</strong>,
             y <code>orders.total</code> guarda el cheque sin propina. Por eso el envío a Aloha resta la propina: así
@@ -370,13 +391,24 @@
         </div>
       </article>
 
-      <article class="finding c" id="h2">
+      <article class="finding fixed" id="h2">
         <div class="stripe"></div>
         <div class="fbody">
           <div class="fhead">
             <span class="fid">H2</span>
-            <h3>Colisión de idempotencia entre negocios distintos</h3>
-            <span class="pill c">Confirmado</span><span class="pill n">aislado sobre 11 pagos</span>
+            <h3><s>Colisión de idempotencia entre negocios distintos</s></h3>
+            <span class="pill ok">Arreglado</span><span class="pill n">desplegado y verificado en vivo</span>
+          </div>
+
+          <div class="fixnote">
+            <span class="lbl">Resuelto · 7 ago 2026</span>
+            Las <strong>cuatro</strong> llaves del sistema llevan ahora el <code>site_id</code>:
+            <code>pos_pay</code>, <code>pos_inject</code> y <code>clover_supp_inject</code> en el motor, y
+            <code>clover_inject</code> en las edge functions. No se inventó un formato — se convergió al que
+            <code>omnivore-helper.ts</code> ya usaba, donde el bug estaba identificado y corregido.
+            Verificado en vivo tras el despliegue: <code>clover_inject:99990003:10328:gezypq</code>, 4 de 4 con
+            el formato nuevo. De paso cierra un riesgo latente de <strong>doble cobro</strong>, porque los dos
+            productores generaban llaves distintas y no deduplicaban entre sí.
           </div>
           <p>La llave de idempotencia se arma <strong>sin el <code>site_id</code></strong>, y es única global. Como
             <code>payments.id</code> es una secuencia <em>por sitio</em>, dos negocios distintos generan la misma
@@ -600,20 +632,75 @@ const idempotencyKey = `pos_pay:${params.posProvider}:${params.paymentId}`;
         <div class="fbody">
           <div class="fhead">
             <span class="fid">M7</span>
-            <h3>Cada cheque cobrado en el POS deja una orden fantasma en Clover</h3>
+            <h3>Se empujan a Clover cheques que ya estaban cobrados</h3>
             <span class="pill w">Confirmado</span><span class="pill n">4 rep + medición completa</span>
           </div>
-          <p>La consulta que decide qué órdenes empujar a Clover incluye el estado <code>check-closed</code> y
-            <strong>no filtra por <code>payment_status</code></strong>. Un cheque ya cobrado en el terminal Aloha se
-            empuja igual como orden <strong>abierta</strong> que nadie va a pagar nunca.</p>
-          <div class="metrics">
-            <div class="metric"><span class="k">Órdenes abiertas para siempre</span><span class="v bad">105</span><span class="n">de las empujadas</span></div>
-            <div class="metric"><span class="k">Monto acumulado</span><span class="v bad">$3,340.86</span><span class="n">en una sola corrida</span></div>
-            <div class="metric"><span class="k">Órdenes sin total</span><span class="v bad">12</span><span class="n">el Register muestra $0.00</span></div>
+          <div class="evidence decision">
+            <span class="lbl">Corrección · eran dos causas, no una</span>
+            Yo había reportado «105 órdenes · $3,340.86» como una sola causa. El dueño preguntó si eran
+            re-inyecciones o si eran órdenes que llegaron legítimamente a Clover y luego se pagaron en el POS.
+            Se verificó comparando, orden por orden, cuándo se creó el job de inyección contra cuándo apareció el
+            pago del POS. <strong>Son dos problemas distintos con arreglos distintos</strong>, y la mayoría
+            <strong>no</strong> es defecto del push.
           </div>
-          <p>En un negocio con 20–40 % de efectivo, esa proporción de basura se genera <strong>cada servicio</strong>.
-            Toda métrica del lado Clover queda inflada por dinero que ya se cobró en el otro sistema, y como quedan
-            abiertas indefinidamente, se acumula día tras día.</p>
+
+          <div class="tw">
+            <table>
+              <thead><tr><th>Grupo</th><th>Qué pasó</th><th class="num">Órdenes</th><th class="num">Monto</th></tr></thead>
+              <tbody>
+                <tr><td><strong>M7</strong> · este hallazgo</td><td>MCM empujó un cheque <strong>ya cobrado y cerrado</strong></td><td class="num bad">35</td><td class="num bad">$1,970.03</td></tr>
+                <tr><td><strong>N6</strong> · abajo</td><td>MCM empujó el cheque <strong>abierto</strong> (correcto) y el POS cobró después</td><td class="num">73</td><td class="num">$1,333.47</td></tr>
+                <tr><td>—</td><td>sin pago del POS registrado</td><td class="num">82</td><td class="num">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p><strong>M7 es el defecto real:</strong> la consulta que decide qué empujar incluye el estado
+            <code>check-closed</code> y <strong>no filtra por <code>payment_status</code></strong>. Se empuja un
+            cheque que MCM ya sabía cobrado. Ejemplo: la orden 10003 se inyectó <strong>99 s después</strong> de que
+            el POS ya había cobrado. <strong>Arreglo: un filtro.</strong></p>
+
+          <div class="evidence">
+            <span class="lbl">El guard de re-inyección SÍ funciona</span>
+            De las 35 de M7, <strong>34 tuvieron una sola inyección</strong> — primera vez sobre un cheque ya
+            cerrado, no re-inyección. En toda la corrida hay 14 órdenes con más de un job, pero son ediciones
+            legítimas (cambió el hash) que <strong>adoptan</strong> la orden de Clover existente en vez de
+            duplicarla. Cero órdenes de Clover duplicadas.
+          </div>
+
+          <p>Aparte: <strong>12 órdenes de Clover tienen líneas pero no <code>total</code></strong>, así que el
+            Register las muestra en $0.00.</p>
+        </div>
+      </article>
+
+      <article class="finding w" id="n6">
+        <div class="stripe"></div>
+        <div class="fbody">
+          <div class="fhead">
+            <span class="fid">N6</span>
+            <h3>Nada cierra la orden de Clover cuando el cheque se cobra en el POS</h3>
+            <span class="pill w">Confirmado</span><span class="pill n">separado de M7</span>
+          </div>
+          <p><strong>No es un defecto del push.</strong> MCM hizo lo correcto: empujó a Clover un cheque que estaba
+            <strong>abierto y por cobrar</strong>. Lo que pasa después es que el cliente paga en el terminal Aloha, y
+            <strong>no existe ningún camino que cierre o anule la orden equivalente en Clover</strong>. Queda
+            huérfana.</p>
+
+          <div class="metrics">
+            <div class="metric"><span class="k">Órdenes huérfanas</span><span class="v bad">73</span><span class="n">el caso más frecuente</span></div>
+            <div class="metric"><span class="k">Monto</span><span class="v bad">$1,333.47</span><span class="n">en una sola corrida</span></div>
+          </div>
+
+          <p>A diferencia de M7, aquí <strong>no hay filtro que sirva</strong> — el cheque estaba legítimamente
+            abierto cuando se empujó. Haría falta una <strong>capacidad nueva</strong>: detectar que el cheque cerró
+            en el POS y cerrar o anular la orden de Clover correspondiente.</p>
+
+          <div class="evidence">
+            <span class="lbl">Mitigación operativa mientras tanto</span>
+            Decidir <strong>una sola superficie de cobro por cheque</strong>. Si se cobra en Aloha, no empujarlo a
+            Clover; si se cobra en Clover, no cobrarlo en Aloha. Es inherente a tener dos terminales de cobro
+            simultáneos sobre el mismo cheque.
+          </div>
         </div>
       </article>
 
@@ -892,21 +979,22 @@ totals: paid=649 <span class="add">(correcto)</span>   tips=<b>1800</b> <span cl
           una sola línea de código durante la certificación.</p>
       </div>
       <ol class="steps">
-        <li><span class="rank">1</span><span class="txt"><b>M1 · en el pull de Clover, no en el envío</b>
-          <span>Guardar lo cobrado (con propina) en <code>payments.total</code> y restar propinas en su suma de
-            cumplimiento. <strong>El envío de pago no se toca</strong>: sostiene la inyección de pagos de MCM a
-            Omnivore en producción.</span></span></li>
+        <li><span class="rank">1</span><span class="txt"><b>✅ M1 · hecho — en el pull de Clover, no en el envío</b>
+          <span>Guarda lo cobrado (<code>amount + tip</code>) y su suma resta propinas. El envío de pago quedó
+            intacto. Verificado end-to-end. <em>Pendiente: llevarlo a producción.</em></span></span></li>
         <li><span class="rank">2</span><span class="txt"><b>R5 · los descuentos no viajan</b>
           <span>El cliente paga de más — hasta $13.91 en una cortesía del 100 %. Verificado vigente en las 4 órdenes. Aplicar el descuento en el constructor de líneas. <em>M8 sale de esta lista: no aplica con el table-service apagado.</em></span></span></li>
-        <li><span class="rank">3</span><span class="txt"><b>H2 · la llave sin <code>site_id</code></b>
-          <span>Un pago cobrado que nunca llega al POS, al azar. Agregar el sitio a la llave de idempotencia.</span></span></li>
+        <li><span class="rank">3</span><span class="txt"><b>✅ H2 · hecho — las 4 llaves llevan el <code>site_id</code></b>
+          <span>Motor y edge alineados con el formato que <code>omnivore-helper</code> ya usaba. Desplegado en Dev
+            y verificado en vivo. <em>Pendiente: llevarlo a producción.</em></span></span></li>
         <li><span class="rank">4</span><span class="txt"><b>N2 · la llave retenida por el job muerto</b>
           <span>$248.58 que nunca llegaron a Clover. Liberar la llave al morir el job, o incluir el intento en ella.</span></span></li>
         <li><span class="rank">5</span><span class="txt"><b>N1 · verificar la location, no cambiar código</b>
           <span>Producción acepta parciales; la location de certificación no. Antes de desplegar, probar un pago
             parcial contra la location real del cliente. Solo si la rechaza haría falta acumular en MCM.</span></span></li>
         <li><span class="rank">6</span><span class="txt"><b>M7 · dejar de empujar cheques ya cobrados</b>
-          <span>Filtrar por <code>payment_status</code>. Limpia $3,340 de basura por corrida.</span></span></li>
+          <span>Filtrar por <code>payment_status</code>: quita 35 órdenes ($1,970) por corrida.
+            <em>N6 (73 órdenes) es aparte — necesita cerrar la orden en Clover, no un filtro.</em></span></span></li>
         <li><span class="rank">7</span><span class="txt"><b>N3 y R10 · tender y propina reales</b>
           <span>Pedir <code>tips</code> y <code>payments</code> en la consulta, y completar el mapa de marcas.</span></span></li>
         <li><span class="rank">8</span><span class="txt"><b>IVU · dejar de gravar el service charge</b>

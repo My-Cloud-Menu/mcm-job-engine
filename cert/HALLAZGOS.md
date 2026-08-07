@@ -38,13 +38,14 @@ orden como cobrada.
 
 | # | Hallazgo | Qué pasa en la práctica | Estado |
 |---|---|---|---|
-| **H2** | Colisión de idempotencia entre tenants | Un pago cobrado **nunca llega al POS**. El cheque queda abierto en Aloha y MCM lo da por cerrado. Es azar cuál pago se pierde | **CONFIRMADO** · mecanismo probado + 1 instancia en vivo + exposición medida (35 llaves) |
-| **M1** | El pull de Clover rompe la convención de `payments.total` | Guarda la base sin propina donde el resto del sistema guarda lo cobrado. El reenvío resta la propina —correctamente— y el monto se va corto: Aloha rechaza con `insufficient_amount` y el cheque queda sin pagar. **La propina siempre se captura al pagar**, así que alcanza a casi todo cobro. **El arreglo va en el pull, NO en el reenvío** (ese funciona en producción) | **CONFIRMADO** · 3 rep + A/B + convención verificada en producción |
+| **H2** | ~~Colisión de idempotencia entre tenants~~ | Un pago cobrado **nunca llegaba al POS** porque la llave no llevaba `site_id` y la ocupaba otro negocio. **ARREGLADO 2026-08-07**: las 4 llaves del sistema (`pos_pay`, `pos_inject`, `clover_supp_inject`, `clover_inject`) ahora la incluyen | ✅ **ARREGLADO** · desplegado en Dev · verificado en vivo |
+| **M1** | ~~El pull de Clover rompe la convención de `payments.total`~~ | Guardaba la base sin propina donde el resto del sistema guarda lo cobrado, y el reenvío la restaba otra vez: el cheque quedaba con saldo pendiente justo por la propina. **ARREGLADO 2026-08-07** en el pull (`amount + tip`) y en su suma de cumplimiento (`Σ total − tip`). El reenvío **no se tocó** | ✅ **ARREGLADO** · verificado por el dueño |
 | **N1** | Los pagos divididos dependen de la LOCATION | En la location de certificación (`cx9oRBRi`) Aloha rechaza todo parcial, hasta a un centavo del total. **Pero en producción (`cjgALEriXXX`) los acepta**: 4 parciales de $115.91 sobre un cheque de $463.64, completados. **No hay nada que arreglar en la integración** — hay que verificar el comportamiento de la location real antes de desplegar | **CORREGIDO** · comportamiento por location, no defecto |
 | **N2** | Una inyección fallida nunca se reintenta | Un rate limit de 8 segundos deja órdenes fuera de Clover **para siempre**. Medido: $248.58 en 3 órdenes | **CONFIRMADO** · 3 casos + mecanismo |
 | **R5** | Los descuentos no viajan a Clover | El cliente paga el precio **sin descuento**. En una cortesía del 100 % paga la comida entera que se le regaló | **CONFIRMADO** · 3 rep |
 | **M8** | El ítem anulado se sigue cobrando | El mesero anula un plato y el cliente igual lo paga en Clover. **Solo ocurre con `omnivoreTableServiceEnabled` encendido.** Decisión del dueño: la integración Clover×Omnivore corre con el flag **apagado** ⇒ **NO APLICA**, no hay que arreglarlo | **CONFIRMADO** · 3 rep con el flag ON · **descartado por configuración** |
-| **M7** | El cheque cobrado en el POS ensucia Clover | Todo cheque cobrado en el terminal Aloha (efectivo o tarjeta propia) se empuja igual a Clover como orden **abierta** que nadie pagará. **Medición final: 105 órdenes abiertas para siempre, $3,340.86 en el Register** | **CONFIRMADO** · 4 rep + medición completa |
+| **M7** | Se empujan a Clover cheques **ya cobrados** | El cheque se cobró en el terminal Aloha y MCM lo empuja igual como orden abierta que nadie pagará. `getOrdersPendingSyncToClover` no filtra por `payment_status`. **35 órdenes · $1,970.03**. Arreglo: un filtro | **CONFIRMADO** · 4 rep + medición separada |
+| **N6** | Nada cierra la orden de Clover cuando el cheque se cobra en el POS | MCM empujó el cheque **abierto** (correcto) y el cliente pagó después en Aloha. La orden de Clover queda huérfana. **73 órdenes · $1,333.47** — el caso más frecuente. No hay filtro que sirva: hace falta una capacidad nueva | **CONFIRMADO** · separado de M7 tras verificación temporal |
 | **N3** | El tender real y la propina del POS se pierden | Todo cobro hecho en el terminal Aloha entra a MCM como `ecr-card` con `tip 0.00`, sea efectivo, VISA o AMEX. El cuadre por tender y el reporte de propinas quedan inservibles | **CONFIRMADO** · 3 rep + literales en código |
 | **N4** | MCM confía en `due`, no reconcilia `paid` vs `total` | Si el POS hipa durante el cobro y deja `due≠0` con el cheque ya pagado, MCM lo marca `partially_fulfilled` y **no crea fila en `payments`**: dinero cobrado, invisible. Ocurrió solo, en vivo | **CONFIRMADO** · repro determinista con 2 controles + 1 instancia en vivo |
 | **N5** | Aloha ignora `Idempotency-Id` y **duplica la propina** al reintentar | Dos POST idénticos con la misma llave crean dos pagos. Aloha autocorrige el principal con un pago negativo pero **no la propina**. Medido: 4 intentos → propina ×4 | **CONFIRMADO** · 2 rep (×4 y ×2) |
@@ -514,17 +515,53 @@ Cuatro reproducciones, con tenders, ítems y montos distintos:
 | D2 | efectivo | `due=0 paid=1405` cerrado | `check-closed`/`fulfilled` | `23NWEKF382V8G` 1405¢ | `OPEN` |
 | D3 | efectivo | `due=0 paid=1662` cerrado | `check-closed`/`fulfilled` | `DBDFE88BK3HS8` 1662¢ | `OPEN` |
 
-**Medido sobre la corrida completa (F11.8), no solo sobre las 4 reproducciones:** de **67** órdenes
-empujadas a Clover, **32 quedaron `OPEN` con el cheque de Aloha ya saldado** (`due=0`) —
-**$1,854.67** de basura permanente en el Register.
+> **Corrección (2026-07-27, a partir de una pregunta del dueño).** Yo había reportado «105 órdenes
+> fantasma · $3,340.86» como **una sola causa**. El dueño preguntó si eran re-inyecciones o si eran
+> órdenes que llegaron legítimamente a Clover y luego se pagaron en el POS. Se verificó comparando,
+> orden por orden, el `created_at` del job de inyección contra el `date_created` del pago externo del
+> POS. **Son dos causas distintas, con arreglos distintos, y la mayoría no es defecto del push.**
+
+| grupo | qué pasó | órdenes | monto |
+|---|---|---|---|
+| **M7 (este hallazgo)** | MCM empujó un cheque que **ya estaba cobrado y cerrado** | **35** | **$1,970.03** |
+| **N6** (abajo) | MCM empujó el cheque **abierto** —correcto— y el cliente pagó después en el POS | **73** | **$1,333.47** |
+| — | sin pago del POS registrado (se pagaron en Clover o quedaron abiertos) | 82 | — |
+
+Ejemplos que ilustran la diferencia: la orden **10001** se inyectó **8.193 s ANTES** de que el POS
+cobrara (eso es N6, carrera normal); la orden **10003** se inyectó **99 s DESPUÉS** de que el POS ya
+había cobrado (eso sí es M7).
+
+**El guard de re-inyección funciona.** De las 35 de M7, **34 tuvieron una sola inyección** — o sea,
+primera vez sobre un cheque ya cerrado, no re-inyección. En toda la corrida hay 14 órdenes con más de
+un job de inyección, pero son ediciones legítimas (cambió el hash) que **adoptan** la orden de Clover
+existente en vez de duplicarla. Cero órdenes de Clover duplicadas.
 
 **Por qué importa en un restaurante real.** Un negocio con 20-40 % de efectivo genera esa proporción
 de órdenes fantasma **cada servicio**. No es solo ruido visual en el Register: toda métrica del lado
 Clover (ventas abiertas, cheques pendientes, conciliación de fin de día) queda inflada por dinero que
-ya se cobró en el otro sistema. Y como las órdenes quedan `OPEN` indefinidamente, el ruido se acumula
-día tras día sin que nada las cierre.
+ya se cobró en el otro sistema.
+
+**Arreglo:** un filtro por `payment_status` en `getOrdersPendingSyncToClover`.
 
 Evidencia: `m7-*.json`, `m7n3cash-*.json`, `f11-*.json`.
+
+---
+
+### 🟠 N6 · Nada cierra la orden de Clover cuando el cheque se cobra en el POS — **CONFIRMADO**
+
+**No es un defecto del push.** MCM hizo lo correcto: empujó a Clover un cheque que estaba **abierto y
+por cobrar**. Lo que ocurre después es que el cliente paga en el terminal Aloha, y **no existe ningún
+camino que anule o cierre la orden equivalente en Clover**. Queda huérfana.
+
+**73 órdenes · $1,333.47** en la corrida. Es el caso más frecuente de los dos, y el más difícil de
+evitar: es inherente a tener **dos superficies de cobro simultáneas** sobre el mismo cheque.
+
+A diferencia de M7, aquí no hay filtro que sirva — el cheque estaba legítimamente abierto cuando se
+empujó. Haría falta una **capacidad nueva**: al detectar que el cheque cerró en el POS, cerrar o
+anular la orden de Clover correspondiente.
+
+**Mitigación operativa mientras tanto:** decidir **una sola superficie de cobro por cheque**. Si se
+cobra en Aloha, no empujar a Clover; si se cobra en Clover, no cobrar en Aloha.
 
 ---
 

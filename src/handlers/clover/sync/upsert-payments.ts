@@ -168,7 +168,8 @@ export async function upsertCloverPayments(siteId: number, cloverPayments: unkno
               .from('payments')
               .update({
                 total_refunded: (p.totalRefunded / 100).toFixed(2),
-                ...(tipChanged ? { tip: (p.tip / 100).toFixed(2), total: (p.amount / 100).toFixed(2) } : {}),
+                // Misma convención que en el INSERT: `total` incluye la propina.
+                ...(tipChanged ? { tip: (p.tip / 100).toFixed(2), total: ((p.amount + p.tip) / 100).toFixed(2) } : {}),
               })
               .eq('id', mapRow.mcm_payment_id)
               .eq('site_id', siteId);
@@ -284,7 +285,18 @@ export async function upsertCloverPayments(siteId: number, cloverPayments: unkno
         }
       }
 
-      const totalInDollars = (p.amount / 100).toFixed(2);
+      // `payments.total` guarda LO COBRADO AL CLIENTE, propina INCLUIDA — es la convención
+      // de todo MCM (`orders.total` es el cheque SIN propina, y `orders.paid` se calcula como
+      // Σ(total) − Σ(tip); verificado sobre los pagos ECR de producción).
+      //
+      // Clover entrega `amount` YA SIN la propina (`amount` == total de la orden; la propina
+      // viaja aparte en `tipAmount`), así que hay que volver a sumarla para respetar la
+      // convención. Guardarla sin sumar hacía que `buildOmnivorePaymentBody` —que resta la
+      // propina para recuperar la base— la restara por segunda vez y enviara al POS un monto
+      // corto justo por el valor de la propina: el cheque quedaba con saldo pendiente.
+      // Caso real 2026-08-07, orden 10334: Clover amount 5189 + tip 2000; se envió a Aloha
+      // `amount: 3189` en vez de 5189 y el cheque quedó debiendo $20.00.
+      const totalInDollars = ((p.amount + p.tip) / 100).toFixed(2);
       const tipInDollars = (p.tip / 100).toFixed(2);
       const now = new Date().toISOString();
 
@@ -331,17 +343,21 @@ export async function upsertCloverPayments(siteId: number, cloverPayments: unkno
       if (!p.voided) {
         // Bug 2 (#10349): NO marcar la orden pagada-completa incondicionalmente. Antes
         // ponía fulfilled/check-closed con el monto de ESTE pago, aunque fuera < total.
-        // Acumulamos Σ(pagos completed) y comparamos contra `order.total`: el pago de
-        // Clover guarda el monto base (sin tip) en `payments.total`, así que la suma de
-        // `total` es la contribución correcta al total de la orden (que excluye tip).
+        // Acumulamos Σ(pagos completed) y comparamos contra `order.total`.
+        //
+        // `payments.total` incluye la propina y `orders.total` la excluye, así que la
+        // contribución de cada pago al cheque es `total − tip`. Es el mismo cálculo que
+        // usa el resto del sistema para `orders.paid` (verificado sobre los pagos ECR de
+        // producción: Σ(total) − Σ(tip) == orders.total en todos). Sumar `total` a secas
+        // daría la orden por pagada de más justo por el monto de las propinas.
         const { data: completedPays } = await supabase
           .from('payments')
-          .select('total')
+          .select('total, tip')
           .eq('site_id', siteId)
           .contains('orders_ids', [order.id])
           .eq('status', 'completed');
         const cumulativePaid = (completedPays || []).reduce(
-          (acc, pay: any) => acc + Number(pay.total ?? 0),
+          (acc, pay: any) => acc + (Number(pay.total ?? 0) - Number(pay.tip ?? 0)),
           0
         );
         const orderTotal = Number(order.total ?? 0);

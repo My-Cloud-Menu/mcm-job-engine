@@ -34,7 +34,13 @@ export async function enqueueOrderInjection(params: {
   payload: PosInjectionPayload;
   correlationId?: string;
 }): Promise<string> {
-  const idempotencyKey = `pos_inject:${params.posProvider}:${params.orderId}`;
+  // Robustez multi-tenant: la llave lleva `site_id`. `orders.id` NO es global (PK compuesta
+  // `(id, site_id)`) e `integration_jobs.idempotency_key` es UNIQUE GLOBAL → sin el site, un
+  // `order.id` que ya exista en otro tenant hace que `enqueue_job` (ON CONFLICT DO NOTHING)
+  // devuelva el job ajeno y descarte esta inyección en silencio.
+  // Formato idéntico al de la edge (`omnivore-helper.ts::enqueueOmnivoreInjection`) para que
+  // ambos productores dedupliquen entre sí. Los step-keys derivan de esta base.
+  const idempotencyKey = `pos_inject:${params.posProvider}:${params.siteId}:${params.orderId}`;
 
   const { data, error } = await supabase.rpc('enqueue_job', {
     p_site_id: params.siteId,
@@ -84,7 +90,15 @@ export async function enqueuePaymentInjection(params: {
   /** Step max_attempts (default 5). */
   maxAttempts?: number;
 }): Promise<string> {
-  const idempotencyKey = `pos_pay:${params.posProvider}:${params.paymentId}`;
+  // Robustez multi-tenant: la llave lleva `site_id`. `payments.id` NO es global (PK compuesta
+  // `(id, site_id)`) e `integration_jobs.idempotency_key` es UNIQUE GLOBAL. Sin el site, un
+  // `payment.id` que otro tenant ya usó hace que `enqueue_job` devuelva el job ajeno y el pago
+  // NUNCA se aplique al POS: el cheque queda abierto en Aloha mientras MCM lo da por cobrado,
+  // sin error, sin dead-letter y sin alerta. Confirmado en vivo el 2026-08-07 (pago 10246 del
+  // site 99990003 contra un job del site 48372619 del 10 de junio).
+  // Formato idéntico al de la edge (`omnivore-helper.ts::enqueueOmnivorePaymentInjection`) para
+  // que ambos productores dedupliquen entre sí. El step-key deriva de esta base.
+  const idempotencyKey = `pos_pay:${params.posProvider}:${params.siteId}:${params.paymentId}`;
 
   const payload: Record<string, unknown> = {
     payment_id: params.paymentId,
@@ -136,11 +150,19 @@ export async function enqueueCloverSupplementalInjection(params: {
   lineItems: unknown[];
   totalCents: number;
   correlationId?: string;
+  /**
+   * Nombre visible de la orden en el Register de Clover. Cosmético: la identidad la
+   * llevan `externalReferenceId` y `clover_ticket_id`, nadie busca por el título.
+   * Por defecto `MCM #{id} (add'l)`; el llamador pasa el nombre de la mesa cuando lo tiene.
+   */
+  title?: string;
 }): Promise<string> {
-  const idem = `clover_supp_inject:${params.orderId}:${params.deltaSignature}`;
+  // Multi-tenant: mismo motivo que arriba — `orders.id` no es global. Aquí la firma del delta
+  // reduce la probabilidad de choque, pero no lo impide por diseño.
+  const idem = `clover_supp_inject:${params.siteId}:${params.orderId}:${params.deltaSignature}`;
 
   const orderBody: Record<string, unknown> = {
-    title: `MCM #${params.orderId} (add'l)`,
+    title: params.title ?? `MCM #${params.orderId} (add'l)`,
     state: 'open',
     currency: 'USD',
     externalReferenceId: params.externalReferenceId,

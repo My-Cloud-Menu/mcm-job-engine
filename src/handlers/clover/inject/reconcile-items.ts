@@ -71,7 +71,8 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
 
     // Fetch current Clover state + payments guard.
     const cur = await client.get<{
-      lineItems?: { elements?: Array<{ id: string; name?: string; note?: string }> };
+      total?: number;
+      lineItems?: { elements?: Array<{ id: string; name?: string; note?: string; price?: number }> };
       payments?: { elements?: unknown[] };
     }>(`/orders/${cloverOrderId}?expand=lineItems,payments`);
 
@@ -92,6 +93,18 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
         desiredHash,
         currentCloverLineItems: existing,
         correlationId: job.correlation_id,
+        // Objetivo de dinero de la orden y lo que Clover ya tiene facturado en la primaria:
+        // con esos dos el suplemento factura EXACTAMENTE lo que falta, sin reconstruir tax.
+        orderTotalCents: typeof orderTotalCents === 'number' ? orderTotalCents : null,
+        primaryCloverTotalCents: typeof cur.data?.total === 'number' ? cur.data.total : null,
+        // Sólo se invoca si hay suplementos previos que descontar.
+        fetchCloverOrder: async (id: string) => {
+          const r = await client.get<{
+            total?: number;
+            lineItems?: { elements?: Array<{ name?: string; price?: number }> };
+          }>(`/orders/${id}?expand=lineItems`);
+          return { total: r.data?.total, lineItems: r.data?.lineItems?.elements || [] };
+        },
       });
     }
     // A supplemental order is brand-new → never has payments; it reconciles below.
