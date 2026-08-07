@@ -71,7 +71,11 @@ const getTaxesBreakdownOfCloverOrder = (cloverOrder: any) => {
       compound: false,
       subtotal: baseStandardAmount / 100,
       rate_code: 'estatal-tax',
-      tax_total: (standardTax / 100).toFixed(2),
+      // `Math.round` sobre CENTAVOS enteros antes de dividir. `standardTax` acumula fracciones
+      // de centavo (700 × 0.105 = 73.5) y `(0.735).toFixed(2)` da "0.73", porque 0.735 en
+      // binario es 0.73499999999999998668 → el medio centavo caía siempre hacia abajo.
+      // Mismo criterio que el mapper de Omnivore y que `buildTaxRatesForClass` de clover-helper.
+      tax_total: (Math.round(standardTax) / 100).toFixed(2),
       additional_properties: {},
     },
     {
@@ -82,7 +86,7 @@ const getTaxesBreakdownOfCloverOrder = (cloverOrder: any) => {
       compound: false,
       subtotal: baseReducedAmount / 100,
       rate_code: 'reduced-tax',
-      tax_total: (reducedTax / 100).toFixed(2),
+      tax_total: (Math.round(reducedTax) / 100).toFixed(2),
       additional_properties: {},
     },
     {
@@ -93,7 +97,7 @@ const getTaxesBreakdownOfCloverOrder = (cloverOrder: any) => {
       compound: false,
       subtotal: baseCityAmount / 100,
       rate_code: 'municipal-tax',
-      tax_total: (cityTax / 100).toFixed(2),
+      tax_total: (Math.round(cityTax) / 100).toFixed(2),
       additional_properties: {},
     },
   ];

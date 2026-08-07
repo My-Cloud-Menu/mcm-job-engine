@@ -1,0 +1,100 @@
+[
+  {
+    "integration": "clover",
+    "sync_type": "fetch_closed_orders",
+    "status": "disabled",
+    "interval_seconds": 300,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_employees",
+    "status": "disabled",
+    "interval_seconds": 86400,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_item_stock",
+    "status": "disabled",
+    "interval_seconds": 300,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_open_orders",
+    "status": "disabled",
+    "interval_seconds": 60,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_payments",
+    "status": "active",
+    "interval_seconds": 15,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_products",
+    "status": "disabled",
+    "interval_seconds": 86400,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "clover",
+    "sync_type": "push_orders",
+    "status": "active",
+    "interval_seconds": 15,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_closed_orders",
+    "status": "disabled",
+    "interval_seconds": 90,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_employees",
+    "status": "disabled",
+    "interval_seconds": 86400,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_health",
+    "status": "active",
+    "interval_seconds": 120,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_open_orders",
+    "status": "disabled",
+    "interval_seconds": 20,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_products",
+    "status": "disabled",
+    "interval_seconds": 86400,
+    "consecutive_failures": 0
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_recent_orders",
+    "status": "disabled",
+    "interval_seconds": 25,
+    "consecutive_failures": 75
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_tables",
+    "status": "disabled",
+    "interval_seconds": 86400,
+    "consecutive_failures": 0
+  }
+]

@@ -1,0 +1,92 @@
+[
+  {
+    "integration": "clover",
+    "sync_type": "fetch_closed_orders",
+    "status": "active",
+    "interval_seconds": 300
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_employees",
+    "status": "active",
+    "interval_seconds": 86400
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_item_stock",
+    "status": "active",
+    "interval_seconds": 300
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_open_orders",
+    "status": "active",
+    "interval_seconds": 60
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_payments",
+    "status": "active",
+    "interval_seconds": 15
+  },
+  {
+    "integration": "clover",
+    "sync_type": "fetch_products",
+    "status": "active",
+    "interval_seconds": 86400
+  },
+  {
+    "integration": "clover",
+    "sync_type": "push_orders",
+    "status": "active",
+    "interval_seconds": 15
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_clock_entries",
+    "status": "disabled",
+    "interval_seconds": 3600
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_closed_orders",
+    "status": "active",
+    "interval_seconds": 90
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_employees",
+    "status": "disabled",
+    "interval_seconds": 86400
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_health",
+    "status": "active",
+    "interval_seconds": 120
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_open_orders",
+    "status": "active",
+    "interval_seconds": 20
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_products",
+    "status": "disabled",
+    "interval_seconds": 86400
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_recent_orders",
+    "status": "disabled",
+    "interval_seconds": 25
+  },
+  {
+    "integration": "omnivore",
+    "sync_type": "fetch_tables",
+    "status": "disabled",
+    "interval_seconds": 86400
+  }
+]

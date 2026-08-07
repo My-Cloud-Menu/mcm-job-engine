@@ -129,7 +129,13 @@ function getTaxesBreakdownOfOmnivoreOrder(omnivoreOrder: any, config: any) {
       compound: false,
       subtotal: baseStandardAmount / 100,
       rate_code: 'estatal-tax',
-      tax_total: ((baseStandardAmount * 0.105) / 100).toFixed(2),
+      // `Math.round` sobre CENTAVOS enteros, no `.toFixed(2)` sobre la fracción: `700 × 0.105`
+      // son 73.5 centavos, pero `(0.735).toFixed(2)` da "0.73" porque 0.735 en binario es
+      // 0.73499999999999998668 → el medio centavo caía SIEMPRE hacia abajo y el desglose
+      // quedaba por debajo del `total_tax` que manda el POS (verificado en las órdenes 10386
+      // y 10384 de Pala Pizza). Es la misma aritmética que ya usa el builder de Clover
+      // (`buildTaxRatesForClass`: `Math.round(priceInCents * r.rate)`), que por eso sí cuadra.
+      tax_total: (Math.round(baseStandardAmount * 0.105) / 100).toFixed(2),
       additional_properties: {},
     },
     {
@@ -140,7 +146,7 @@ function getTaxesBreakdownOfOmnivoreOrder(omnivoreOrder: any, config: any) {
       compound: false,
       subtotal: baseReducedAmount / 100,
       rate_code: 'reduced-tax',
-      tax_total: ((baseReducedAmount * 0.06) / 100).toFixed(2),
+      tax_total: (Math.round(baseReducedAmount * 0.06) / 100).toFixed(2),
       additional_properties: {},
     },
     {
@@ -151,7 +157,7 @@ function getTaxesBreakdownOfOmnivoreOrder(omnivoreOrder: any, config: any) {
       compound: false,
       subtotal: totalAmount / 100,
       rate_code: 'municipal-tax',
-      tax_total: ((totalAmount * 0.01) / 100).toFixed(2),
+      tax_total: (Math.round(totalAmount * 0.01) / 100).toFixed(2),
       additional_properties: {},
     },
   ];
@@ -355,7 +361,8 @@ export function convertOmnivoreOrderToMCMOrder(
         name: 'Maintenance & Entertainment Fee',
         total: (omnivoreOrder.totals?.service_charges / 100 || 0).toFixed(2),
         tax_class: 'standard',
-        total_tax: ((omnivoreOrder.totals?.service_charges * 0.115) / 100).toFixed(2),
+        // Mismo redondeo en centavos enteros que las tax_lines (ver getTaxesBreakdownOfOmnivoreOrder).
+        total_tax: (Math.round((omnivoreOrder.totals?.service_charges || 0) * 0.115) / 100).toFixed(2),
         is_taxable: false,
         additional_properties: {},
       },
