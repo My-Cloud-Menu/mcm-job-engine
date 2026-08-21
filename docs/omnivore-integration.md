@@ -272,3 +272,29 @@ en `FIELDS` y mapea `item._embedded.modifiers[]` (vía `mapOmnivoreItemModifiers
 `additional_properties.omnivore_payment_id` como marca de "aplicado" (su `pos_id` ya es el id del pago
 Clover). Cuerpo armado por `omnivore/inject/build-payment-body.ts` (port byte-equivalente de
 `buildOmnivorePaymentBody`, incluye tip). Ver `docs/clover-integration.md §10`.
+
+## 2026-08-21 — Modo "Open Product": la parte del pull
+
+Con `omnivoreOpenProductEnabled` en `site_integrations.config`, el edge inyecta **todas** las líneas
+bajo un producto global del POS (`menu_item` fijo + `name` + `price_per_unit`) en vez de exigir el
+espejo 1:1 de catálogo. El contrato completo, la evidencia contra el POS y el builder están en
+`mcm-edge-functions/_docs/omnivore-open-product.md`.
+
+**El job-engine NO participa en la inyección**: sigue rigiendo "el edge construye, el job-engine
+envía" (`inject/add-items.ts` postea `jobPayload.items` tal cual). Lo único que cambia aquí es el
+PULL.
+
+`order-mapper.ts::convertOmnivoreOrderToMCMOrder` resolvía el `product_id` de cada línea por
+`menu_item.id`. En modo open eso convertiría **todas** las líneas que MCM inyectó en el mismo
+producto MCM (el que espeja el open product, tipo "OPEN FOOD"), y de paso `isStandardProduct`
+clasificaría mal el `tax_class`. Ahora, cuando el `menu_item` que llega es uno de los ids
+configurados (`getConfiguredOpenProductIds`, en `src/handlers/omnivore/open-product.ts`), el producto
+se resuelve por **nombre normalizado** contra el catálogo del site — que es exactamente el nombre que
+MCM le mandó al POS. Si no casa, se deja el comportamiento de siempre (`unmapped: true`).
+
+El mapa `productIdByName` lo arma `upsert-orders.ts` junto al `omnivoreIdToProductId` que ya existía,
+y **solo se puebla si la bandera está encendida**: sin ella el set de ids está vacío, el bloque nunca
+entra y el pull es idéntico al de antes. Mantener en sync con el mapeador gemelo del edge
+(`omnivore-helper.ts::convertOmnivoreOrderToMCMOrder`), que lleva el mismo cambio.
+
+Tests: `tests/unit/omnivore-open-product-pull.test.ts` (8).

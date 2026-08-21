@@ -1,6 +1,7 @@
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
 import { convertOmnivoreOrderToMCMOrder } from './order-mapper';
+import { isOpenProductEnabled, normalizeOpenProductName } from '../open-product';
 import { mergeManagedOrderLineItems } from './merge-managed-order';
 
 interface UpsertResult {
@@ -190,14 +191,23 @@ export async function upsertOmnivoreOrders(
   // Mapa omnivoreId → product_id (MCM) para resolver los ítems POS-originados al
   // product real (evita el throw del OrderCalculator y deja editar órdenes mixtas).
   const omnivoreIdToProductId = new Map<string, number>();
+  // Solo se puebla en modo open product (ver convertOmnivoreOrderToMCMOrder). Vacío ⇒ no-op.
+  const productIdByName = new Map<string, number>();
   {
+    const openProductModeForPull = isOpenProductEnabled(config);
     const { data: prods } = await supabase
       .from('products')
-      .select('id, additional_properties')
+      .select('id, name, additional_properties')
       .eq('site_id', siteId);
     for (const p of prods ?? []) {
       const oid = (p as any)?.additional_properties?.omnivoreId;
       if (oid != null) omnivoreIdToProductId.set(String(oid), Number((p as any).id));
+      if (openProductModeForPull) {
+        const key = normalizeOpenProductName((p as any).name);
+        // Primero gana: con nombres duplicados en el catálogo no hay forma de desempatar, y
+        // preferimos ser deterministas antes que arbitrarios.
+        if (key && !productIdByName.has(key)) productIdByName.set(key, Number((p as any).id));
+      }
     }
   }
 
@@ -232,7 +242,7 @@ export async function upsertOmnivoreOrders(
     // Per-order guard: a single malformed ticket must not fail the whole batch.
     let omnivorePosId = '(unknown)';
     try {
-      const order = convertOmnivoreOrderToMCMOrder(raw as any, config, omnivoreIdToProductId);
+      const order = convertOmnivoreOrderToMCMOrder(raw as any, config, omnivoreIdToProductId, productIdByName);
       omnivorePosId = order.pos_id as string;
 
       // Linkeo al floor_element MCM por external_id (= id de mesa de Omnivore). Deja table_id +

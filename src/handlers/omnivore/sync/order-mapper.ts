@@ -1,4 +1,5 @@
 import { AxiosInstance } from 'axios';
+import { getConfiguredOpenProductIds, normalizeOpenProductName } from '../open-product';
 
 // Puerto Rico is UTC-4 year-round (no DST) — same convention as the legacy
 // `getOmnivoreOrders` (`dayjs().utcOffset(-240)`).
@@ -214,8 +215,12 @@ export function convertOmnivoreOrderToMCMOrder(
   omnivoreOrder: any,
   config: any,
   omnivoreIdToProductId?: Map<string, number>,
+  productIdByName?: Map<string, number>,
 ) {
   const standardCategories: string[] = config?.standardProductsCategories || [];
+  // Ids de producto global configurados. Vacío (bandera apagada) ⇒ la resolución por nombre de
+  // abajo nunca entra y el mapeo es el de siempre.
+  const openProductIds = getConfiguredOpenProductIds(config);
 
   const lineItems =
     omnivoreOrder._embedded?.items?.map((item: any, index: number) => {
@@ -230,7 +235,16 @@ export function convertOmnivoreOrderToMCMOrder(
       // additional_properties.omnivoreId). Si no mapea, conservar el id crudo + unmapped:true
       // (el OrderCalculator lo tratará como ítem externo verbatim → no tira).
       const omniMenuItemId = item._embedded?.menu_item?.id != null ? String(item._embedded.menu_item.id) : '';
-      const mappedProductId = omnivoreIdToProductId?.get(omniMenuItemId);
+      let mappedProductId = omnivoreIdToProductId?.get(omniMenuItemId);
+      // Modo open product: TODAS las líneas que MCM inyectó vuelven con el MISMO `menu_item` (el
+      // producto global), así que resolver por id las convertiría a todas en "OPEN FOOD" y
+      // `isStandardProduct` clasificaría mal el tax_class. Cuando el `menu_item` es uno de los
+      // open products configurados se resuelve por NOMBRE — que es exactamente lo que MCM le
+      // mandó al POS. Si no casa, se deja el comportamiento de siempre (unmapped:true).
+      if (openProductIds.has(omniMenuItemId)) {
+        const byName = productIdByName?.get(normalizeOpenProductName(item?.name));
+        if (byName != null) mappedProductId = byName;
+      }
       const productId = mappedProductId ?? parseInt(omniMenuItemId || '0');
       const isSent = !!item.sent;
 
