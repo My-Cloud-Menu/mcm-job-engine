@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
   posts: [] as any[],
   gets: 0,
   getFalla: false,
+  getStatus: 500,
   updates: [] as any[],
 }));
 
@@ -39,7 +40,7 @@ vi.mock('../../src/handlers/clover/client', async (orig) => {
     createCloverClient: vi.fn(() => ({
       get: vi.fn(async () => {
         h.gets++;
-        if (h.getFalla) throw Object.assign(new Error('boom'), { response: { status: 500 } });
+        if (h.getFalla) throw Object.assign(new Error('boom'), { isAxiosError: true, response: { status: h.getStatus, data: { message: 'boom' } } });
         return { data: { payments: { elements: h.pagosEnClover } } };
       }),
       post: vi.fn(async (_u: string, body: any) => {
@@ -63,6 +64,7 @@ vi.mock('../../src/lib/supabase', () => {
 
 import '../../src/handlers/clover/inject/payment';
 import { getHandler } from '../../src/handlers/registry';
+import { notaLlevaAncla } from '../../src/handlers/clover/inject/payment';
 
 const correr = (attempt = 0) => getHandler('clover', 'payment_injection')!({
   jobPayload: { ticket_id: 'ORD1', payment_id: 77, order_id: 10, payment: { amount: 1000, tender: { id: 'T' } } },
@@ -70,7 +72,7 @@ const correr = (attempt = 0) => getHandler('clover', 'payment_injection')!({
   step: { idempotency_key: 'k', attempt_count: attempt, max_attempts: 4 } as any,
 } as any);
 
-beforeEach(() => { h.pagoMcm = { pos_id: null }; h.pagosEnClover = []; h.posts = []; h.gets = 0; h.getFalla = false; h.updates = []; });
+beforeEach(() => { h.pagoMcm = { pos_id: null }; h.pagosEnClover = []; h.posts = []; h.gets = 0; h.getFalla = false; h.getStatus = 500; h.updates = []; });
 
 describe('cobro doble en Clover (H-N7)', () => {
   it('el pago lleva el ancla `note` con site y payment_id', async () => {
@@ -95,15 +97,50 @@ describe('cobro doble en Clover (H-N7)', () => {
     expect(h.posts).toHaveLength(0);   // preferible reintentar luego que cobrar dos veces
   });
 
+  // MEDIDO (H-N9): Clover devuelve el `amount` EXACTO que se le envía, así que compararlo es
+  // fiable. `requeue_job(p_payload_override)` deja reencolar con otro importe: entonces el ancla
+  // coincide pero el dinero no, y ni adoptar ni re-postear son correctos.
+  it('mismo ancla pero OTRO importe: ni adopta ni re-postea, para para revisión', async () => {
+    h.pagosEnClover = [{ id: 'CLV_PAY_YA', amount: 500, note: 'mcm:pay:99990004:77' }];
+    await expect(correr(0)).rejects.toMatchObject({
+      code: 'CLOVER_PAYMENT_AMOUNT_MISMATCH', retryable: false,
+    });
+    expect(h.posts).toHaveLength(0);
+  });
+
   it('un pago AJENO del mismo importe no se confunde con el nuestro', async () => {
     h.pagosEnClover = [{ id: 'OTRO', amount: 1000, note: 'mcm:pay:99990004:99' }];
     await correr(1);
     expect(h.posts).toHaveLength(1);   // el nuestro no estaba: sí hay que postear
   });
 
-  it('el primer intento no gasta un GET (el camino normal no paga peaje)', async () => {
-    await correr(0);
-    expect(h.gets).toBe(0);
+  // ── El gate por `attempt_count` era el propio agujero ───────────────────────────────────
+  // `attempt_count` sólo lo incrementan `complete_step`/`fail_step`, y TRES caminos automáticos lo
+  // devuelven a 0: `recover_stuck_jobs()` (cron cada minuto) no toca `job_steps`;
+  // `retry_dead_letter_job()` lo pone a 0 explícitamente; y `retry_transient_dead_letters()`
+  // (cron cada 5 min) llama al anterior casando `%timeout%`, el error más frecuente de Clover.
+  // El test anterior afirmaba que el primer intento «no paga peaje» — y ese ahorro era justo lo
+  // que dejaba pasar el cobro doble.
+  it('RECONCILIA CON attempt_count=0: es el escenario del cron de reintentos', async () => {
+    h.pagosEnClover = [{ id: 'CLV_PAY_YA', amount: 1000, note: 'mcm:pay:99990004:77' }];
+    const r: any = await correr(0);                        // <- contador reseteado por el cron
+    expect(h.gets).toBe(1);
+    expect(h.posts).toHaveLength(0);                       // <- NO cobra dos veces
+    expect(r.reconciled).toBe(true);
+  });
+
+  it('404 en el GET: corta sin postear y NO es reintentable (no lo resucita el cron)', async () => {
+    h.getFalla = true; h.getStatus = 404;
+    await expect(correr(0)).rejects.toMatchObject({
+      code: 'CLOVER_ORDER_NOT_FOUND', retryable: false,
+    });
+    expect(h.posts).toHaveLength(0);   // el POST iría al mismo id y daría 404 igual
+  });
+
+  it('cualquier OTRO fallo del GET sigue bloqueando el POST', async () => {
+    h.getFalla = true; h.getStatus = 500;
+    await expect(correr(0)).rejects.toThrow();
+    expect(h.posts).toHaveLength(0);
   });
 
   it('el guard por pos_id sigue funcionando', async () => {
@@ -111,5 +148,28 @@ describe('cobro doble en Clover (H-N7)', () => {
     const r: any = await correr(0);
     expect(r.skipped).toBe('already_applied');
     expect(h.posts).toHaveLength(0);
+  });
+});
+
+// ── El ancla no puede casar por PREFIJO ───────────────────────────────────────────────────
+// `mcm:pay:9:1` es prefijo de `mcm:pay:9:19`. Con `includes`, el reintento del pago 1 adoptaba el
+// pago 19, marcaba el suyo como aplicado y salía SIN COBRAR: dinero que falta, no que sobra.
+describe('frontera del ancla de reconciliación', () => {
+  it('casa el ancla exacta', () => {
+    expect(notaLlevaAncla('mcm:pay:9:1', 'mcm:pay:9:1')).toBe(true);
+  });
+  it('NO casa un id que la tiene por prefijo', () => {
+    expect(notaLlevaAncla('mcm:pay:9:19', 'mcm:pay:9:1')).toBe(false);
+    expect(notaLlevaAncla('mcm:pay:9:1234', 'mcm:pay:9:12')).toBe(false);
+  });
+  it('casa cuando el ancla va detrás de una nota del negocio', () => {
+    expect(notaLlevaAncla('Mesa 4 mcm:pay:9:1', 'mcm:pay:9:1')).toBe(true);
+  });
+  it('encuentra el ancla aunque antes aparezca un prefijo suyo', () => {
+    expect(notaLlevaAncla('mcm:pay:9:19 mcm:pay:9:1', 'mcm:pay:9:1')).toBe(true);
+  });
+  it('tolera nota nula o vacía', () => {
+    expect(notaLlevaAncla(null, 'mcm:pay:9:1')).toBe(false);
+    expect(notaLlevaAncla(undefined, 'mcm:pay:9:1')).toBe(false);
   });
 });

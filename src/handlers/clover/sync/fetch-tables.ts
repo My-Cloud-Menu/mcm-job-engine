@@ -7,6 +7,7 @@ import { logger } from '../../../lib/logger';
 import { mapCloverError } from '../error-map';
 import { readAllBySite } from '../../omnivore/sync/inventory/supabase-read';
 import { fetchCloverTablesAndSections, MesaClover } from './table-mapper';
+import { resolveSiteLocationId } from '../../../lib/site-location';
 
 const InputSchema = z.object({
   schedule_id: z.string().uuid().nullable().optional(),
@@ -61,18 +62,47 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
     throw mapCloverError(err, 'CLOVER_FETCH_TABLES_FAILED');
   }
 
-  // El plano: uno por site para las mesas de Clover. Se crea sólo si hay algo que colocar.
+  // El plano: uno por merchant para las mesas de Clover. Se crea sólo si hay algo que colocar.
+  //
+  // OJO con el `external_id`: el índice único es `(site_id, external_source, external_id)`, así que
+  // DOS planos `clover` del mismo site son legales si difiere el merchant. Buscando sólo por
+  // `(site_id, 'clover')`, en cuanto existieran dos el `.maybeSingle()` devolvería PGRST116 →
+  // `data` null → se insertaría un TERCERO, y otro más en cada corrida. Estado absorbente. Por eso
+  // se filtra también por `external_id` y **se mira el error** en vez de descartarlo.
   let planId: string | null = null;
   {
-    const { data } = await supabase.from('floor_plans').select('id')
-      .eq('site_id', job.site_id).eq('external_source', 'clover').maybeSingle();
+    const { data, error: errBusca } = await supabase.from('floor_plans').select('id')
+      .eq('site_id', job.site_id)
+      .eq('external_source', 'clover')
+      .eq('external_id', cloverConfig.merchantId)
+      .maybeSingle();
+    if (errBusca) throw errBusca;
     planId = (data as any)?.id ?? null;
+
     if (!planId && mesas.length > 0) {
+      // La sucursal, SÓLO al crear. En las corridas siguientes se reutiliza el plano existente y
+      // NO se repisa `location_id`: alguien puede moverlo de sucursal a mano desde el editor, y un
+      // sync de 24 h que lo arrastrase de vuelta cada noche sería un tira y afloja invisible.
+      const locationId = await resolveSiteLocationId(job.site_id);
+
+      // `display_order` al final, como Omnivore. Sin esto queda en 0 y el plano de Clover se cuela
+      // por delante de los que montó el negocio a mano.
+      const { data: ultimo } = await supabase.from('floor_plans')
+        .select('display_order').eq('site_id', job.site_id)
+        .order('display_order', { ascending: false }).limit(1).maybeSingle();
+      const orden = Number((ultimo as any)?.display_order ?? -1) + 1;
+
       const { data: nuevo, error } = await supabase.from('floor_plans')
-        .insert({ site_id: job.site_id, name: 'Clover', is_active: true, external_source: 'clover', external_id: cloverConfig.merchantId })
+        .insert({
+          site_id: job.site_id, location_id: locationId, name: 'Clover', is_active: true,
+          display_order: orden,
+          external_source: 'clover', external_id: cloverConfig.merchantId,
+        })
         .select('id').single();
       if (error) throw error;
       planId = (nuevo as any).id;
+      logger.info({ site_id: job.site_id, plan_id: planId, location_id: locationId, display_order: orden },
+        'clover_floor_plan_created');
     }
   }
 
@@ -102,6 +132,12 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
         x: 0, y: 0, width: 60, height: 60, rotation: 0, z_index: 0,
         table_name: m.nombre, table_number: m.nombre, capacity: m.asientos,
         section: m.seccionNombre, status: 'available',
+        // NACE NO PUBLICABLE. La columna tiene `DEFAULT true`, así que sin esta línea una mesa
+        // importada se publicaría sola en la web de reservas en cuanto alguien la desarchive para
+        // usarla en el POS. Omnivore tiene una migración dedicada exactamente a esto
+        // (`20260821153826_omnivore_floor_sync_imports_not_bookable.sql`). Sólo en el INSERT: a
+        // quien ya publicó una mesa a mano no se le toca.
+        bookable_online: false,
         external_source: 'clover', external_id: m.id,
         archived_at: new Date().toISOString(),
         metadata: { ...meta, archived_reason: 'import', clover_baseline: { table_name: m.nombre } },

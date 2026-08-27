@@ -11,7 +11,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => ({
   mesasClover: [] as any[], seccionesClover: [] as any[], falloTables: false,
-  filas: [] as any[], planes: [] as any[], ordenes: [] as any[],
+  filas: [] as any[], planes: [] as any[], ordenes: [] as any[], locations: [] as any[],
   inserts: [] as any[], updates: [] as any[],
   cfg: { apiKey: 'k', merchantId: 'M', apiUrl: 'https://x', sync_orders: true, sync_tables: true } as any,
 }));
@@ -37,7 +37,7 @@ vi.mock('../../src/lib/supabase', () => {
   const write = () => { const c: any = { eq: () => c, then: (r: any) => r({ error: null }) }; return c; };
   return { supabase: {
     from: (t: string) => ({
-      select: () => chain(t === 'floor_elements' ? h.filas : t === 'floor_plans' ? h.planes : t === 'orders' ? h.ordenes : []),
+      select: () => chain(t === 'floor_elements' ? h.filas : t === 'floor_plans' ? h.planes : t === 'orders' ? h.ordenes : t === 'locations' ? h.locations : []),
       insert: (row: any) => { h.inserts.push({ t, row });
         return { select: () => ({ single: async () => ({ data: { id: 'PLAN-1' }, error: null }) }), then: (r: any) => r({ error: null }) }; },
       update: (p: any) => { h.updates.push({ t, patch: p }); return write(); },
@@ -64,7 +64,7 @@ const fila = (extId: string, nombre: string, extra: any = {}) =>
 
 beforeEach(() => {
   h.mesasClover = []; h.seccionesClover = [{ id: 'S1', name: 'Salón' }]; h.falloTables = false;
-  h.filas = []; h.planes = [{ id: 'PLAN-1' }]; h.ordenes = [];
+  h.filas = []; h.planes = [{ id: 'PLAN-1' }]; h.ordenes = []; h.locations = [];
   h.inserts = []; h.updates = []; h.cfg = { ...h.cfg, sync_tables: true }; vi.clearAllMocks();
 });
 
@@ -158,5 +158,57 @@ describe('sync de mesas de Clover', () => {
     const r = await correr(false);
     expect(r.skipped_reason).toBe('sync_tables_disabled');
     expect(h.inserts).toHaveLength(0);
+  });
+});
+
+// ── El plano: sucursal, orden y búsqueda exacta ───────────────────────────────────────────
+// Un plano con `location_id` NULL no es invisible: es INTERMITENTE. `lib/supabase/floor.ts` filtra
+// con `.eq('location_id')` estricto, así que se ve mientras nadie haya elegido sucursal y
+// desaparece —del editor Y DEL POS— en cuanto alguien la elige, elección que además persiste en
+// `localStorage`.
+describe('el plano de Clover nace bien colocado', () => {
+  const planoCreado = () => h.inserts.find((i) => i.t === 'floor_plans')?.row;
+
+  it('le pone la sucursal por defecto del site', async () => {
+    h.planes = []; h.locations = [{ id: 90010047 }];
+    h.mesasClover = [mesa('T1', 'Mesa 1')];
+    await correr();
+    expect(planoCreado()).toMatchObject({ location_id: 90010047, site_id: 99990004, external_id: 'M' });
+  });
+
+  it('un site SIN sucursales deja NULL, que es legítimo — no se inventa una', async () => {
+    h.planes = []; h.locations = [];
+    h.mesasClover = [mesa('T1', 'Mesa 1')];
+    await correr();
+    expect(planoCreado()!.location_id).toBeNull();
+  });
+
+  it('va al final de la lista, no por delante de los planos del negocio', async () => {
+    h.planes = []; h.locations = [{ id: 1 }];
+    h.mesasClover = [mesa('T1', 'Mesa 1')];
+    await correr();
+    // el mock de `select('display_order')` devuelve `h.planes[0]`, vacío ⇒ arranca en 0
+    expect(planoCreado()!.display_order).toBe(0);
+  });
+
+  it('NO repisa la sucursal si el plano ya existe (una corrección manual sobrevive)', async () => {
+    h.planes = [{ id: 'PLAN-1', location_id: 777 }];
+    h.locations = [{ id: 90010047 }];
+    h.mesasClover = [mesa('T1', 'Mesa 1')];
+    await correr();
+    expect(h.inserts.some((i) => i.t === 'floor_plans')).toBe(false);
+    expect(h.updates.some((u) => u.t === 'floor_plans')).toBe(false);
+  });
+});
+
+// Las mesas nacen archivadas, pero la columna `bookable_online` tiene DEFAULT true: sin esto,
+// desarchivar una para usarla en el POS la publicaba sola en la web de reservas.
+describe('una mesa importada no se publica sola en reservas', () => {
+  it('nace NO publicable', async () => {
+    h.mesasClover = [mesa('T1', 'Mesa 1')];
+    await correr();
+    const fe = h.inserts.find((i) => i.t === 'floor_elements')?.row;
+    expect(fe.bookable_online).toBe(false);
+    expect(fe.archived_at).toBeTruthy();
   });
 });

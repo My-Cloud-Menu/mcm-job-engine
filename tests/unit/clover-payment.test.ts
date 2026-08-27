@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/handlers/clover/client', () => ({
-  createCloverClient: () => ({ post: h.post }),
+  createCloverClient: () => ({ post: h.post, get: async () => ({ data: { payments: { elements: [] } } }) }),
   CloverConfigSchema: { parse: (c: unknown) => c },
 }));
 vi.mock('../../src/lib/credentials', () => ({
