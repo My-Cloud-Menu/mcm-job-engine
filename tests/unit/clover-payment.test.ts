@@ -22,11 +22,22 @@ vi.mock('../../src/lib/supabase', () => ({
   supabase: {
     from: (table: string) => ({
       select: () => ({
-        eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: h.existingPosId ? { pos_id: h.existingPosId } : null }) }) }),
+        eq: function self(this: any): any {
+          const c: any = {
+            eq: () => c, neq: () => c, not: () => c,
+            maybeSingle: async () => ({ data: h.existingPosId ? { pos_id: h.existingPosId } : null, error: null }),
+            then: (r: any) => r({ data: [], error: null }),
+          };
+          return c;
+        },
       }),
       update: (patch: any) => {
         (table === 'payments' ? h.paymentUpdates : h.orderUpdates).push(patch);
-        return { eq: () => ({ eq: async () => ({ error: null }) }) };
+        const c: any = {
+          eq: () => c, not: () => c,
+          then: (r: any) => r({ error: null }),
+        };
+        return c;
       },
       upsert: (row: any) => {
         h.mapUpserts.push(row);
@@ -89,9 +100,20 @@ describe('clover payment_injection handler', () => {
     expect(h.post).not.toHaveBeenCalled();
   });
 
-  it('business error → non-retryable HandlerError + pos_injection_error', async () => {
+  it('el fallo de PAGO va a `issues` — la columna que ve el mesero — y no a pos_injection_error', async () => {
     h.post.mockRejectedValue({ isAxiosError: true, response: { status: 400, data: { message: 'bad tender' } } });
     await expect(run()).rejects.toBeInstanceOf(HandlerError);
-    expect(h.orderUpdates.find((u) => u.pos_injection_error)).toBeTruthy();
+
+    const conIssue = h.orderUpdates.find((u) => u.issues);
+    expect(conIssue).toBeTruthy();
+    expect(conIssue.issues.provider).toBe('clover');
+    expect(conIssue.issues.payment_id).toBe(55);
+    // Mensaje para una persona, no el volcado del POS.
+    expect(conIssue.issues.friendly_error).toBe('El POS rechazó la operación.');
+    // Y NO se guarda la respuesta cruda: en Omnivore esa clave llega a pesar kilobytes.
+    expect(String(conIssue.issues.error).length).toBeLessThan(500);
+
+    // El camino de pago ya no pisa el error de inyección de la orden.
+    expect(h.orderUpdates.find((u) => u.pos_injection_error)).toBeFalsy();
   });
 });

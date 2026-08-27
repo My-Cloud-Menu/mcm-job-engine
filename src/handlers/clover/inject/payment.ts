@@ -4,7 +4,10 @@ import { createCloverClient, CloverConfigSchema } from '../client';
 import { HandlerError } from '../../../core/types';
 import { supabase } from '../../../lib/supabase';
 import { mapCloverError } from '../error-map';
-import { persistInjectionError, willTerminate } from './shared';
+import {
+  persistInjectionError, willTerminate,
+  persistCloverPaymentIssue, reconcileCloverOrderIssues,
+} from './shared';
 
 /**
  * Standalone Clover payment injection (replaces the legacy `sendPaymentToClover`).
@@ -131,10 +134,15 @@ registerHandler('clover', 'payment_injection', async ({ jobPayload, job, step })
       // No retryable a propósito, y el mensaje NO casa con el filtro del cron de reintentos
       // (`%timeout%`, `%HTTP 50%`, `%HTTP 429%`), así que nadie lo resucita a ciegas.
       if (he.statusCode === 404) {
-        throw new HandlerError(
+        const terminal = new HandlerError(
           `clover payment: la orden ${ticketId} no existe en Clover — no se aplica el pago`,
           'CLOVER_ORDER_NOT_FOUND', false, 404,
         );
+        // Este bloque vive ANTES del try/catch de abajo, así que si no se escribe aquí el aviso
+        // no lo escribe nadie: un pago que muere porque el ticket desapareció se quedaría sin
+        // rastro para el mesero, que es justo lo que se viene a arreglar.
+        await persistCloverPaymentIssue(job.site_id, orderId, paymentId, terminal);
+        throw terminal;
       }
       // Se fuerza retryable: no saber si ya se cobro NUNCA puede degenerar en re-postear.
       throw new HandlerError(
@@ -152,11 +160,15 @@ registerHandler('clover', 'payment_injection', async ({ jobPayload, job, step })
     // es fiable y no va a bloquear pagos legítimos.
     const importeEsperado = Number((paymentBody as any)?.amount);
     if (yaAplicado?.id && Number.isFinite(importeEsperado) && Number(yaAplicado.amount) !== importeEsperado) {
-      throw new HandlerError(
+      const desajuste = new HandlerError(
         `clover payment: el pago ${yaAplicado.id} lleva nuestra ancla pero su importe es ` +
         `${yaAplicado.amount} y se esperaba ${importeEsperado} — no se adopta ni se re-postea`,
         'CLOVER_PAYMENT_AMOUNT_MISMATCH', false,
       );
+      // Terminal y fuera del try de abajo: sin esto, el caso que MÁS necesita ojos humanos
+      // sería el único que no avisa a nadie.
+      await persistCloverPaymentIssue(job.site_id, orderId, paymentId, desajuste);
+      throw desajuste;
     }
     if (yaAplicado?.id) {
       const cloverPaymentId = String(yaAplicado.id);
@@ -178,6 +190,7 @@ registerHandler('clover', 'payment_injection', async ({ jobPayload, job, step })
           'CLOVER_PAYMENT_MAP_FAILED', true,
         );
       }
+      await reconcileCloverOrderIssues(job.site_id, orderId, job.id);
       return { clover_payment_id: cloverPaymentId, reconciled: true };
     }
   }
@@ -231,11 +244,17 @@ registerHandler('clover', 'payment_injection', async ({ jobPayload, job, step })
         );
       }
     }
+    await reconcileCloverOrderIssues(job.site_id, orderId, job.id);
     return { clover_payment_id: cloverPaymentId };
   } catch (err) {
     const he = err instanceof HandlerError ? err : mapCloverError(err, 'CLOVER_PAYMENT_FAILED');
     if (willTerminate(he.retryable, step)) {
-      await persistInjectionError(job.site_id, orderId, he);
+      // El fallo de PAGO va a `orders.issues`, que es la columna que lee la app del mesero
+      // (`orderandpay`): sube la cuenta al tope, la marca y ofrece «Reintentar». Antes esto sólo
+      // escribía `pos_injection_error`, que esa app no lee — o sea que un cobro que no entraba
+      // era invisible para quien podía arreglarlo. Y de paso deja de pisar el error de inyección
+      // de la orden, que comparte esa otra columna.
+      await persistCloverPaymentIssue(job.site_id, orderId, paymentId, he);
     }
     throw he;
   }

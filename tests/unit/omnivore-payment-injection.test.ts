@@ -221,4 +221,123 @@ describe('omnivore payment_injection handler', () => {
     expect(s.max_attempts).toBe(5);
     expect(h.paymentUpdates.find((u) => u.table === 'job_steps')).toBeUndefined();
   });
+
+  // ── «Error closing ticket»: el POS aplicó el pago y falló al cerrar ──────────────────────────
+  //
+  // Incidente real en Numen (site VIVO) el 2026-08-27. El ticket `20260827-10027` acabó con DOS
+  // tenders: `95420423` (importe 1) y `95420424` (importe 0, cambio 1). El segundo lo creó el
+  // reintento de MCM después de que el POS ya hubiera aplicado el primero.
+  const errorCierreFallido = (reason: unknown = 'Error closing ticket.') =>
+    Object.assign(new Error('Request failed with status code 500'), {
+      isAxiosError: true,
+      response: {
+        status: 500,
+        data: {
+          errors: [
+            {
+              error: 'internal_error',
+              description: 'The system threw an unexpected error.',
+              ...(reason === undefined ? {} : { metadata: { reason } }),
+            },
+          ],
+        },
+      },
+    });
+
+  it('«Error closing ticket»: NO se reintenta — reintentar es exactamente lo que duplicó el tender', async () => {
+    h.post.mockRejectedValue(errorCierreFallido());
+    const s = freshStep();
+
+    const err: any = await runWithStep(s).then(
+      () => { throw new Error('debió lanzar'); },
+      (e) => e
+    );
+
+    expect(err.code).toBe('OMNIVORE_PAYMENT_APPLIED_CLOSE_FAILED');
+    expect(err.retryable).toBe(false);
+    // Sin escalada de intentos: esto no es contención, es un pago que YA entró.
+    expect(s.max_attempts).toBe(5);
+  });
+
+  it('«Error closing ticket»: deja ESCRITO que el pago entró, para que nadie lo reenvíe a mano', async () => {
+    h.post.mockRejectedValue(errorCierreFallido());
+
+    await runWithStep(freshStep()).catch(() => {});
+
+    // 1. Marcador en el pago → cualquier intento posterior sale por `already_applied`.
+    const marca = h.paymentUpdates.find((u) => u.table === 'payments');
+    expect(marca.patch.pos_id).toBe('applied_close_failed');
+
+    // 2. Mensaje accionable en la orden. Sin esto se vería «pago fallido», alguien lo reenviaría
+    //    y el duplicado entraría por la otra puerta.
+    const issue = h.paymentUpdates.find((u) => u.table === 'orders' && u.patch.issues);
+    expect(issue.patch.issues.friendly_error).toContain('cerralo en el terminal');
+    expect(issue.patch.issues.payment_id).toBe(55);
+  });
+
+  it('el marcador cierra el círculo: con él puesto, un intento posterior NO postea', async () => {
+    h.existingPosId = 'applied_close_failed';
+
+    const out = await run();
+
+    expect(out).toMatchObject({ skipped: 'already_applied' });
+    expect(h.post).not.toHaveBeenCalled();
+  });
+
+  it('normaliza el reason: mayúsculas, espacios y el punto final no desactivan la protección', async () => {
+    for (const variante of ['Error closing ticket.', 'error closing ticket', '  ERROR CLOSING TICKET.  ']) {
+      h.post.mockReset();
+      h.paymentUpdates.length = 0;
+      h.post.mockRejectedValue(errorCierreFallido(variante));
+
+      const err: any = await runWithStep(freshStep()).then(() => null, (e) => e);
+      expect(err?.code, `variante ${JSON.stringify(variante)}`).toBe('OMNIVORE_PAYMENT_APPLIED_CLOSE_FAILED');
+    }
+  });
+
+  it('OTRO internal_error sigue siendo reintentable — no se toca el resto del slug', async () => {
+    h.post.mockRejectedValue(errorCierreFallido('Something else entirely'));
+
+    const err: any = await runWithStep(freshStep()).then(() => null, (e) => e);
+
+    expect(err.code).toBe('OMNIVORE_INTERNAL_ERROR');
+    expect(err.retryable).toBe(true);
+    // Y NO se marca el pago como aplicado: aquí no sabemos que entrara.
+    expect(h.paymentUpdates.find((u) => u.table === 'payments')).toBeUndefined();
+  });
+
+  it('internal_error SIN metadata sigue siendo reintentable', async () => {
+    // Se construye a mano: pasarle `undefined` al helper activaría su valor por defecto y el
+    // error acabaría llevando el `reason` que este caso justamente quiere omitir.
+    h.post.mockRejectedValue(
+      Object.assign(new Error('Request failed with status code 500'), {
+        isAxiosError: true,
+        response: {
+          status: 500,
+          data: { errors: [{ error: 'internal_error', description: 'The system threw an unexpected error.' }] },
+        },
+      }),
+    );
+
+    const err: any = await runWithStep(freshStep()).then(() => null, (e) => e);
+
+    expect(err.code).toBe('OMNIVORE_INTERNAL_ERROR');
+    expect(err.retryable).toBe(true);
+  });
+
+  it('en un reintento, si el GET del ticket falla NO se postea (guarda conservada)', async () => {
+    h.get.mockRejectedValue(omnivoreError('pos_offline', 503));
+    h.post.mockResolvedValue({ data: { id: 'NO-DEBERÍA' } });
+
+    const err: any = await handler({
+      stepInput: {},
+      jobPayload: { payment_id: 55, order_id: 123, ticket_id: 'TICKET-9', payment },
+      context: {},
+      job,
+      step: { ...freshStep(), attempt_count: 1 },
+    }).then(() => null, (e) => e);
+
+    expect(err).toBeTruthy();
+    expect(h.post).not.toHaveBeenCalled();
+  });
 });

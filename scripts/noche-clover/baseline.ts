@@ -45,6 +45,16 @@ async function capturar() {
     .map(r => `BOR:${r.id}:${r.type}:${r.provider}:${r.active}`);
   const checksumOmnivore = md5([...omni, ...omniSched, ...bor].sort().join('|'));
 
+  // 1b · El mismo checksum, desglosado por site. El global cambia si alguien conecta Omnivore a
+  // un site NUEVO desde el dashboard — pasó el 27-ago con «Numen» (1173690) — y entonces el
+  // comparador acusaba a todo Omnivore de haberse movido. Con el desglose se ve al culpable.
+  const porSiteOmnivore: Record<string, string> = {};
+  for (const sid of new Set([...omni, ...omniSched].map(l => l.split(':')[2]))) {
+    porSiteOmnivore[sid] = md5(
+      [...omni, ...omniSched].filter(l => l.split(':')[2] === sid).sort().join('|'),
+    );
+  }
+
   // 2 · Dead-letters por integración
   const dlRows = await todas('integration_jobs', 'integration, status', q => q.eq('status', 'dead_letter'));
   const deadLetters: Record<string, number> = {};
@@ -92,6 +102,7 @@ async function capturar() {
   return {
     ts: new Date().toISOString(),
     checksumOmnivore,
+    porSiteOmnivore,
     checksumTenants: md5(JSON.stringify(porTenant)),
     porTenant,
     deadLetters,
@@ -128,6 +139,25 @@ async function capturar() {
     };
     console.log(`comparando "${a}" → "${b}"`);
     chk('checksum Omnivore + Borinqueña', prev.checksumOmnivore, snap.checksumOmnivore);
+    // Si el global cambió, se dice CUÁL site lo movió y si alguno de los de antes se tocó — que es
+    // la única pregunta que importa. Un site nuevo conectado desde el dashboard mueve el global
+    // sin que nada existente se haya alterado.
+    if (prev.checksumOmnivore !== snap.checksumOmnivore) {
+      const antes = prev.porSiteOmnivore ?? {};
+      const nuevos = Object.keys(snap.porSiteOmnivore).filter(s => !(s in antes));
+      const idos = Object.keys(antes).filter(s => !(s in snap.porSiteOmnivore));
+      const alterados = Object.keys(antes).filter(
+        s => s in snap.porSiteOmnivore && antes[s] !== snap.porSiteOmnivore[s],
+      );
+      if (nuevos.length) console.log(`      · sites de Omnivore NUEVOS (no los tocamos): ${nuevos.join(', ')}`);
+      if (idos.length) console.log(`      · sites de Omnivore que DESAPARECIERON: ${idos.join(', ')}`);
+      console.log(`      · ${alterados.length === 0 ? '✓ ninguno de los sites previos se alteró' : '✗ ALTERADOS: ' + alterados.join(', ')}`);
+      // Un site nuevo no es un fallo: lo que se afirma es que NADA de lo que ya existía se movió.
+      if (alterados.length === 0) {
+        const i = fallos.findIndex(f => f.startsWith('checksum Omnivore'));
+        if (i >= 0) fallos.splice(i, 1);
+      }
+    }
     chk('huella de Clover fuera del banco', prev.huellaCloverFuera, snap.huellaCloverFuera);
     chk('dead-letters de Omnivore', prev.deadLetters.omnivore ?? 0, snap.deadLetters.omnivore ?? 0);
     // por tenant, detallado: qué site cambió y en qué

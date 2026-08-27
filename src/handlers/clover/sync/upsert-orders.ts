@@ -238,13 +238,44 @@ export async function upsertOrdersFromClover(
           (order as any).line_items
         );
 
-        // ¿Hay líneas que sólo existen en MCM (añadidas y aún no empujadas)?
-        // Si las hay, MCM va por delante: sus totales ya las incluyen y los de Clover no.
-        // Tomar los de Clover subvaloraría la cuenta. Se conservan los de MCM hasta que
-        // el push las suba y el pull siguiente alinee.
-        const hayLocalesSinEmpujar = mergedLineItems.some(
+        // ── TOTALES: se SUMAN los dos lados, no se elige uno ──────────────────────────────
+        //
+        // La versión anterior preguntaba «¿tengo yo líneas sin empujar?» y, si la respuesta era
+        // sí, DESCARTABA los totales de Clover. Su intención era buena —evitar subvalorar cuando
+        // MCM va por delante— pero fallaba cuando van por delante LOS DOS: si el mesero tiene un
+        // ítem sin firear Y alguien tecleó algo en el terminal, MCM conservaba su total, que no
+        // incluye lo del terminal. Y como `line_items` se escribe SIEMPRE (abajo), ese ítem
+        // aparecía en la cuenta SIN SUMAR AL TOTAL → sub-cobro.
+        //
+        // Y no era una ventana temporal: la condición es de ESTADO. Un ítem retenido (`held`)
+        // nunca se firea, así que el desfase podía durar todo el servicio.
+        //
+        // Se adopta la regla de Omnivore (`omnivore/sync/upsert-orders.ts:335,377`), que lleva
+        // meses en producción: la pregunta correcta es **si el ticket del POS tiene líneas**, y
+        // cuando las tiene el total es `POS + preview de lo que aún no está en el POS`.
+        //
+        // OJO con el doble conteo (el mismo fix que Omnivore documenta en :336-341): al preview
+        // SÓLO van las líneas que Clover NO tiene, o sea las que no llevan ancla. Las que ya
+        // están en el ticket vienen dentro de `order.total` y re-sumarlas duplicaría la cuenta.
+        const sinEmpujar = mergedLineItems.filter(
           (li: any) => li.status !== 'voided' && cloverIdsOf(li).length === 0
         );
+        const importeLinea = (li: any): number => {
+          const t = Number(li?.total);
+          if (Number.isFinite(t)) return t;
+          // Respaldo: una línea sin `total` aportaría CERO al preview en silencio — otro sub-cobro
+          // con distinta cara. Un `total: 0` legítimo (invitación) sí se respeta, porque 0 es finito.
+          return Number(li?.price ?? 0) * Number(li?.quantity ?? 1);
+        };
+        const previewSubtotal = sinEmpujar.reduce((acc: number, li: any) => acc + importeLinea(li), 0);
+        const previewTax = sinEmpujar.reduce((acc: number, li: any) => acc + Number(li.total_tax ?? 0), 0);
+
+        // La puerta: ¿tiene el ticket de Clover alguna línea? Si NO (mesa recién abierta — la
+        // orden nace vacía en `openCloverTicketForManagedOrder`), se conservan los totales de MCM.
+        // Sin esta guarda, cada ciclo escribiría `total = 0` sobre una cuenta con ítems y el
+        // mesero vería «Cobrar $0.00».
+        const cloverTieneLineas =
+          Array.isArray((order as any).line_items) && (order as any).line_items.length > 0;
 
         const updatePayload: Record<string, unknown> = {
           line_items: mergedLineItems,
@@ -254,12 +285,17 @@ export async function upsertOrdersFromClover(
             clover_synced_at: new Date().toISOString(),
           },
         };
-        if (!hayLocalesSinEmpujar) {
-          updatePayload.subtotal = (order as any).subtotal;
-          updatePayload.total = (order as any).total;
-          updatePayload.total_tax = (order as any).total_tax;
+        if (cloverTieneLineas) {
+          updatePayload.subtotal = Number((order as any).subtotal) + previewSubtotal;
+          updatePayload.total = Number((order as any).total) + previewSubtotal + previewTax;
+          updatePayload.total_tax = Number((order as any).total_tax) + previewTax;
           updatePayload.discount_total = (order as any).discount_total;
           updatePayload.tax_lines = (order as any).tax_lines;
+          // NO se escriben `fee_lines` ni `fee_total`, aunque Omnivore sí los arrastre: el mapper
+          // de Clover los emite vacíos (`order-mapper.ts:226,235`) y el 91 % de las órdenes de POS
+          // llevan recargo — copiarlo verbatim los borraría. Los recargos ya van DENTRO del total
+          // de Clover: la reconciliación del push fuerza `Σ líneas = order.total − propinas`
+          // (`clover-helper.ts:1401-1430`). Ver H-N14.
         }
         // Los campos de pago los gobierna el guard anti-doble-cobro de arriba.
         updatePayload.status = (order as any).status;

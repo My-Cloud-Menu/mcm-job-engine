@@ -165,6 +165,27 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
     (acc: number, tax: any) => acc + tax.amount,
     0
   );
+
+  // ── El total del POS, cuando Clover no lo calcula ────────────────────────────────────────────
+  // MEDIDO (H-N15): Clover **no computa `order.total`** cuando las líneas se añaden una a una por
+  // API — que es exactamente como funciona el modo gestionado (`addLineItemsToCloverTicket`).
+  // Devuelve `undefined`, y `undefined / 100` es `NaN`, que acaba en la base como `total: null`.
+  // Evidencia: 3 de las 6 órdenes gestionadas del banco tienen `total` y `subtotal` en NULL con
+  // `paid` de 7.00, 5.00 y 20.00 — cobradas sin total.
+  //
+  // El respaldo se calcula igual que el push (`clover-helper.ts:2144`): Σ(precio + su impuesto)
+  // de las mismas líneas. Es el número que el propio Clover muestra en el Register.
+  //
+  // Sólo actúa cuando Clover NO da el total, así que los caminos que hoy funcionan —órdenes
+  // nacidas en el terminal, y las que MCM empuja fijando `orderBody.total`— no cambian nada.
+  const totalDeLineas = (cloverOrder?.lineItems?.elements || []).reduce(
+    (acc: number, li: any) =>
+      acc + (li?.price || 0) +
+      (li?.taxRates || []).reduce((a: number, t: any) => a + (t?.taxAmount || 0), 0),
+    0
+  );
+  const orderTotalCents =
+    typeof cloverOrder?.total === 'number' ? cloverOrder.total : totalDeLineas;
   const discountTotal = (cloverOrder?.discounts?.elements || []).reduce(
     (acc: number, d: any) => acc + d.amount,
     0
@@ -229,12 +250,12 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
     coupon_lines: [],
     pickup_time: null,
     currency: 'USD',
-    subtotal: (cloverOrder.total - taxTotal) / 100,
+    subtotal: (orderTotalCents - taxTotal) / 100,
     discount_total: discountTotal / 100,
     shipping_total: 0,
     fee_total: 0,
     total_tax: taxTotal / 100,
-    total: cloverOrder.total / 100,
+    total: orderTotalCents / 100,
     paid: paidTotal / 100,
     tracking_link: null,
     additional_properties: {},

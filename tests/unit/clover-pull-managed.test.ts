@@ -70,7 +70,10 @@ const cl = (id: string, name: string, price: number, itemId = 'ITEM_A') =>
 
 /** `name` es lo que correlaciona: `product_id` no hace el viaje de ida y vuelta. */
 const mcmLine = (id: string, name: string, price: string, extra: any = {}) =>
-  ({ id, name, product_id: '', price, quantity: 1, notes: '', status: 'new', ...extra });
+  ({ id, name, product_id: '', price, quantity: 1, notes: '', status: 'new',
+     // Las líneas reales de MCM llevan `total` y `total_tax`; el fixture no los tenía y por eso
+     // el preview salía a cero. Es de lo que se alimenta la suma de totales.
+     total: (Number(price) * 1).toFixed(2), total_tax: '0', ...extra });
 
 const existing = (over: any = {}) => ({
   id: 10, site_id: SITE, channel: 'pos', status: 'new-order', payment_status: 'not_fulfilled',
@@ -107,11 +110,12 @@ describe('pull de Clover · modo gestionado', () => {
     expect(p.line_items[0].additional_properties.clover.line_item_ids).toEqual(['C1']);
   });
 
-  it('una línea local sin empujar NO se pierde y los totales de Clover no se toman', async () => {
+  it('una línea local sin empujar NO se pierde, y su importe SE SUMA al total del POS', async () => {
     h.existingOrder = existing({
       line_items: [mcmLine('u1', 'Café', '2.50'), mcmLine('u2', 'Tostada', '4.00')],
       total: 6.5,
     });
+    // En Clover sólo está el café (500c). La tostada aún no se ha empujado.
     await upsertOrdersFromClover(SITE, [cloverOrder([cl('C1', 'Café', 250, '500')])],
       { tableServiceEnabled: true });
 
@@ -119,12 +123,46 @@ describe('pull de Clover · modo gestionado', () => {
     expect(p.line_items).toHaveLength(2);
     const u2 = p.line_items.find((l: any) => l.id === 'u2');
     expect(u2.status).toBe('new');            // intacta
-    // MCM va por delante → no se pisan sus totales con los de Clover
-    expect(p.total).toBeUndefined();
-    expect(p.subtotal).toBeUndefined();
+
+    // Antes se descartaba el total del POS y quedaba el de MCM — de ahí el sub-cobro cuando el
+    // terminal había añadido algo. Ahora: total del POS (5.00) + la tostada pendiente (4.00).
+    expect(p.total).toBe(9);
+    expect(p.subtotal).toBe(9);
   });
 
-  it('sin líneas locales pendientes SÍ toma los totales de Clover', async () => {
+  // La regresión que hay que evitar: la orden nace VACÍA en Clover al abrir la mesa
+  // (`openCloverTicketForManagedOrder`). Si se tomara su total, el mesero vería «Cobrar $0.00».
+  it('ticket de Clover VACÍO: se conservan los totales de MCM, no se pisan con cero', async () => {
+    h.existingOrder = existing({
+      line_items: [mcmLine('u1', 'Café', '2.50'), mcmLine('u2', 'Tostada', '4.00')],
+      total: 6.5,
+    });
+    await upsertOrdersFromClover(SITE, [cloverOrder([])], { tableServiceEnabled: true });
+
+    // La invariante es que el total NUNCA se pise con el del ticket vacío. Que además no se
+    // escriba nada (el anti-churn ve que no cambió nada) es aún mejor, así que se acepta cualquiera
+    // de las dos formas: lo que no puede pasar es que `total` acabe valiendo 0.
+    expect(patch()?.total).toBeUndefined();
+    expect(patch()?.subtotal).toBeUndefined();
+  });
+
+  // MEDIDO (H-N15): en modo gestionado las líneas se añaden una a una por API y Clover NO computa
+  // `order.total` — devuelve undefined, y `undefined/100` es NaN, que aterriza como `total: null`.
+  // 3 de las 6 órdenes gestionadas del banco están así, cobradas y sin total.
+  it('Clover no devuelve total (modo gestionado): se calcula desde sus líneas, no queda NaN', async () => {
+    h.existingOrder = existing({ line_items: [mcmLine('u1', 'Café', '2.50')] });
+    const sinTotal: any = cloverOrder([cl('C1', 'Café', 250, '500')]);
+    delete sinTotal.total;                       // como lo devuelve Clover de verdad
+
+    await upsertOrdersFromClover(SITE, [sinTotal], { tableServiceEnabled: true });
+
+    const p = patch();
+    expect(p.total).toBe(2.5);                   // 250c de la línea
+    expect(Number.isNaN(p.total)).toBe(false);
+    expect(p.total).not.toBeNull();
+  });
+
+  it('sin líneas pendientes, el preview es cero y el total es el del POS', async () => {
     h.existingOrder = existing({ line_items: [mcmLine('u1', 'Café', '2.50')] });
     await upsertOrdersFromClover(SITE, [cloverOrder([cl('C1', 'Café', 250, '500')])],
       { tableServiceEnabled: true });

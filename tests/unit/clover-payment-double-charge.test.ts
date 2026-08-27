@@ -53,10 +53,10 @@ vi.mock('../../src/handlers/clover/client', async (orig) => {
   };
 });
 vi.mock('../../src/lib/supabase', () => {
-  const chain = (row: any) => { const c: any = { eq: () => c, maybeSingle: async () => ({ data: row, error: null }), then: (r: any) => r({ data: row ? [row] : [], error: null }) }; return c; };
-  const write = () => { const c: any = { eq: () => c, then: (r: any) => r({ error: null }) }; return c; };
-  return { supabase: { from: () => ({
-    select: () => chain(h.pagoMcm),
+  const chain = (row: any) => { const c: any = { eq: () => c, neq: () => c, not: () => c, maybeSingle: async () => ({ data: row, error: null }), then: (r: any) => r({ data: row ? [row] : [], error: null }) }; return c; };
+  const write = () => { const c: any = { eq: () => c, neq: () => c, not: () => c, then: (r: any) => r({ error: null }) }; return c; };
+  return { supabase: { from: (t: string) => ({
+    select: () => chain(t === 'integration_jobs' ? null : h.pagoMcm),
     update: (p: any) => { h.updates.push(p); return write(); },
     upsert: () => ({ then: (r: any) => r({ error: null }) }),
   }) } };
@@ -135,6 +135,24 @@ describe('cobro doble en Clover (H-N7)', () => {
       code: 'CLOVER_ORDER_NOT_FOUND', retryable: false,
     });
     expect(h.posts).toHaveLength(0);   // el POST iría al mismo id y daría 404 igual
+  });
+
+  // Los dos errores TERMINALES de este bloque se lanzan ANTES del try/catch que persiste el
+  // aviso. Sin escribirlo aquí, un pago que muere por estas dos causas no dejaría ni rastro
+  // para el mesero — que es justo lo que este trabajo viene a cerrar.
+  it('el 404 terminal SÍ deja aviso en `issues`', async () => {
+    h.getFalla = true; h.getStatus = 404;
+    await expect(correr(0)).rejects.toThrow();
+    const aviso = h.updates.find((u) => u.issues);
+    expect(aviso).toBeTruthy();
+    expect(aviso.issues.provider).toBe('clover');
+    expect(aviso.issues.payment_id).toBe(77);
+  });
+
+  it('el desajuste de importe SÍ deja aviso en `issues`', async () => {
+    h.pagosEnClover = [{ id: 'CLV_PAY_YA', amount: 500, note: 'mcm:pay:99990004:77' }];
+    await expect(correr(0)).rejects.toMatchObject({ code: 'CLOVER_PAYMENT_AMOUNT_MISMATCH' });
+    expect(h.updates.find((u) => u.issues)).toBeTruthy();
   });
 
   it('cualquier OTRO fallo del GET sigue bloqueando el POST', async () => {
