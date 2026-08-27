@@ -25,7 +25,11 @@ registerHandler('clover', 'fetch_open_orders', async ({ stepInput, job }) => {
     return { orders_fetched: 0, skipped_reason: 'sync_orders_disabled' };
   }
 
-  const client = createCloverClient(cloverConfig, job.correlation_id);
+  // Instante ANTES de pedirle nada a Clover. El merge gestionado lo usa como guard de
+  // frescura: si un push escribió después de este sello, su estado es más nuevo y el pull
+  // no lo pisa.
+  const fetchStartIso = new Date().toISOString();
+  const client = createCloverClient(cloverConfig, job.correlation_id, job.site_id);
   const baseUrl = `${client.defaults.baseURL}`;
   const limit = getPageLimit();
   let offset = 0;
@@ -41,7 +45,10 @@ registerHandler('clover', 'fetch_open_orders', async ({ stepInput, job }) => {
     await new Promise((r) => setTimeout(r, 150));
   }
 
-  const { inserted, updated, skipped } = await upsertOrdersFromClover(job.site_id, allOrders);
+  const { inserted, updated, skipped } = await upsertOrdersFromClover(job.site_id, allOrders, {
+    tableServiceEnabled: (cloverConfig as any).cloverTableServiceEnabled === true,
+    fetchStartIso,
+  });
 
   logger.info(
     { site_id: job.site_id, orders_fetched: allOrders.length, inserted, updated, skipped },

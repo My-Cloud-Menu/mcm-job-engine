@@ -68,10 +68,13 @@ describe('clover payment_injection handler', () => {
     h.post.mockResolvedValue({ data: { id: 'CPAY-1' } });
     const out = await run();
     expect(out).toMatchObject({ clover_payment_id: 'CPAY-1' });
-    // WS-12/F9: el POST ahora lleva un 3er arg con el header Idempotency-Key.
+    // El POST lleva el 3er arg con la cabecera Idempotency-Key (que Clover IGNORA — medido,
+    // H-N7 — pero se conserva por si algún día la implementa) y el cuerpo ahora incluye el
+    // ancla `note`, que es la protección REAL contra el cobro doble: el reconcile-before-repost
+    // busca por ese `note` antes de re-postear en un reintento.
     expect(h.post).toHaveBeenCalledWith(
       '/orders/CLOVER-9/payments',
-      payment,
+      { ...payment, note: 'mcm:pay:25:55' },
       expect.objectContaining({ headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }) }),
     );
     expect(h.paymentUpdates.find((u) => u.pos_id === 'CPAY-1')).toBeTruthy();

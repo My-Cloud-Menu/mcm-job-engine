@@ -147,7 +147,10 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
         variation_id: '',
         product_price: (item.price / 100).toFixed(2),
         variation_name: '',
-        additional_properties: { modifiers: mods, clover: { line_item_id: item?.id ?? null, clover_item_id: cloverItemId } },
+        // `origin: 'pos'` por paridad con el mapper de Omnivore (omnivore/sync/order-mapper.ts:279).
+        // Es metadato forense —nada ramifica sobre él— pero sin esto una línea nacida en el
+        // terminal sólo lo recibía al pasar por el merge, o sea nunca en su primer pull.
+        additional_properties: { modifiers: mods, clover: { line_item_id: item?.id ?? null, clover_item_id: cloverItemId, origin: 'pos' } },
       };
     }) || [];
 

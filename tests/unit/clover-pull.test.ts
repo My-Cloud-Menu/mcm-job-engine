@@ -28,7 +28,7 @@ vi.mock('../../src/lib/supabase', () => {
   // query se `await`-ea directo sin terminal (Bug 2: select de pagos completed).
   const selectChain = (val: any, arrayVal: any = null) => {
     const c: any = {
-      eq: () => c,
+      eq: () => c, range: () => c, order: () => c,
       or: () => c,
       contains: () => c,
       is: () => c,
@@ -40,7 +40,7 @@ vi.mock('../../src/lib/supabase', () => {
     return c;
   };
   const writeChain = () => {
-    const c: any = { eq: () => c, then: (res: any) => res({ error: null }) };
+    const c: any = { eq: () => c, range: () => c, order: () => c, then: (res: any) => res({ error: null }) };
     return c;
   };
   return {

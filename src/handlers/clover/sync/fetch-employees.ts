@@ -52,10 +52,12 @@ registerHandler('clover', 'fetch_employees', async ({ stepInput, jobPayload, job
     return { skipped_reason: 'sync_employees_disabled' };
   }
 
-  const client = createCloverClient(cloverConfig, job.correlation_id);
+  const client = createCloverClient(cloverConfig, job.correlation_id, job.site_id);
   const started = Date.now();
 
-  let created = 0, updated = 0, skippedNoPin = 0, total = 0;
+  let created = 0, updated = 0, skippedNoPin = 0, total = 0, deactivated = 0;
+  // Bandera de site: desactivar en MCM a los empleados que Clover ya no devuelve.
+  const desactivarBajas = (cloverConfig as any).cloverDeactivateRemovedEmployees === true;
   try {
     const { elements } = await fetchAllCloverElements(client, job.site_id, '/employees');
     total = elements.length;
@@ -63,7 +65,7 @@ registerHandler('clover', 'fetch_employees', async ({ stepInput, jobPayload, job
     // existing rows for admin-protection + change diff
     const { data: existingRows, error: readErr } = await supabase
       .from('employees')
-      .select('login, first_name, last_name, pos_id, check_name, role')
+      .select('login, first_name, last_name, pos_id, check_name, role, is_active')
       .eq('site_id', job.site_id);
     if (readErr) throw readErr;
     const existing = new Map<string, any>();
@@ -100,12 +102,43 @@ registerHandler('clover', 'fetch_employees', async ({ stepInput, jobPayload, job
       const { error } = await supabase.from('employees').upsert(toWrite.slice(i, i + CHUNK), { onConflict: 'site_id,login' });
       if (error) throw error;
     }
+
+    // ── Desactivar a quien ya NO está en Clover ─────────────────────────────────────────────
+    // El sync era ADITIVO: un empleado despedido y borrado en Clover conservaba su PIN y
+    // **seguía entrando al POS** (medido: `verify-employee-pin` devolvía `ok:true`).
+    //
+    // El arreglo ingenuo —desactivar a todo el que falte en el listado— es INCORRECTO: hay
+    // empleados NATIVOS de MCM (creados a mano, sin `pos_id`) que tampoco están en Clover y
+    // quedarían fuera de golpe. Por eso el criterio es doble:
+    //   1. sólo se tocan los que TIENEN `pos_id` (o sea, vinieron de Clover), y
+    //   2. sólo si ese `pos_id` ya no aparece en el listado del merchant.
+    //
+    // Y con el mismo suelo de seguridad que el catálogo: si el listado vino vacío no se
+    // desactiva a nadie — un fallo de red no puede dejar al negocio sin quien cobre.
+    if (desactivarBajas && elements.length > 0) {
+      const vivosEnClover = new Set(elements.map((e: any) => String(e.id)).filter(Boolean));
+      const bajas = (existingRows ?? []).filter((r: any) => {
+        const posId = String(r.pos_id ?? '');
+        return posId !== '' && !vivosEnClover.has(posId) && r.is_active !== false;
+      });
+      for (const b of bajas) {
+        const { error } = await supabase.from('employees')
+          .update({ is_active: false })
+          .eq('site_id', job.site_id).eq('login', (b as any).login);   // multi-tenant: SIEMPRE
+        if (error) throw error;
+        deactivated++;
+      }
+      if (deactivated > 0) {
+        logger.info({ site_id: job.site_id, deactivated, logins: bajas.map((b: any) => b.login) },
+          'clover_employees_deactivated');
+      }
+    }
   } catch (err) {
     throw mapCloverError(err, 'CLOVER_FETCH_EMPLOYEES_FAILED');
   }
 
   const duration = Date.now() - started;
-  const result = { total, created, updated, skipped_no_pin: skippedNoPin, duration_ms: duration };
+  const result = { total, created, updated, deactivated, skipped_no_pin: skippedNoPin, duration_ms: duration };
 
   try {
     await supabase.from('clover_employee_sync_log').insert({

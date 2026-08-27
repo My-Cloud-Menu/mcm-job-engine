@@ -31,7 +31,7 @@ registerHandler('clover', 'create_order', async ({ jobPayload, job, step }) => {
   }
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
-  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id);
+  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id, job.site_id);
 
   // Primary, header/filter-independent dedup: if this MCM order already has a
   // Clover ticket persisted (from a prior attempt), adopt it. Reliable even if

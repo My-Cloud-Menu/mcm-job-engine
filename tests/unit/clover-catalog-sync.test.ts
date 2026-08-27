@@ -19,14 +19,14 @@ vi.mock('../../src/lib/supabase', () => {
   // (...eq().contains().limit().maybeSingle()).
   const selectChain = (rows: any[]) => {
     const c: any = {
-      eq: () => c, contains: () => c, limit: () => c,
+      eq: () => c, range: () => c, order: () => c, contains: () => c, limit: () => c,
       maybeSingle: async () => ({ data: h.dupeRow ?? null, error: null }),
       then: (res: any) => res({ data: rows, error: null }),
     };
     return c;
   };
   const writeChain = () => {
-    const c: any = { eq: () => c, then: (res: any) => res({ error: null }) };
+    const c: any = { eq: () => c, range: () => c, order: () => c, then: (res: any) => res({ error: null }) };
     return c;
   };
   return {

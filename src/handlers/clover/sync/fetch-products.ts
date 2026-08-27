@@ -42,24 +42,26 @@ registerHandler('clover', 'fetch_products', async ({ stepInput, jobPayload, job 
     return { skipped_reason: 'sync_products_disabled' };
   }
 
-  const client = createCloverClient(cloverConfig, job.correlation_id);
+  const client = createCloverClient(cloverConfig, job.correlation_id, job.site_id);
+  // Respetar los campos cosméticos ya editados en MCM (ver `sync/local-overrides.ts`).
+  const preservarEdiciones = (cloverConfig as any).cloverPreserveLocalEdits === true;
   const started = Date.now();
 
   let catStats, prodStats, stockStats, modStats, catalogStats;
   try {
     // 1. categories (needed to link products)
-    const cats = await syncCloverCategories(job.site_id, client);
+    const cats = await syncCloverCategories(job.site_id, client, preservarEdiciones);
     catStats = cats.stats;
     // 2. items (single expanded fetch feeds products, item-stock and modifier links)
     const { elements: items, complete } = await fetchAllCloverElements(
       client, job.site_id, '/items', 'categories,itemStock,taxRates,modifierGroups', { cursorField: 'id' }
     );
-    const prod = await syncCloverProducts(job.site_id, items, complete, cats.cloverIdToMcmId);
+    const prod = await syncCloverProducts(job.site_id, items, complete, cats.cloverIdToMcmId, preservarEdiciones);
     prodStats = prod.stats;
     // 3. item stock / 86 (from the same items payload)
     stockStats = await syncCloverItemStock(job.site_id, items);
     // 4. modifiers / modifier groups → ingredients / ingredients_groups (linked to products)
-    modStats = await syncCloverModifiers(job.site_id, client, items, prod.cloverIdToMcmId);
+    modStats = await syncCloverModifiers(job.site_id, client, items, prod.cloverIdToMcmId, preservarEdiciones);
     // 5. (opt-in) maintain a POS catalog so synced products render in /pos-order
     if ((cloverConfig as any).autoManageCloverCatalog === true) {
       const channels = (cloverConfig as any).cloverCatalogChannels || ['pos'];

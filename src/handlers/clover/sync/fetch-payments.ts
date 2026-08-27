@@ -29,7 +29,7 @@ registerHandler('clover', 'fetch_payments', async ({ stepInput, job }) => {
   const input = InputSchema.parse(stepInput);
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
-  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id);
+  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id, job.site_id);
 
   const watermark = input.cursor ? Number(input.cursor) : Date.now() - DEFAULT_LOOKBACK_MS;
   const sinceMs = Math.max(0, watermark - OVERLAP_MS);

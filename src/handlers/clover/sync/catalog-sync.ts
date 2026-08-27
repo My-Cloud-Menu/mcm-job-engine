@@ -1,7 +1,13 @@
 import { AxiosInstance } from 'axios';
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
-import { acquireCloverCatalogToken } from './rate-limit';
+// Lector paginado. Vive en el carril de Omnivore porque allí se escribió primero, pero es
+// agnóstico de integración y el repo ya cruza en esa dirección (`upsert-payments.ts` importa
+// su builder de pagos). Se reutiliza en vez de duplicarlo: PostgREST corta en `db-max-rows`
+// (1000 por defecto) SIN error, y una lectura truncada aquí hace que los productos 1001+ se
+// vean como nuevos y que los borrados de verdad nunca se archiven.
+import { readAllBySite } from '../../omnivore/sync/inventory/supabase-read';
+import { aplicarOverridesLocales, CAMPOS_PROTEGIDOS } from './local-overrides';
 
 /**
  * Clover → MCM CATALOG sync (categories, products, item stock/86). ADDITIVE, source of truth
@@ -29,12 +35,30 @@ const PAGE = 100;
 const MAX_PAGES = 60; // 6000 elements hard cap; logs if reached (G6, no silent truncation)
 
 /**
- * Offset-paginated fetch of a Clover collection, rate-limited per site. Returns the elements
- * plus `complete` (false if the cap was hit — callers MUST NOT soft-archive on an incomplete
- * sweep, G9). NOTE: Clover's offset is effectively capped (~1000); >MAX_PAGES catalogs need
- * modifiedTime-window cursor pagination — logged as `clover_catalog_pagination_capped` and
- * documented as a production follow-up (BLOQUEOS).
+ * Fetch paginado de una colección de Clover, con rate limit por site. Devuelve los elementos
+ * más `complete` (false si se tocó el tope — quien llama NO debe archivar en un barrido
+ * incompleto, G9).
+ *
+ * Dos modos: **cursor** (`opts.cursorField`, `orderBy=id` + `filter=id>`) y **offset**. El offset
+ * de Clover está capado en la práctica (~1000) y devuelve una página corta que se leería como
+ * un barrido completo → archive masivo. Por eso `/items`, `/categories` y `/modifier_groups`
+ * usan cursor. `/employees` sigue en offset a propósito: un merchant no tiene 1000 empleados.
  */
+/**
+ * Serialización estable: ordena las claves de todo objeto, recursivamente. Necesaria para
+ * comparar contra lo que devuelve Postgres, porque `jsonb` no conserva el orden de inserción.
+ */
+function canonico(v: unknown): string {
+  const norm = (x: any): any => {
+    if (Array.isArray(x)) return x.map(norm);
+    if (x && typeof x === 'object') {
+      return Object.keys(x).sort().reduce((acc: any, k) => { acc[k] = norm(x[k]); return acc; }, {});
+    }
+    return x;
+  };
+  return JSON.stringify(norm(v ?? null));
+}
+
 export async function fetchAllCloverElements(
   client: AxiosInstance,
   siteId: number,
@@ -54,7 +78,6 @@ export async function fetchAllCloverElements(
     let lastCursor: string | null = null;
     let pages = 0;
     for (;;) {
-      await acquireCloverCatalogToken(siteId);
       const q = new URLSearchParams({ limit: String(PAGE), orderBy: cursorField });
       if (expand) q.set('expand', expand);
       if (lastCursor != null) q.set('filter', `${cursorField}>${lastCursor}`); // strict > (unique field)
@@ -85,7 +108,6 @@ export async function fetchAllCloverElements(
   let offset = 0;
   let pages = 0;
   for (;;) {
-    await acquireCloverCatalogToken(siteId);
     const q = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
     if (expand) q.set('expand', expand);
     const res = await client.get<{ elements?: any[] }>(`${path}?${q.toString()}`);
@@ -138,19 +160,21 @@ export async function insertOrAdopt(
 // ─────────────────────────────────────────────────────────── categories ──
 export async function syncCloverCategories(
   siteId: number,
-  client: AxiosInstance
+  client: AxiosInstance,
+  preservarEdiciones = false
 ): Promise<{ stats: CatalogSyncStats; cloverIdToMcmId: Map<string, number> }> {
   const stats = emptyStats();
   const cloverIdToMcmId = new Map<string, number>();
 
-  const { elements: cats, complete } = await fetchAllCloverElements(client, siteId, '/categories');
+  // Cursor, no offset: el offset de Clover está capado y una página corta se leería como
+  // `complete:true` → archive masivo. Verificado contra el merchant que `/categories` soporta
+  // `orderBy=id` y `filter=id>`.
+  const { elements: cats, complete } = await fetchAllCloverElements(
+    client, siteId, '/categories', undefined, { cursorField: 'id' });
   const present = new Set<string>();
 
-  const { data: existing, error: readErr } = await supabase
-    .from('categories')
-    .select('id, name, menu_order, status, additional_properties')
-    .eq('site_id', siteId);
-  if (readErr) throw readErr;
+  const existing = await readAllBySite<any>(
+    'categories', siteId, 'id, name, menu_order, status, additional_properties');
   const byClover = new Map<string, any>();
   for (const row of existing ?? []) {
     const cid = parseAP((row as any).additional_properties).cloverId;
@@ -164,11 +188,23 @@ export async function syncCloverCategories(
     const prev = byClover.get(String(cat.id));
     if (prev) {
       cloverIdToMcmId.set(String(cat.id), Number(prev.id));
-      const ap = { ...parseAP(prev.additional_properties), cloverId: String(cat.id), cloverArchived: false };
-      const changed = (prev.name ?? '') !== (cat.name ?? '') || Number(prev.menu_order) !== Number(cat.sortOrder ?? 0) || prev.status !== 'published';
+      const ap: Record<string, any> = { ...parseAP(prev.additional_properties), cloverId: String(cat.id), cloverArchived: false };
+      const baselinePrevia = JSON.stringify(ap.cloverBaseline ?? null);
+      const overridesPreviasCat = JSON.stringify(ap.cloverOverrides ?? null);
+      const { base: nombreFinal } = aplicarOverridesLocales(
+        CAMPOS_PROTEGIDOS.categories, prev, { name: cat.name ?? '' }, ap, preservarEdiciones);
+      const changed = (prev.name ?? '') !== nombreFinal.name
+        || Number(prev.menu_order) !== Number(cat.sortOrder ?? 0) || prev.status !== 'published'
+        // la línea base también se persiste: si no quedaría desfasada y el override no se podría
+        // liberar nunca volviendo a poner a mano el valor de Clover.
+        || baselinePrevia !== JSON.stringify(ap.cloverBaseline ?? null) ||
+        // ...y la propia MARCA de override: en régimen estacionario nada más difiere (MCM ya
+        // tiene su valor y Clover no ha cambiado) ⇒ `changed` falso ⇒ la marca no se escribiría
+        // nunca, y sin ella tampoco se podría liberar el override después.
+        overridesPreviasCat !== JSON.stringify(ap.cloverOverrides ?? null);
       if (!changed) { stats.skipped++; continue; }
       const { error } = await supabase.from('categories')
-        .update({ name: cat.name, menu_order: cat.sortOrder ?? 0, status: 'published', additional_properties: ap, date_updated: new Date().toISOString() })
+        .update({ name: nombreFinal.name, menu_order: cat.sortOrder ?? 0, status: 'published', additional_properties: ap, date_updated: new Date().toISOString() })
         .eq('id', prev.id).eq('site_id', siteId);
       if (error) throw error;
       stats.updated++;
@@ -207,16 +243,15 @@ export async function syncCloverProducts(
   siteId: number,
   items: any[],
   itemsComplete: boolean,
-  categoryCloverToMcm: Map<string, number>
+  categoryCloverToMcm: Map<string, number>,
+  preservarEdiciones = false
 ): Promise<{ stats: CatalogSyncStats; cloverIdToMcmId: Map<string, number> }> {
   const stats = emptyStats();
   const cloverIdToMcmId = new Map<string, number>();
 
-  const { data: existing, error: readErr } = await supabase
-    .from('products')
-    .select('id, name, description, price, sku, status, stock_status, tax_class, is_taxable, categories_id, additional_properties')
-    .eq('site_id', siteId);
-  if (readErr) throw readErr;
+  const existing = await readAllBySite<any>(
+    'products', siteId,
+    'id, name, description, price, sku, status, stock_status, tax_class, is_taxable, categories_id, additional_properties');
   const byClover = new Map<string, any>();
   for (const row of existing ?? []) {
     const cid = parseAP((row as any).additional_properties).cloverId;
@@ -249,6 +284,8 @@ export async function syncCloverProducts(
     const ap: Record<string, any> = { ...(prev ? parseAP(prev.additional_properties) : {}), cloverId: String(item.id), cloverArchived: false };
     if (priceType) ap.cloverPriceType = priceType; else delete ap.cloverPriceType;
     const isTaxable = item.defaultTaxRates !== false;
+    const baselinePrevia = JSON.stringify(ap.cloverBaseline ?? null);
+    const overridesPreviasProd = JSON.stringify(ap.cloverOverrides ?? null);
     const base = {
       site_id: siteId, name: item.name, description: item.description ?? '', price,
       sku: item.sku ?? '', status, stock_status: stockStatus, tax_class: taxClass,
@@ -265,12 +302,25 @@ export async function syncCloverProducts(
       const baseCents = Math.round(Number(base.price) * 100);
       const prevCats = JSON.stringify([...(prev.categories_id ?? [])].map(String).sort());
       const baseCats = JSON.stringify([...categoryIds].sort());
+      // Campos cosméticos editados en MCM: se revierten al valor local ANTES de comparar, así
+      // el `changed` queda coherente y el sync sigue siendo idempotente.
+      // `Object.assign` porque el helper NO muta `base`: devuelve una copia ajustada, y `base`
+      // es lo que se escribe más abajo. Descartar el retorno hacía que el override se detectara
+      // pero no se aplicara — el valor de Clover seguía ganando.
+      Object.assign(base, aplicarOverridesLocales(
+        CAMPOS_PROTEGIDOS.products, prev, base, ap, preservarEdiciones).base);
       const changed =
         (prev.name ?? '') !== base.name || prevCents !== baseCents ||
         prev.status !== status || prev.stock_status !== stockStatus || prev.tax_class !== taxClass ||
         (prev.description ?? '') !== base.description || (prev.sku ?? '') !== base.sku ||
         (prev.is_taxable ?? true) !== isTaxable ||
         prevCats !== baseCats ||
+        // la línea base también se persiste (ver la nota en categorías)
+        baselinePrevia !== JSON.stringify(ap.cloverBaseline ?? null) ||
+        // ...y la propia MARCA de override: en régimen estacionario nada más difiere (MCM ya
+        // tiene su valor y Clover no ha cambiado) ⇒ `changed` falso ⇒ la marca no se escribiría
+        // nunca, y sin ella tampoco se podría liberar el override después.
+        overridesPreviasProd !== JSON.stringify(ap.cloverOverrides ?? null) ||
         parseAP(prev.additional_properties).cloverArchived === true;
       if (!changed) { stats.skipped++; continue; }
       const { error } = await supabase.from('products').update(base).eq('id', prev.id).eq('site_id', siteId);
@@ -322,8 +372,7 @@ export async function syncCloverPosCatalog(
   // Clover items with NO category can't be reached via the catalog's categories_id — so a
   // category-only menu would drop them. Add them explicitly via the item `products_id` so
   // every synced (non-archived) product renders in /pos-order.
-  const { data: prods } = await supabase
-    .from('products').select('id, categories_id, additional_properties').eq('site_id', siteId);
+  const prods = await readAllBySite<any>('products', siteId, 'id, categories_id, additional_properties');
   const uncategorizedProductIds = (prods ?? [])
     .filter((p: any) => {
       const ap = parseAP(p.additional_properties);
@@ -338,17 +387,34 @@ export async function syncCloverPosCatalog(
     tags: [] as string[], products_id: uncategorizedProductIds, products_excluded_id: [] as string[],
     categories_id: categoryMcmIds.map(String), translations: { en: { name: 'Clover' } }, additional_properties: {},
   };
+  // Sin paginar a propósito: medido, el site con más catálogos de toda la base tiene 12 y hay
+  // 32 en total. Aquí el corte de 1000 de PostgREST no es alcanzable.
   const { data: existing, error: readErr } = await supabase
-    .from('catalogs').select('id, additional_properties').eq('site_id', siteId);
+    .from('catalogs').select('id, items, channels, status, additional_properties').eq('site_id', siteId);
   if (readErr) throw readErr;
   const managed = (existing ?? []).find((c: any) => parseAP(c.additional_properties).cloverManaged === true);
 
   if (managed) {
+    // Antes se escribía SIEMPRE, aunque nada hubiera cambiado: cada corrida tocaba
+    // `catalogs.date_updated` y disparaba cualquier cosa que escuche esa columna. Se compara
+    // primero, igual que hacen productos, categorías e ingredientes.
+    const m: any = managed;
+    // Comparación CANÓNICA, no `JSON.stringify` a secas: la columna es `jsonb[]` y jsonb
+    // **reordena las claves** al guardar (se midió: vuelve como `name, tags, view, status, …`,
+    // no en el orden de inserción). Sin ordenar las claves, la comparación nunca casaría y el
+    // catálogo se reescribiría en cada corrida — que es justo lo que se quiere evitar.
+    const igual =
+      canonico(m.items) === canonico([item]) &&
+      canonico(m.channels) === canonico(channels) &&
+      m.status === 'published';
+    if (igual) {
+      return { action: 'unchanged', catalog_id: m.id, categories: categoryMcmIds.length, uncategorized: uncategorizedProductIds.length };
+    }
     const { error } = await supabase.from('catalogs')
       .update({ items: [item], channels, status: 'published', date_updated: new Date().toISOString() })
-      .eq('id', (managed as any).id).eq('site_id', siteId);
+      .eq('id', m.id).eq('site_id', siteId);
     if (error) throw error;
-    return { action: 'updated', catalog_id: (managed as any).id, categories: categoryMcmIds.length, uncategorized: uncategorizedProductIds.length };
+    return { action: 'updated', catalog_id: m.id, categories: categoryMcmIds.length, uncategorized: uncategorizedProductIds.length };
   }
   const { data: ins, error } = await supabase.from('catalogs')
     .insert({ site_id: siteId, name: 'Clover (auto)', status: 'published', channels, experiences: [], items: [item], additional_properties: { cloverManaged: true } })
@@ -377,9 +443,7 @@ export async function syncCloverItemStock(
   items: any[]
 ): Promise<CatalogSyncStats> {
   const stats = emptyStats();
-  const { data: existing, error } = await supabase
-    .from('products').select('id, status, stock_status, additional_properties').eq('site_id', siteId);
-  if (error) throw error;
+  const existing = await readAllBySite<any>('products', siteId, 'id, status, stock_status, additional_properties');
   const byClover = new Map<string, any>();
   for (const row of existing ?? []) {
     const cid = parseAP((row as any).additional_properties).cloverId;

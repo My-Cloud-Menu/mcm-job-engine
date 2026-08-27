@@ -58,6 +58,17 @@ registerHandler('clover', 'push_orders', async ({ stepInput, job }) => {
     body = text;
   }
 
+  // Un 404 de "no hay integración activa" NO es un fallo: es que alguien apagó la integración.
+  // Tratarlo como error permanente mandaba el job a `dead_letter` y dejaba el schedule sumando
+  // `consecutive_failures` hasta `failing`, con su alerta. Se completa el schedule y se sale
+  // limpio. Un 404 por OTRA causa (ruta mal) sí se sigue tratando como error.
+  if (res.status === 404 && /no active .*integration/i.test(String(body?.error ?? text ?? ''))) {
+    if (input.schedule_id) {
+      await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
+    }
+    return { enqueued: 0, skipped_reason: 'clover_integration_inactive' };
+  }
+
   if (!res.ok) {
     const retryable = res.status >= 500 || res.status === 429;
     throw new HandlerError(

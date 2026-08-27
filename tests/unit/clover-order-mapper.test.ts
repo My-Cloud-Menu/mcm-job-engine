@@ -15,7 +15,8 @@ describe('convertCloverOrderToMCMOrder — modifier + product_id mapping', () =>
     const li = mcm.line_items[0];
     expect(li.attributes).toEqual([{ id: 'M1', label: 'Crossiant', value: 'Crossiant', price: 0.5 }]);
     expect(li.additional_properties.modifiers).toEqual([{ id: 'M1', label: 'Crossiant', value: 'Crossiant', price: 0.5 }]);
-    expect(li.additional_properties.clover).toEqual({ line_item_id: 'LI1', clover_item_id: 'ITEM_A' });
+    // `origin: 'pos'` por paridad con el mapper de Omnivore: la línea nace en el terminal.
+    expect(li.additional_properties.clover).toEqual({ line_item_id: 'LI1', clover_item_id: 'ITEM_A', origin: 'pos' });
   });
 
   it('resolves product_id to the MCM product via productMap (else falls back to the Clover item id)', () => {

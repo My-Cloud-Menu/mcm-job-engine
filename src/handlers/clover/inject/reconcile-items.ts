@@ -5,7 +5,9 @@ import { HandlerError } from '../../../core/types';
 import { logger } from '../../../lib/logger';
 import { mapCloverError } from '../error-map';
 import { getOrderCloverState, persistCloverHash, persistInjectionError, willTerminate } from './shared';
+import { imprimirEnClover } from './print';
 import { handlePaidPrimaryDelta } from './supplemental';
+import { computeLineItemDelta, CloverExistingLineItem } from './line-item-delta';
 
 /**
  * Step 2 of 2 — reconcile the Clover order's line items to the desired state.
@@ -55,7 +57,7 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
   const parsedConfig = CloverConfigSchema.parse(config);
-  const client = createCloverClient(parsedConfig, job.correlation_id);
+  const client = createCloverClient(parsedConfig, job.correlation_id, job.site_id);
   const nativeModifiers = (parsedConfig as any).cloverNativeModifiers === true;
 
   try {
@@ -72,9 +74,12 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
     // Fetch current Clover state + payments guard.
     const cur = await client.get<{
       total?: number;
-      lineItems?: { elements?: Array<{ id: string; name?: string; note?: string; price?: number }> };
+      lineItems?: { elements?: CloverExistingLineItem[] };
       payments?: { elements?: unknown[] };
-    }>(`/orders/${cloverOrderId}?expand=lineItems,payments`);
+      // A9: se expanden tasas y modificaciones porque entran en la FIRMA con la que
+      // se empareja cada linea. Sin ellas, dos lineas que sólo difieren en el céntimo
+      // del reparto de impuesto parecerían iguales y el delta seria incorrecto.
+    }>(`/orders/${cloverOrderId}?expand=lineItems,lineItems.taxRates,lineItems.modifications,payments`);
 
     const existing = cur.data?.lineItems?.elements || [];
 
@@ -108,11 +113,25 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
       });
     }
     // A supplemental order is brand-new → never has payments; it reconciles below.
-    for (const li of existing) {
+
+    // ── A9 · INCREMENTAL ──────────────────────────────────────────────────────
+    // Antes se borraba TODO y se recreaba TODO. Eso reasignaba un `line_item_id`
+    // nuevo a cada linea en cada push, destruyendo el ancla que el modo gestionado
+    // usa para correlacionar el POS con MCM. Ahora sólo se tocan las que sobran y
+    // las que faltan; una linea que no cambia CONSERVA su id.
+    // Si nada empareja, el delta degrada exactamente al comportamiento anterior.
+    const delta = computeLineItemDelta(existing, lineItems as any[]);
+    logger.info(
+      { site_id: job.site_id, clover_order_id: cloverOrderId,
+        kept: delta.keep.length, deleted: delta.toDelete.length, created: delta.toCreateIndexes.length },
+      'clover reconcile: delta'
+    );
+
+    for (const cloverLineId of delta.toDelete) {
       try {
-        await client.delete(`/orders/${cloverOrderId}/line_items/${li.id}`);
+        await client.delete(`/orders/${cloverOrderId}/line_items/${cloverLineId}`);
       } catch (e) {
-        logger.warn({ e, site_id: job.site_id, line_item: li.id }, 'clover reconcile: delete line item failed');
+        logger.warn({ e, site_id: job.site_id, line_item: cloverLineId }, 'clover reconcile: delete line item failed');
         // With native modifiers on, a SURVIVING old line would duplicate items+modifications on
         // the recreate. Fail (retryable) so the whole reconcile retries cleanly instead of
         // accumulating duplicates. (Legacy non-native path keeps the tolerant swallow.)
@@ -122,11 +141,13 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
       }
     }
 
-    if (lineItems.length > 0) {
+    // A9: sólo se crean las lineas que faltan, no todas.
+    const desiredToCreate = delta.toCreateIndexes.map((i) => (lineItems as any[])[i]);
+    if (desiredToCreate.length > 0) {
       // `modifiers` is our own per-line field (applied natively below), not a Clover
       // bulk_line_items field — strip it so the bulk payload stays clean. No-op for the
       // production edge payload (which has no `modifiers` field).
-      const bulkItems = (lineItems as any[]).map((li) => { const { modifiers, ...rest } = li; return rest; });
+      const bulkItems = desiredToCreate.map((li) => { const { modifiers, ...rest } = li; return rest; });
       // Clover caps bulk_line_items at 100 line items PER REQUEST (a 120-item POST 400s with
       // "maximum ... is 100" and creates NOTHING). Chunk so a large order (big party / catering,
       // up to the 2500/order cap) doesn't fail. bulk returns EITHER a bare array OR {elements:[...]}.
@@ -164,7 +185,10 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
         let failed = 0;
         let hadRetryableFailure = false;
         const pool = created.map((c) => ({ id: c.id, name: c.name, price: c.price, used: false }));
-        for (const li of lineItems as Array<Record<string, any>>) {
+        // A9: se recorre SÓLO lo recien creado. Una linea conservada ya trae sus
+        // modificaciones puestas (y su firma las incluye, asi que si cambiaron no se
+        // habria conservado). Recorrer todas aqui daria falsos "no match".
+        for (const li of desiredToCreate as Array<Record<string, any>>) {
           const mods = li?.modifiers as Array<Record<string, unknown>> | undefined;
           if (!Array.isArray(mods) || mods.length === 0) continue;
           const match = pool.find((p) => !p.used && String(p.name) === String(li.name) && Number(p.price) === Number(li.price));
@@ -215,7 +239,16 @@ registerHandler('clover', 'reconcile_items', async ({ jobPayload, context, job, 
     if (desiredHash && !isSupplemental) {
       await persistCloverHash(job.site_id, orderId, desiredHash);
     }
-    return { removed: existing.length, added: lineItems.length };
+    // Impresión en el POS de Clover, al final y NUNCA fatal: la orden ya está en el ticket.
+    // Apagada por defecto (`cloverPrintOnFire`) para no duplicar el chit con la plataforma de
+    // impresión propia de MCM. El resultado va en la salida del paso → queda en la traza del job.
+    const impresion = await imprimirEnClover(
+      client, cloverOrderId, (parsedConfig as any).cloverPrintOnFire === true, job.site_id);
+
+    return {
+      kept: delta.keep.length, removed: delta.toDelete.length, added: desiredToCreate.length,
+      print: impresion.status,
+    };
   } catch (err) {
     const he = err instanceof HandlerError ? err : mapCloverError(err, 'CLOVER_RECONCILE_FAILED');
     if (willTerminate(he.retryable, step)) {

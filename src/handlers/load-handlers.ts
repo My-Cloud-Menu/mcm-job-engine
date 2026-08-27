@@ -26,6 +26,7 @@ import './clover/sync/push-orders';
 import './clover/sync/fetch-products';
 import './clover/sync/fetch-employees';
 import './clover/sync/fetch-item-stock';
+import './clover/sync/fetch-tables';
 
 import './twilio/send-sms';
 import './sendgrid/send-email';

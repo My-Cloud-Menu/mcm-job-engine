@@ -1,6 +1,8 @@
 import { supabase } from '../../../lib/supabase';
+import { readAllBySite } from '../../omnivore/sync/inventory/supabase-read';
 import { logger } from '../../../lib/logger';
 import { convertCloverOrderToMCMOrder } from './order-mapper';
+import { mergeCloverManagedLineItems, cloverIdsOf } from './managed-merge';
 
 interface UpsertResult {
   inserted: number;
@@ -106,8 +108,11 @@ function verifyOrderHasRelevantChanges(order1: any, order2: any): boolean {
 
 export async function upsertOrdersFromClover(
   siteId: number,
-  cloverOrders: unknown[]
+  cloverOrders: unknown[],
+  opts?: { tableServiceEnabled?: boolean; fetchStartIso?: string }
 ): Promise<UpsertResult> {
+  const tableServiceEnabled = opts?.tableServiceEnabled === true;
+  const fetchStartIso = opts?.fetchStartIso;
   let inserted = 0;
   let updated = 0;
   let skipped = 0;
@@ -117,8 +122,9 @@ export async function upsertOrdersFromClover(
   // (enables edit/repeat/86 in the POS). Best-effort; absent map → line items keep the Clover id.
   const productMap = new Map<string, number>();
   {
-    const { data: prodRows } = await supabase
-      .from('products').select('id, additional_properties').eq('site_id', siteId);
+    // Paginado: sin esto, en un catálogo de >1000 productos las líneas de las órdenes de los
+    // productos 1001+ se quedan con el id de Clover en vez del `product_id` de MCM.
+    const prodRows = await readAllBySite<any>('products', siteId, 'id, additional_properties');
     for (const p of prodRows ?? []) {
       const apRaw = (p as any).additional_properties;
       const ap = typeof apRaw === 'string' ? (() => { try { return JSON.parse(apRaw); } catch { return {}; } })() : (apRaw || {});
@@ -131,6 +137,15 @@ export async function upsertOrdersFromClover(
 
     if (cloverOrder.modifiedTime && cloverOrder.modifiedTime > maxModifiedTime) {
       maxModifiedTime = cloverOrder.modifiedTime;
+    }
+
+    // Una orden marcada `Deleted` en Clover NO desaparece del pull: se sigue devolviendo
+    // con sus líneas (medido contra el merchant sandbox — Clover ni valida ni aplica el
+    // `state`). Sin este filtro se importa como ticket VIVO `new-order`. Medido: 5 órdenes
+    // `Deleted` entraron como 5 tickets abiertos en el banco de pruebas.
+    if (String(cloverOrder.state ?? '').toLowerCase() === 'deleted') {
+      skipped++;
+      continue;
     }
 
     const order = convertCloverOrderToMCMOrder(cloverOrder, productMap);
@@ -172,6 +187,27 @@ export async function upsertOrdersFromClover(
       order.id = existing.id;
       order.site_id = existing.site_id;
 
+      // A1 — PRESERVAR `additional_properties`. El mapper emite `{}` a nivel de orden
+      // (order-mapper.ts) y el UPDATE de abajo escribe `order` entero, así que sin esto
+      // cada ciclo borra TODO lo que viva ahí:
+      //   · `clover_supplemental` — el manifiesto que escribe `claim_clover_supplement`
+      //     y lo único que permite al pago de una orden suplementaria encontrar a su
+      //     orden padre (upsert-payments.ts) y, con ella, reenviarse a Omnivore.
+      //   · `omnivore_managed` / `omnivore_synced_at` — en un site con las dos.
+      // Se funde lo existente DEBAJO de lo que traiga el mapper, para que si algún día
+      // el pull emite claves propias, esas ganen.
+      {
+        const apRaw = (existing as any).additional_properties;
+        const apPrev =
+          typeof apRaw === 'string'
+            ? (() => { try { return JSON.parse(apRaw); } catch { return {}; } })()
+            : (apRaw || {});
+        (order as any).additional_properties = {
+          ...apPrev,
+          ...((order as any).additional_properties || {}),
+        };
+      }
+
       // GUARD anti-doble-cobro robusto (reemplaza el guard débil previo que confiaba
       // en orders.payment_status + total-unchanged). Si la orden ya tiene un pago
       // aplicado en MCM, preservamos sus campos de pago; line items y totales sí
@@ -180,6 +216,86 @@ export async function upsertOrdersFromClover(
         order.status = existing.status;
         order.payment_status = existing.payment_status;
         order.paid = existing.paid;
+      }
+
+      // ── MODO GESTIONADO (espejo de omnivore/sync/upsert-orders.ts) ──────────────
+      // Con los dos lados escribiendo sobre la misma mesa abierta, el overwrite de abajo
+      // borraría lo que el mesero acaba de añadir en /pos-order. Aquí se hace merge por
+      // línea. Un site SIN `cloverTableServiceEnabled` no entra aquí jamás y se comporta
+      // exactamente igual que antes.
+      const isManaged =
+        (existing as any).additional_properties?.clover_managed === true ||
+        (tableServiceEnabled && String((existing as any).channel ?? '').toLowerCase() === 'pos');
+
+      if (isManaged) {
+        // Freshness guard: si un push salió DESPUÉS del snapshot de este pull, su estado
+        // es más nuevo → saltar. El próximo ciclo toma la orden fresca.
+        const syncedAt = (existing as any).additional_properties?.clover_synced_at as string | undefined;
+        if (fetchStartIso && syncedAt && syncedAt > fetchStartIso) { skipped++; continue; }
+
+        const mergedLineItems = mergeCloverManagedLineItems(
+          (existing as any).line_items,
+          (order as any).line_items
+        );
+
+        // ¿Hay líneas que sólo existen en MCM (añadidas y aún no empujadas)?
+        // Si las hay, MCM va por delante: sus totales ya las incluyen y los de Clover no.
+        // Tomar los de Clover subvaloraría la cuenta. Se conservan los de MCM hasta que
+        // el push las suba y el pull siguiente alinee.
+        const hayLocalesSinEmpujar = mergedLineItems.some(
+          (li: any) => li.status !== 'voided' && cloverIdsOf(li).length === 0
+        );
+
+        const updatePayload: Record<string, unknown> = {
+          line_items: mergedLineItems,
+          additional_properties: {
+            ...((existing as any).additional_properties ?? {}),
+            clover_managed: true,
+            clover_synced_at: new Date().toISOString(),
+          },
+        };
+        if (!hayLocalesSinEmpujar) {
+          updatePayload.subtotal = (order as any).subtotal;
+          updatePayload.total = (order as any).total;
+          updatePayload.total_tax = (order as any).total_tax;
+          updatePayload.discount_total = (order as any).discount_total;
+          updatePayload.tax_lines = (order as any).tax_lines;
+        }
+        // Los campos de pago los gobierna el guard anti-doble-cobro de arriba.
+        updatePayload.status = (order as any).status;
+        updatePayload.payment_status = (order as any).payment_status;
+        updatePayload.paid = (order as any).paid;
+
+        // Anti-churn: no escribir si nada cambió de verdad (evita despertar el realtime
+        // del mesero cada 60 s y disparar su banner de conflicto sin motivo).
+        const jsonEq = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+        const numEq = (a: unknown, b: unknown) => Number(a ?? 0) === Number(b ?? 0);
+        const sinCambios =
+          jsonEq(mergedLineItems, (existing as any).line_items) &&
+          numEq(updatePayload.total ?? (existing as any).total, (existing as any).total) &&
+          numEq(updatePayload.paid ?? (existing as any).paid, (existing as any).paid) &&
+          (updatePayload.status ?? (existing as any).status) === (existing as any).status &&
+          (updatePayload.payment_status ?? (existing as any).payment_status) === (existing as any).payment_status;
+        if (sinCambios) { skipped++; continue; }
+
+        // CAS sobre date_updated: si el mesero escribió desde el snapshot, no se pisa.
+        const { data: casRows, error: casErr } = await supabase
+          .from('orders')
+          .update(updatePayload)
+          .eq('id', existing.id)
+          .eq('site_id', existing.site_id)
+          .eq('date_updated', (existing as any).date_updated)
+          .select('id');
+
+        if (casErr) {
+          logger.error({ error: casErr, site_id: siteId, clover_pos_id: cloverPosId }, 'clover merge: update failed');
+          skipped++;
+        } else if (!casRows || casRows.length === 0) {
+          skipped++;   // conflicto CAS → se reintegra en el próximo ciclo
+        } else {
+          updated++;
+        }
+        continue;
       }
 
       if (
@@ -203,6 +319,18 @@ export async function upsertOrdersFromClover(
       const randomNumberId = Math.floor(Math.random() * 10_000_000_000_000_000);
       order.site_id = siteId;
       order.id = randomNumberId;
+
+      // Una orden NACIDA en Clover llega sin sello. Sin él `/pos-order` no la reconoce como
+      // gestionada —las funciones edge exigen `clover_managed === true`— y firear un ítem
+      // nuevo NO llegaría al terminal. El merge del pull siguiente sí lo pondría, pero el
+      // hueco cae justo en el primer servicio de la mesa, que es cuando se usa.
+      if (tableServiceEnabled && String((order as any).channel ?? '').toLowerCase() === 'pos') {
+        (order as any).additional_properties = {
+          ...((order as any).additional_properties ?? {}),
+          clover_managed: true,
+          clover_synced_at: new Date().toISOString(),
+        };
+      }
 
       const { error: upsertError } = await supabase
         .from('orders')

@@ -30,10 +30,25 @@ export interface PosInjectionPayload {
 export async function enqueueOrderInjection(params: {
   siteId: number;
   orderId: string | number;
-  posProvider: 'omnivore' | 'clover';
+  /**
+   * SÓLO 'omnivore'. Los 3 pasos de abajo (`create_order → add_items → create_payment`) son la
+   * forma de Omnivore. Clover **no tiene registrados** `add_items` ni `create_payment`
+   * (`load-handlers.ts`), así que un job encolado aquí con 'clover' moriría en el paso 2 con
+   * "No handler registered" → `dead_letter` SIN UN SOLO REINTENTO (`executor.ts:110-116`).
+   * La inyección de Clover son 2 pasos y la encola `clover-helper.ts::enqueueCloverInjection`;
+   * su pago va en un job aparte (`payment_injection`).
+   */
+  posProvider: 'omnivore';
   payload: PosInjectionPayload;
   correlationId?: string;
 }): Promise<string> {
+  // Guarda en tiempo de ejecución además del tipo: este helper también se alcanza desde JS.
+  if ((params.posProvider as string) !== 'omnivore') {
+    throw new Error(
+      `enqueueOrderInjection sólo soporta 'omnivore' (recibido: ${params.posProvider}). ` +
+      `Para Clover usa enqueueCloverInjection (2 pasos) y enqueueCloverPaymentInjection.`,
+    );
+  }
   // Robustez multi-tenant: la llave lleva `site_id`. `orders.id` NO es global (PK compuesta
   // `(id, site_id)`) e `integration_jobs.idempotency_key` es UNIQUE GLOBAL → sin el site, un
   // `order.id` que ya exista en otro tenant hace que `enqueue_job` (ON CONFLICT DO NOTHING)

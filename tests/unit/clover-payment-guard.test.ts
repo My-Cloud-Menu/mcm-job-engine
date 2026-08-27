@@ -21,15 +21,15 @@ vi.mock('../../src/lib/logger', () => ({
 vi.mock('../../src/lib/supabase', () => {
   // Soporta el lookup de F12: .or(...).order(...).limit(1).maybeSingle()
   const ordersSelectChain = (val: any) => {
-    const c: any = { eq: () => c, or: () => c, order: () => c, limit: () => c, maybeSingle: async () => val, single: async () => val };
+    const c: any = { eq: () => c, range: () => c, order: () => c, or: () => c, order: () => c, limit: () => c, maybeSingle: async () => val, single: async () => val };
     return c;
   };
   const paymentsSelectChain = (val: any) => {
-    const c: any = { eq: () => c, contains: () => c, limit: () => c, maybeSingle: async () => val, single: async () => val };
+    const c: any = { eq: () => c, range: () => c, order: () => c, contains: () => c, limit: () => c, maybeSingle: async () => val, single: async () => val };
     return c;
   };
   const writeChain = () => {
-    const c: any = { eq: () => c, then: (res: any) => res({ error: null }) };
+    const c: any = { eq: () => c, range: () => c, order: () => c, then: (res: any) => res({ error: null }) };
     return c;
   };
   return {

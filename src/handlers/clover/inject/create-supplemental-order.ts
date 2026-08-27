@@ -33,7 +33,7 @@ registerHandler('clover', 'create_supplemental_order', async ({ jobPayload, job,
   }
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'clover', 'pos');
-  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id);
+  const client = createCloverClient(CloverConfigSchema.parse(config), job.correlation_id, job.site_id);
 
   // Primary adopt: manifest already has this supplement's Clover id (prior attempt).
   const manifest = await readManifest(job.site_id, orderId);

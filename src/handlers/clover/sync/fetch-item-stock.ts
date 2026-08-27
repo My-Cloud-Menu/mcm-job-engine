@@ -33,7 +33,7 @@ registerHandler('clover', 'fetch_item_stock', async ({ stepInput, jobPayload, jo
     return { skipped_reason: 'sync_item_stock_disabled' };
   }
 
-  const client = createCloverClient(cloverConfig, job.correlation_id);
+  const client = createCloverClient(cloverConfig, job.correlation_id, job.site_id);
   const started = Date.now();
 
   let stats;
