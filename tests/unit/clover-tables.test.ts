@@ -102,13 +102,50 @@ describe('sync de mesas de Clover', () => {
     expect(up.patch.metadata.clover_overrides).toEqual(['table_name']);
   });
 
-  it('una mesa que Clover ya no devuelve se ARCHIVA (no se borra)', async () => {
+  it('una mesa que Clover ya no devuelve se marca con MARCA PROPIA, no con `archived_at`', async () => {
+    // Espeja a Omnivore (`metadata.omnivore_deleted_at`). Escribir `archived_at` la metía en la
+    // MISMA barra que lo archivado a mano, donde es arrastrable — y devolverla al plano limpia
+    // `archived_at`, así que el ciclo siguiente la re-archivaba: bucle silencioso.
     h.filas = Array.from({ length: 12 }, (_, i) => fila(`T${i}`, `Mesa ${i}`));
     h.mesasClover = Array.from({ length: 11 }, (_, i) => mesa(`T${i}`, `Mesa ${i}`));  // falta T11
     const r = await correr();
     expect(r.archived).toBe(1);
-    const arch = h.updates.find((u) => u.patch?.archived_at);
-    expect(arch.patch.metadata.archived_reason).toBe('clover_removed');
+    const marcada = h.updates.find((u) => u.patch?.metadata?.clover_deleted_at);
+    expect(marcada).toBeTruthy();
+    expect(marcada.patch.archived_at).toBeUndefined();   // ← lo que rompe el bucle
+  });
+
+  it('NO se re-marca una mesa que ya estaba marcada (idempotente, sin churn)', async () => {
+    h.filas = [
+      ...Array.from({ length: 11 }, (_, i) => fila(`T${i}`, `Mesa ${i}`)),
+      fila('T11', 'Mesa 11', { metadata: { clover_deleted_at: '2026-08-01T00:00:00Z' } }),
+    ];
+    h.mesasClover = Array.from({ length: 11 }, (_, i) => mesa(`T${i}`, `Mesa ${i}`));
+    const r = await correr();
+    expect(r.archived).toBe(0);
+  });
+
+  it('una mesa archivada A MANO que desaparece de Clover se marca igual: son ejes distintos', async () => {
+    // `archived_at` es «la escondió una persona»; `clover_deleted_at` es «ya no está en el POS».
+    // Coexisten, igual que en Omnivore, y la barra manual sigue mandando en su propio grupo.
+    h.filas = [
+      ...Array.from({ length: 11 }, (_, i) => fila(`T${i}`, `Mesa ${i}`)),
+      fila('T11', 'Mesa 11', { archived_at: '2026-08-01T00:00:00Z' }),
+    ];
+    h.mesasClover = Array.from({ length: 11 }, (_, i) => mesa(`T${i}`, `Mesa ${i}`));
+    const r = await correr();
+    expect(r.archived).toBe(1);
+    const marcada = h.updates.find((u) => u.patch?.metadata?.clover_deleted_at);
+    expect(marcada.patch.archived_at).toBeUndefined();   // no se toca el archivado manual
+  });
+
+  it('REACTIVACIÓN: si la mesa vuelve a Clover se le quita la marca', async () => {
+    h.filas = [fila('T1', 'Mesa 1', { metadata: { clover_deleted_at: '2026-08-01T00:00:00Z' } })];
+    h.mesasClover = [mesa('T1', 'Mesa 1')];
+    const r = await correr();
+    expect(r.reactivated).toBe(1);
+    const up = h.updates.find((u) => u.t === 'floor_elements');
+    expect(up.patch.metadata.clover_deleted_at).toBeUndefined();
   });
 
   it('una mesa CON ORDEN VIVA no se archiva aunque Clover no la devuelva', async () => {

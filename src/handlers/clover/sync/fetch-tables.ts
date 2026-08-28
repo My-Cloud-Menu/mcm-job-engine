@@ -113,7 +113,7 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
     if (f.external_source === 'clover' && f.external_id) porExterno.set(String(f.external_id), f);
   }
 
-  let creadas = 0, actualizadas = 0, saltadas = 0, archivadas = 0;
+  let creadas = 0, actualizadas = 0, saltadas = 0, archivadas = 0, reactivadas = 0;
   const presentes = new Set<string>();
 
   for (const m of mesas) {
@@ -147,6 +147,12 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
       continue;
     }
 
+    // REACTIVACIÓN: la mesa había desaparecido de Clover y ha vuelto. Se le quita la marca de
+    // muerta, igual que hace Omnivore (`sync_omnivore_floor_tables`: `v_meta - 'omnivore_deleted_at'`
+    // con su contador `v_reactivated`). Sin esto seguiría oculta del plano para siempre.
+    const estabaMuerta = prev.metadata?.clover_deleted_at != null;
+    if (estabaMuerta) { delete meta.clover_deleted_at; reactivadas++; }
+
     // Override local del nombre: si difiere de lo último que mandó Clover, manda MCM.
     const baseline = prev.metadata?.clover_baseline?.table_name;
     const nombreLocal = String(prev.table_name ?? '');
@@ -160,7 +166,10 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
       || Number(prev.capacity ?? 0) !== Number(m.asientos ?? 0)
       || String(prev.section ?? '') !== String(m.seccionNombre ?? '')
       || JSON.stringify(prev.metadata?.clover_baseline ?? null) !== JSON.stringify(meta.clover_baseline)
-      || JSON.stringify(prev.metadata?.clover_overrides ?? null) !== JSON.stringify(meta.clover_overrides ?? null);
+      || JSON.stringify(prev.metadata?.clover_overrides ?? null) !== JSON.stringify(meta.clover_overrides ?? null)
+      // La reactivación es un cambio aunque no se mueva ningún otro campo: si no se contase aquí,
+      // el `continue` de abajo descartaría el UPDATE y la mesa seguiría marcada como muerta.
+      || estabaMuerta;
     if (!cambio) { saltadas++; continue; }
 
     // OJO: aquí NO van x/y/width/height/rotation/shape/z_index — el layout es de MCM.
@@ -171,8 +180,16 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
     actualizadas++;
   }
 
-  // ── Archivar las que Clover ya no devuelve ────────────────────────────────────────────────
-  const candidatas = [...porExterno.entries()].filter(([cid, f]) => !presentes.has(cid) && !f.archived_at);
+  // ── Marcar las que Clover ya no devuelve ──────────────────────────────────────────────────
+  //
+  // Se usa `metadata.clover_deleted_at` y se DEJA `archived_at` en NULL, espejando a Omnivore
+  // (`metadata.omnivore_deleted_at`). No es un capricho de nomenclatura: escribir `archived_at`
+  // metía la mesa en la MISMA barra que lo archivado a mano, donde es arrastrable — y al devolverla
+  // al plano el RPC `set_floor_element_archived` limpia `archived_at`, así que el ciclo siguiente
+  // la volvía a archivar. Bucle silencioso, sin aviso. Con marca propia, quien la borró en el POS
+  // manda, la mesa cae en su grupo de sólo lectura, y no hay nada que arrastrar.
+  const candidatas = [...porExterno.entries()]
+    .filter(([cid, f]) => !presentes.has(cid) && f.metadata?.clover_deleted_at == null);
   if (candidatas.length > 0) {
     if (!archivarEsSeguro(completo, presentes.size, porExterno.size, candidatas.length)) {
       logger.warn({ site_id: job.site_id, presentes: presentes.size, existentes: porExterno.size,
@@ -189,9 +206,8 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
       for (const [, f] of candidatas) {
         if (conOrden.has(String(f.id))) { saltadas++; continue; }
         const { error } = await supabase.from('floor_elements')
-          .update({ archived_at: new Date().toISOString(),
-            metadata: { ...(f.metadata ?? {}), archived_reason: 'clover_removed' } })
-          .eq('id', f.id).eq('site_id', job.site_id);
+          .update({ metadata: { ...(f.metadata ?? {}), clover_deleted_at: new Date().toISOString() } })
+          .eq('id', f.id).eq('site_id', job.site_id);        // multi-tenant: SIEMPRE
         if (error) throw error;
         archivadas++;
       }
@@ -201,6 +217,7 @@ registerHandler('clover', 'fetch_tables', async ({ stepInput, jobPayload, job })
   const resultado = {
     tables_fetched: mesas.length, sections: secciones.length, complete: completo,
     created: creadas, updated: actualizadas, skipped: saltadas, archived: archivadas,
+    reactivated: reactivadas,
     duration_ms: Date.now() - inicio,
   };
   logger.info({ site_id: job.site_id, ...resultado }, 'clover fetch_tables completed');

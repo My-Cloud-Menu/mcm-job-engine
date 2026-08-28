@@ -425,7 +425,7 @@ export async function handlePaidPrimaryDelta(params: {
   // mismo select porque son las que identifican qué línea es un cargo.
   const { data: ord } = await supabase
     .from('orders')
-    .select('table, experience_reference, customer, fee_lines, shipping_lines')
+    .select('table, experience, experience_reference, customer, fee_lines, shipping_lines')
     .eq('id', orderId)
     .eq('site_id', siteId)
     .maybeSingle();
@@ -528,10 +528,28 @@ export async function handlePaidPrimaryDelta(params: {
       });
     }
   }
-  const mesa = (ord as any)?.table?.label ?? (ord as any)?.experience_reference;
+  // MIRROR de `buildCloverOrderTitle` / `ETIQUETA_EXPERIENCIA` del edge
+  // (`_shared/helpers/clover-helper.ts`). Ojo con el `??` que había aquí: `table` viene
+  // con cadenas VACÍAS en las órdenes que no son de mesa, y `"" ?? x` devuelve `""`,
+  // así que el número de habitación nunca llegaba al POS.
+  const ETIQUETA_EXPERIENCIA: Record<string, string> = {
+    room: 'Room',
+    lobby: 'Lobby',
+    bc: 'Beach Club',
+  };
   const cliente = [(ord as any)?.customer?.first_name, (ord as any)?.customer?.last_name]
     .filter(Boolean).join(' ').trim();
-  const nombre = (typeof mesa === 'string' && mesa.trim()) ? mesa.trim() : cliente;
+  const etiquetaMesa = String((ord as any)?.table?.label ?? '').trim();
+  const referencia = String((ord as any)?.experience_reference ?? '').trim();
+  let nombre: string;
+  if (etiquetaMesa) {
+    nombre = etiquetaMesa;
+  } else if (referencia) {
+    const etiqueta = ETIQUETA_EXPERIENCIA[String((ord as any)?.experience ?? '').toLowerCase()];
+    nombre = etiqueta ? `${etiqueta} ${referencia}` : referencia;
+  } else {
+    nombre = cliente;
+  }
   // El id va siempre: la etiqueta sola no distingue una orden de otra (mesas que se repiten,
   // multi-check sobre la misma mesa). Mismo formato que el primario, + la marca de adicional.
   const etiqueta = nombre ? `${nombre} · #${orderId}` : `MCM #${orderId}`;
