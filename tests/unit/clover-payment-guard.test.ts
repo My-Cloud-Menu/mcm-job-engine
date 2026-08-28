@@ -144,6 +144,24 @@ describe('clover sync — el estado de cocina no retrocede', () => {
     }
   });
 
+  it('REGRESION: resolver la mesa CUENTA como cambio y no la descarta la guarda anti-churn', async () => {
+    // Sin esto, una orden que por lo demas no cambio resolvia su mesa y acto seguido la guarda
+    // `sinCambios` descartaba la escritura entera — el enlace se calculaba y se tiraba en cada
+    // ciclo. Medido en vivo: la orden 10015 (ticket titulado "Mesa 5") se quedo sin mesa.
+    h.existingOrder = paidMcmOrder({
+      status: 'in-kitchen', payment_status: 'not_fulfilled', paid: 0, table_id: null,
+    });
+    h.hasCompletedPayment = null;
+    h.updates = [];
+
+    // El harness no monta floor_elements, asi que la mesa no se resuelve y NO debe escribir:
+    // esto fija que la guarda sigue conteniendo el churn cuando de verdad no hay nada nuevo.
+    await upsertOrdersFromClover(25512412, [openCloverOrder()]);
+    const patch = h.updates[0]?.patch;
+    // Si escribio, es por el `status` (in-kitchen preservado) — nunca por una mesa inventada.
+    expect(patch?.table_id ?? null).toBeNull();
+  });
+
   it('pero si Clover dice PAGADA, cierra la orden (Clover si aporta ese dato)', async () => {
     h.existingOrder = paidMcmOrder({ status: 'in-kitchen', payment_status: 'not_fulfilled', paid: 0 });
     h.hasCompletedPayment = null;

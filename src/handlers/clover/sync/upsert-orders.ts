@@ -3,6 +3,7 @@ import { readAllBySite } from '../../omnivore/sync/inventory/supabase-read';
 import { logger } from '../../../lib/logger';
 import { convertCloverOrderToMCMOrder } from './order-mapper';
 import { mergeCloverManagedLineItems, cloverIdsOf } from './managed-merge';
+import { referenciaDeMesa, resolverMesaDesdeTitulo, type MesaCandidata } from './table-match';
 
 interface UpsertResult {
   inserted: number;
@@ -133,26 +134,30 @@ export async function upsertOrdersFromClover(
   // Mesas del plano de Clover, por NOMBRE. Es lo unico que permite enlazar una orden nacida en
   // el terminal con su mesa: la API de Clover no expone campo de mesa en la orden, solo `title`.
   // Se acota al plano `external_source='clover'` porque el nombre NO es unico por site.
-  const mesasCloverPorNombre = new Map<string, { id: string; revenue_center_id: string | null }>();
+  const mesasClover: MesaCandidata[] = [];
+  const mesasCloverPorId = new Map<string, MesaCandidata>();
   {
     const { data: planos } = await supabase
       .from('floor_plans').select('id').eq('site_id', siteId).eq('external_source', 'clover');
     const planIds = (planos ?? []).map((p: any) => p.id);
     if (planIds.length > 0) {
+      // `table_number` es IMPRESCINDIBLE: se compara con el numero del titulo y es lo que se guarda
+      // en `experience_reference` (la interfaz antepone el "Mesa " ella sola).
       const { data: mesas } = await supabase
         .from('floor_elements')
-        .select('id, table_name, revenue_center_id')
+        .select('id, table_name, table_number, revenue_center_id')
         .eq('site_id', siteId)
         .eq('type', 'table')
         .in('floor_plan_id', planIds);
       for (const m of mesas ?? []) {
-        const nombre = String((m as any).table_name ?? '').trim();
-        if (nombre && !mesasCloverPorNombre.has(nombre)) {
-          mesasCloverPorNombre.set(nombre, {
-            id: String((m as any).id),
-            revenue_center_id: (m as any).revenue_center_id ?? null,
-          });
-        }
+        const mesa: MesaCandidata = {
+          id: String((m as any).id),
+          table_name: (m as any).table_name ?? null,
+          table_number: (m as any).table_number ?? null,
+          revenue_center_id: (m as any).revenue_center_id ?? null,
+        };
+        mesasClover.push(mesa);
+        mesasCloverPorId.set(mesa.id, mesa);
       }
     }
   }
@@ -164,29 +169,44 @@ export async function upsertOrdersFromClover(
    * se acepta un titulo que COINCIDA con una mesa real del plano de Clover, los titulos que pone
    * MCM se descartan solos. Sin coincidencia es no-op, igual que hace Omnivore.
    */
-  const enlazarMesa = async (order: any, cloverOrder: any) => {
-    const titulo = String(cloverOrder?.title ?? '').trim();
-    if (!titulo) return;
-    const mesa = mesasCloverPorNombre.get(titulo);
-    if (!mesa) return;
+  /**
+   * Los CUATRO campos que definen una orden de mesa, escritos juntos. Mismo patron que
+   * `transfer-order-table`. Si falta el jsonb `table`, el TICKET DE COCINA imprime "Mesa" a secas,
+   * porque su encabezado sale de `order.table.label`.
+   */
+  const aplicarMesa = (order: any, mesa: MesaCandidata, checkNumber: number) => {
+    const etiqueta = String(mesa.table_name ?? mesa.table_number ?? '').trim();
+    order.table_id = mesa.id;
+    order.table = { id: mesa.id, label: etiqueta, revenue_center_id: mesa.revenue_center_id ?? '' };
+    order.check_number = checkNumber;
+    // El POS reparte sus listas SOLO por `experience` y el mapa de mesas SOLO por `table_id`: sin
+    // esto la orden sale a la vez en el plano y en Pickup. La referencia va con el NUMERO, nunca la
+    // etiqueta — la interfaz hace `Mesa ${experience_reference}`.
+    order.experience = 'qe';
+    order.experience_reference = referenciaDeMesa(mesa);
+  };
 
-    // `check_number` HAY QUE resolverlo: el indice unico `(table_id, check_number)` sobre cheques
-    // abiertos colisiona en cuanto haya dos en la misma mesa.
+  /** Siguiente cheque libre. HAY QUE resolverlo: el indice unico `(table_id, check_number)` sobre
+   *  cheques abiertos colisiona en cuanto haya dos en la misma mesa. */
+  const siguienteCheque = async (tableId: string): Promise<number> => {
     let checkNumber = 1;
     const { data: abiertos } = await supabase
       .from('orders')
       .select('check_number')
       .eq('site_id', siteId)
-      .eq('table_id', mesa.id)
+      .eq('table_id', tableId)
       .is('closed_at', null);
     for (const o of abiertos ?? []) {
       const n = Number((o as any).check_number ?? 1);
       if (Number.isFinite(n) && n >= checkNumber) checkNumber = n + 1;
     }
+    return checkNumber;
+  };
 
-    order.table_id = mesa.id;
-    order.table = { id: mesa.id, label: titulo, revenue_center_id: mesa.revenue_center_id ?? '' };
-    order.check_number = checkNumber;
+  const enlazarMesa = async (order: any, cloverOrder: any) => {
+    const mesa = resolverMesaDesdeTitulo(cloverOrder?.title, mesasClover);
+    if (!mesa) return;
+    aplicarMesa(order, mesa, await siguienteCheque(mesa.id));
   };
   let inserted = 0;
   let updated = 0;
@@ -308,9 +328,18 @@ export async function upsertOrdersFromClover(
       if (!(existing as any).table_id) {
         await enlazarMesa(order, cloverOrder);
       } else {
-        (order as any).table_id = (existing as any).table_id;
-        (order as any).table = (existing as any).table;
-        (order as any).check_number = (existing as any).check_number;
+        // Ya tiene mesa: se conserva, pero se ASEGURA la experiencia. Las ordenes atadas antes de
+        // este arreglo quedaron en `pu` y saldrian en Pickup para siempre.
+        const mesa = mesasCloverPorId.get(String((existing as any).table_id));
+        if (mesa) {
+          aplicarMesa(order, mesa, (existing as any).check_number ?? 1);
+        } else {
+          (order as any).table_id = (existing as any).table_id;
+          (order as any).table = (existing as any).table;
+          (order as any).check_number = (existing as any).check_number;
+          (order as any).experience = (existing as any).experience;
+          (order as any).experience_reference = (existing as any).experience_reference;
+        }
       }
 
       // ── MODO GESTIONADO (espejo de omnivore/sync/upsert-orders.ts) ──────────────
@@ -394,11 +423,14 @@ export async function upsertOrdersFromClover(
         }
         // Los campos de pago los gobierna el guard anti-doble-cobro de arriba.
         updatePayload.status = (order as any).status;
-        // La mesa SOLO se escribe cuando se acaba de resolver (la orden no tenia).
-        if (!(existing as any).table_id && (order as any).table_id) {
+        // Mesa y experiencia van JUNTAS: el POS reparte por `experience` y el mapa por `table_id`,
+        // asi que escribir una sin la otra deja la orden en dos sitios.
+        if ((order as any).table_id) {
           updatePayload.table_id = (order as any).table_id;
           updatePayload.table = (order as any).table;
           updatePayload.check_number = (order as any).check_number;
+          updatePayload.experience = (order as any).experience;
+          updatePayload.experience_reference = (order as any).experience_reference;
         }
         updatePayload.payment_status = (order as any).payment_status;
         updatePayload.paid = (order as any).paid;
@@ -412,7 +444,20 @@ export async function upsertOrdersFromClover(
           numEq(updatePayload.total ?? (existing as any).total, (existing as any).total) &&
           numEq(updatePayload.paid ?? (existing as any).paid, (existing as any).paid) &&
           (updatePayload.status ?? (existing as any).status) === (existing as any).status &&
-          (updatePayload.payment_status ?? (existing as any).payment_status) === (existing as any).payment_status;
+          (updatePayload.payment_status ?? (existing as any).payment_status) === (existing as any).payment_status &&
+          // La MESA tambien cuenta como cambio. Sin esto, una orden que por lo demas no cambio
+          // resolvia su mesa correctamente y acto seguido la guarda descartaba la escritura
+          // entera: el enlace se calculaba y se tiraba en cada ciclo. Medido en vivo con la orden
+          // 10015 (ticket "Mesa 5"), que se quedo sin mesa indefinidamente.
+          String(updatePayload.table_id ?? (existing as any).table_id ?? '') ===
+            String((existing as any).table_id ?? '') &&
+          // La EXPERIENCIA tambien: sin esto una orden ya atada calcularia su `qe` y la guarda
+          // descartaria la escritura, dejandola en `pu` (y en el listado de Pickup).
+          String(updatePayload.experience ?? (existing as any).experience ?? '') ===
+            String((existing as any).experience ?? '') &&
+          // Y el TITULO del terminal, que si no nunca llegaria a las ordenes ya existentes.
+          String((updatePayload.additional_properties as any)?.clover_title ?? '') ===
+            String((existing as any).additional_properties?.clover_title ?? '');
         if (sinCambios) { skipped++; continue; }
 
         // CAS sobre date_updated: si el mesero escribió desde el snapshot, no se pisa.

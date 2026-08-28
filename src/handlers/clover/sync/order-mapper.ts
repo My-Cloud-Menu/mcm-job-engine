@@ -218,7 +218,12 @@ export const convertCloverOrderToMCMOrder = (
     total: orderTotalCents / 100,
     paid: paidTotal / 100,
     tracking_link: null,
-    additional_properties: {},
+    // El TITULO del terminal se conserva. Antes se leia solo para buscar mesa y, si no casaba, se
+    // DESCARTABA: un ticket llamado "Cumpleanos Juan" se perdia entero, porque `orders` no tiene
+    // columna de titulo. Clave PLANA, la convencion de este objeto a nivel de orden.
+    additional_properties: String(cloverOrder?.title ?? '').trim()
+      ? { clover_title: String(cloverOrder.title).trim() }
+      : {},
     coupon_feedback: { deliveryDiscount: 0, couponCodeApplied: '' },
     date_created: new Date(cloverOrder.clientCreatedTime).toISOString(),
     date_updated: new Date(cloverOrder.modifiedTime).toISOString(),
