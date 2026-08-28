@@ -181,7 +181,13 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
   const totalDeLineas = (cloverOrder?.lineItems?.elements || []).reduce(
     (acc: number, li: any) =>
       acc + (li?.price || 0) +
-      (li?.taxRates || []).reduce((a: number, t: any) => a + (t?.taxAmount || 0), 0),
+      // OJO: `taxRates` viene como `{ elements: [...] }`, NO como array — lo demuestra el propio
+      // `taxClass` de arriba, que hace `item.taxRates?.elements?.some(...)`. Escribir
+      // `(li?.taxRates || [])` devolvía el OBJETO y reventaba con «.reduce is not a function»,
+      // tumbando `fetch_open_orders` y `fetch_closed_orders` enteros (94 dead-letters en el banco
+      // el 2026-08-27). Se aceptan las dos formas por si alguna ruta trae ya el array.
+      ((li?.taxRates?.elements ?? li?.taxRates ?? []) as any[])
+        .reduce((a: number, t: any) => a + (t?.taxAmount || 0), 0),
     0
   );
   const orderTotalCents =

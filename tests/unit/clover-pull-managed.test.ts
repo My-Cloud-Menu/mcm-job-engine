@@ -65,8 +65,12 @@ const cloverOrder = (els: any[]) => ({
   clientCreatedTime: 1700000000000, modifiedTime: 1700000001000,
   lineItems: { elements: els },
 });
-const cl = (id: string, name: string, price: number, itemId = 'ITEM_A') =>
-  ({ id, name, price, item: { id: itemId } });
+// FIEL a lo que devuelve Clover de verdad: `taxRates` es `{ elements: [...] }`, NO un array.
+// El fixture lo OMITÍA, y por eso `(li?.taxRates || [])` daba `[]` y el test pasaba mientras en
+// producción reventaba con «.reduce is not a function». Mock idealizado = bug invisible.
+const cl = (id: string, name: string, price: number, itemId = 'ITEM_A', taxAmount = 0) =>
+  ({ id, name, price, item: { id: itemId },
+     taxRates: { elements: [{ name: 'Estatal', rate: 10500000, taxAmount }] } });
 
 /** `name` es lo que correlaciona: `product_id` no hace el viaje de ida y vuelta. */
 const mcmLine = (id: string, name: string, price: string, extra: any = {}) =>
@@ -160,6 +164,20 @@ describe('pull de Clover · modo gestionado', () => {
     expect(p.total).toBe(2.5);                   // 250c de la línea
     expect(Number.isNaN(p.total)).toBe(false);
     expect(p.total).not.toBeNull();
+  });
+
+  // REGRESIÓN del 2026-08-27: el respaldo del total trataba `taxRates` como array y lanzaba
+  // «.reduce is not a function», tumbando `fetch_open_orders` y `fetch_closed_orders` enteros.
+  // 94 jobs muertos en el banco antes de detectarlo.
+  it('el respaldo del total NO revienta con la forma real de taxRates ({elements})', async () => {
+    h.existingOrder = existing({ line_items: [mcmLine('u1', 'Café', '2.50')] });
+    const sinTotal: any = cloverOrder([cl('C1', 'Café', 250, 'ITEM_A', 26)]);
+    delete sinTotal.total;
+
+    await upsertOrdersFromClover(SITE, [sinTotal], { tableServiceEnabled: true });
+
+    // 250c de la línea + 26c de su impuesto = 2.76
+    expect(patch().total).toBe(2.76);
   });
 
   it('sin líneas pendientes, el preview es cero y el total es el del POS', async () => {
