@@ -50,6 +50,13 @@ registerHandler('clover', 'fetch_closed_orders', async ({ stepInput, job }) => {
   const { inserted, updated, skipped } = await upsertOrdersFromClover(job.site_id, allOrders, {
     tableServiceEnabled: (cloverConfig as any).cloverTableServiceEnabled === true,
     fetchStartIso,
+    // `rate_code -> id` esta configurado al reves de como se necesita al LEER, asi que se
+    // invierte aqui. Sin el, el clasificador de tasas cae al respaldo por nombre.
+    taxRateIdToCode: Object.fromEntries(
+      Object.entries(((cloverConfig as any).cloverTaxRateIdByRateCode ?? {}) as Record<string, unknown>)
+        .filter(([, id]) => typeof id === 'string' && id)
+        .map(([rateCode, id]) => [id as string, rateCode]),
+    ),
   });
 
   logger.info(

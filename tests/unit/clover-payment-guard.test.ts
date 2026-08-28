@@ -118,3 +118,38 @@ describe('clover sync guard — orden con pago aplicado', () => {
     expect(res.updated).toBe(1);
   });
 });
+
+/**
+ * GUARD ANTI-PARPADEO. El mapper devuelve `new-order` para toda orden que Clover reporte abierta.
+ * Sin esta guarda el sync lo escribia en cada ciclo, `SEND_ORDER_TO_KITCHEN_AUTOMATICALLY` la
+ * devolvia a `in-kitchen`, y la orden parpadeaba cada 20 s con una ventana de ~1 s (medido en vivo
+ * en el site 70030000). El sync no gobierna el flujo de cocina de MCM.
+ */
+describe('clover sync — el estado de cocina no retrocede', () => {
+  it('una orden `in-kitchen` sigue `in-kitchen` aunque Clover la reporte abierta', async () => {
+    h.existingOrder = paidMcmOrder({ status: 'in-kitchen', payment_status: 'not_fulfilled', paid: 0 });
+    h.hasCompletedPayment = null;
+
+    await upsertOrdersFromClover(25512412, [openCloverOrder()]);
+
+    expect(h.updates[0].patch.status).toBe('in-kitchen');
+  });
+
+  it('lo mismo para los demas estados en curso', async () => {
+    for (const estado of ['new-order', 'ready-for-pickup', 'delivery-in-progress']) {
+      h.updates = [];
+      h.existingOrder = paidMcmOrder({ status: estado, payment_status: 'not_fulfilled', paid: 0 });
+      await upsertOrdersFromClover(25512412, [openCloverOrder()]);
+      expect(h.updates[0]?.patch.status).toBe(estado);
+    }
+  });
+
+  it('pero si Clover dice PAGADA, cierra la orden (Clover si aporta ese dato)', async () => {
+    h.existingOrder = paidMcmOrder({ status: 'in-kitchen', payment_status: 'not_fulfilled', paid: 0 });
+    h.hasCompletedPayment = null;
+
+    await upsertOrdersFromClover(25512412, [openCloverOrder({ paymentState: 'PAID' })]);
+
+    expect(h.updates[0].patch.status).toBe('check-closed');
+  });
+});

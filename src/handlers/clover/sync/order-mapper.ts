@@ -1,3 +1,5 @@
+import { getTaxesBreakdownOfCloverOrder, modificacionesEnCentavos } from './tax-breakdown';
+
 const EXPAND =
   'expand=employee,customers,orderType,serviceCharge,discounts,taxRates,' +
   'lineItems,lineItems.taxRates,lineItems.modifications,lineItems.discounts,' +
@@ -39,73 +41,18 @@ export function getPageLimit(): number {
   return LIMIT;
 }
 
-const getTaxesBreakdownOfCloverOrder = (cloverOrder: any) => {
-  let baseStandardAmount = 0;
-  let standardTax = 0;
-  let baseReducedAmount = 0;
-  let reducedTax = 0;
-  let baseCityAmount = 0;
-  let cityTax = 0;
-
-  cloverOrder?.lineItems?.elements?.forEach((item: any) => {
-    (item?.taxRates?.elements || []).forEach((taxRate: any) => {
-      if (taxRate.name.toLowerCase().includes('reduced')) {
-        reducedTax += item.price * (taxRate.rate / 10_000_000);
-        baseReducedAmount += item.price;
-      } else if (taxRate.name.toLowerCase().includes('city')) {
-        cityTax += item.price * (taxRate.rate / 10_000_000);
-        baseCityAmount += item.price;
-      } else {
-        standardTax += item.price * (taxRate.rate / 10_000_000);
-        baseStandardAmount += item.price;
-      }
-    });
-  });
-
-  return [
-    {
-      id: 'taxline-0',
-      rate: '10.5',
-      label: 'Tax Estatal',
-      rate_id: '10001',
-      compound: false,
-      subtotal: baseStandardAmount / 100,
-      rate_code: 'estatal-tax',
-      // `Math.round` sobre CENTAVOS enteros antes de dividir. `standardTax` acumula fracciones
-      // de centavo (700 × 0.105 = 73.5) y `(0.735).toFixed(2)` da "0.73", porque 0.735 en
-      // binario es 0.73499999999999998668 → el medio centavo caía siempre hacia abajo.
-      // Mismo criterio que el mapper de Omnivore y que `buildTaxRatesForClass` de clover-helper.
-      tax_total: (Math.round(standardTax) / 100).toFixed(2),
-      additional_properties: {},
-    },
-    {
-      id: 'taxline-1',
-      rate: '6',
-      label: 'Tax Reducido',
-      rate_id: '10002',
-      compound: false,
-      subtotal: baseReducedAmount / 100,
-      rate_code: 'reduced-tax',
-      tax_total: (Math.round(reducedTax) / 100).toFixed(2),
-      additional_properties: {},
-    },
-    {
-      id: 'taxline-2',
-      rate: '1',
-      label: 'Tax Municipal',
-      rate_id: '10004',
-      compound: false,
-      subtotal: baseCityAmount / 100,
-      rate_code: 'municipal-tax',
-      tax_total: (Math.round(cityTax) / 100).toFixed(2),
-      additional_properties: {},
-    },
-  ];
-};
+// El desglose vive en `tax-breakdown.ts` (espejo del edge): se extrajo para poder testearlo
+// y de paso se arreglo el clasificador, que contaba la tasa `municipal` como estatal.
 
 // `productMap` (cloverItemId → MCM product id) lets pulled line items resolve to the synced
 // MCM product so the POS can act on them (edit/repeat/86); absent → falls back to the Clover id.
-export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<string, number>) => {
+export const convertCloverOrderToMCMOrder = (
+  cloverOrder: any,
+  productMap?: Map<string, number>,
+  // Mapa `id de tasa de Clover -> rate_code de MCM`. Se pasa como parametro —igual que
+  // `productMap`— porque esta funcion es PURA y el mapa exige leer la integracion del site.
+  taxRateIdToCode?: Record<string, string> | null,
+) => {
   const lineItems =
     cloverOrder.lineItems?.elements?.map((item: any, index: number) => {
       let taxClass = 'standard';
@@ -128,6 +75,7 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
       }));
       const cloverItemId = item?.item?.id ? String(item.item.id) : '';
       const mcmProductId = cloverItemId && productMap ? productMap.get(cloverItemId) : undefined;
+      const precioConMods = (Number(item.price) || 0) + modificacionesEnCentavos(item);
 
       return {
         id: `lineitem-${index}`,
@@ -136,8 +84,11 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
         name: item.name || '',
         paid: 0,
         notes: item?.note || '',
-        price: (item.price / 100).toFixed(2),
-        total: (item.price / 100).toFixed(2),
+        // La convencion del sistema es `price = product_price + Σ modificadores` y
+        // `total = price × quantity` (`order-calculator.ts`); este mapper era la excepcion y
+        // emitia el precio BASE. Un Espresso de 3,59 se veia como 1,99 al abrirlo en MCM.
+        price: (precioConMods / 100).toFixed(2),
+        total: (precioConMods / 100).toFixed(2),
         quantity: 1,
         tax_class: taxClass,
         thumbnail: '',
@@ -181,6 +132,9 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
   const totalDeLineas = (cloverOrder?.lineItems?.elements || []).reduce(
     (acc: number, li: any) =>
       acc + (li?.price || 0) +
+      // Mismo defecto hermano que el precio de linea: sin esto el subtotal de la ORDEN se come
+      // los modificadores y el total no cuadra con el POS.
+      modificacionesEnCentavos(li) +
       // OJO: `taxRates` viene como `{ elements: [...] }`, NO como array — lo demuestra el propio
       // `taxClass` de arriba, que hace `item.taxRates?.elements?.some(...)`. Escribir
       // `(li?.taxRates || [])` devolvía el OBJETO y reventaba con «.reduce is not a function»,
@@ -251,7 +205,7 @@ export const convertCloverOrderToMCMOrder = (cloverOrder: any, productMap?: Map<
     },
     line_items: lineItems,
     fee_lines: [],
-    tax_lines: getTaxesBreakdownOfCloverOrder(cloverOrder),
+    tax_lines: getTaxesBreakdownOfCloverOrder(cloverOrder, taxRateIdToCode),
     shipping_lines: [],
     coupon_lines: [],
     pickup_time: null,

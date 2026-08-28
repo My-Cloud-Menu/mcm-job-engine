@@ -106,13 +106,88 @@ function verifyOrderHasRelevantChanges(order1: any, order2: any): boolean {
   return false;
 }
 
+/** Estados del flujo de cocina de MCM que Clover NO conoce y por tanto no debe pisar. */
+const ESTADOS_EN_CURSO = new Set([
+  'new-order',
+  'in-kitchen',
+  'ready-for-pickup',
+  'delivery-in-progress',
+]);
+
 export async function upsertOrdersFromClover(
   siteId: number,
   cloverOrders: unknown[],
-  opts?: { tableServiceEnabled?: boolean; fetchStartIso?: string }
+  opts?: {
+    tableServiceEnabled?: boolean;
+    fetchStartIso?: string;
+    /** `id de tasa de Clover -> rate_code de MCM`, invertido desde
+     *  `site_integrations.config.cloverTaxRateIdByRateCode`. Sin el, el clasificador cae al
+     *  respaldo por nombre. */
+    taxRateIdToCode?: Record<string, string> | null;
+  }
 ): Promise<UpsertResult> {
   const tableServiceEnabled = opts?.tableServiceEnabled === true;
   const fetchStartIso = opts?.fetchStartIso;
+  const taxRateIdToCode = opts?.taxRateIdToCode ?? null;
+
+  // Mesas del plano de Clover, por NOMBRE. Es lo unico que permite enlazar una orden nacida en
+  // el terminal con su mesa: la API de Clover no expone campo de mesa en la orden, solo `title`.
+  // Se acota al plano `external_source='clover'` porque el nombre NO es unico por site.
+  const mesasCloverPorNombre = new Map<string, { id: string; revenue_center_id: string | null }>();
+  {
+    const { data: planos } = await supabase
+      .from('floor_plans').select('id').eq('site_id', siteId).eq('external_source', 'clover');
+    const planIds = (planos ?? []).map((p: any) => p.id);
+    if (planIds.length > 0) {
+      const { data: mesas } = await supabase
+        .from('floor_elements')
+        .select('id, table_name, revenue_center_id')
+        .eq('site_id', siteId)
+        .eq('type', 'table')
+        .in('floor_plan_id', planIds);
+      for (const m of mesas ?? []) {
+        const nombre = String((m as any).table_name ?? '').trim();
+        if (nombre && !mesasCloverPorNombre.has(nombre)) {
+          mesasCloverPorNombre.set(nombre, {
+            id: String((m as any).id),
+            revenue_center_id: (m as any).revenue_center_id ?? null,
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Enlaza la orden con su mesa a partir del `title` de Clover.
+   *
+   * ANTI-BUCLE: MCM ESCRIBE ese mismo `title` al inyectar (`"Room 200 · #10001"`). Como aqui solo
+   * se acepta un titulo que COINCIDA con una mesa real del plano de Clover, los titulos que pone
+   * MCM se descartan solos. Sin coincidencia es no-op, igual que hace Omnivore.
+   */
+  const enlazarMesa = async (order: any, cloverOrder: any) => {
+    const titulo = String(cloverOrder?.title ?? '').trim();
+    if (!titulo) return;
+    const mesa = mesasCloverPorNombre.get(titulo);
+    if (!mesa) return;
+
+    // `check_number` HAY QUE resolverlo: el indice unico `(table_id, check_number)` sobre cheques
+    // abiertos colisiona en cuanto haya dos en la misma mesa.
+    let checkNumber = 1;
+    const { data: abiertos } = await supabase
+      .from('orders')
+      .select('check_number')
+      .eq('site_id', siteId)
+      .eq('table_id', mesa.id)
+      .is('closed_at', null);
+    for (const o of abiertos ?? []) {
+      const n = Number((o as any).check_number ?? 1);
+      if (Number.isFinite(n) && n >= checkNumber) checkNumber = n + 1;
+    }
+
+    order.table_id = mesa.id;
+    order.table = { id: mesa.id, label: titulo, revenue_center_id: mesa.revenue_center_id ?? '' };
+    order.check_number = checkNumber;
+  };
   let inserted = 0;
   let updated = 0;
   let skipped = 0;
@@ -148,7 +223,7 @@ export async function upsertOrdersFromClover(
       continue;
     }
 
-    const order = convertCloverOrderToMCMOrder(cloverOrder, productMap);
+    const order = convertCloverOrderToMCMOrder(cloverOrder, productMap, taxRateIdToCode);
     const cloverPosId = order.clover_pos_id as string;
     // WS-12/F30: id de Clover alfanumérico; saltar uno malformado evita romper el `.or()`.
     if (!cloverPosId || !/^[A-Za-z0-9_-]+$/.test(cloverPosId)) {
@@ -216,6 +291,26 @@ export async function upsertOrdersFromClover(
         order.status = existing.status;
         order.payment_status = existing.payment_status;
         order.paid = existing.paid;
+      }
+
+      // GUARD ANTI-PARPADEO. El mapper devuelve `new-order` para toda orden que Clover reporte
+      // abierta, y este upsert lo escribia en CADA ciclo: una orden que MCM ya habia pasado a
+      // `in-kitchen` volvia a `new-order`, y `SEND_ORDER_TO_KITCHEN_AUTOMATICALLY` la devolvia.
+      // El sync NO gobierna el flujo de cocina: Clover solo aporta que la orden esta PAGADA.
+      // Solo se protegen los estados EN CURSO del flujo de cocina. Una orden que MCM tiene por
+      // CERRADA sin pago aplicado SI se deja reabrir — conducta fijada por
+      // `clover-payment-guard.test.ts`: si la inyeccion del pago fallo hay que poder cobrarla.
+      if ((order as any).status !== 'check-closed' && ESTADOS_EN_CURSO.has(String((existing as any).status))) {
+        (order as any).status = (existing as any).status;
+      }
+
+      // Solo se enlaza si la orden aun no tiene mesa: una que ya la tiene no se toca jamas.
+      if (!(existing as any).table_id) {
+        await enlazarMesa(order, cloverOrder);
+      } else {
+        (order as any).table_id = (existing as any).table_id;
+        (order as any).table = (existing as any).table;
+        (order as any).check_number = (existing as any).check_number;
       }
 
       // ── MODO GESTIONADO (espejo de omnivore/sync/upsert-orders.ts) ──────────────
@@ -299,6 +394,12 @@ export async function upsertOrdersFromClover(
         }
         // Los campos de pago los gobierna el guard anti-doble-cobro de arriba.
         updatePayload.status = (order as any).status;
+        // La mesa SOLO se escribe cuando se acaba de resolver (la orden no tenia).
+        if (!(existing as any).table_id && (order as any).table_id) {
+          updatePayload.table_id = (order as any).table_id;
+          updatePayload.table = (order as any).table;
+          updatePayload.check_number = (order as any).check_number;
+        }
         updatePayload.payment_status = (order as any).payment_status;
         updatePayload.paid = (order as any).paid;
 
@@ -355,6 +456,9 @@ export async function upsertOrdersFromClover(
       const randomNumberId = Math.floor(Math.random() * 10_000_000_000_000_000);
       order.site_id = siteId;
       order.id = randomNumberId;
+
+      // Orden nacida en el terminal: es el momento natural de enlazarla con su mesa.
+      await enlazarMesa(order, cloverOrder);
 
       // Una orden NACIDA en Clover llega sin sello. Sin él `/pos-order` no la reconoce como
       // gestionada —las funciones edge exigen `clover_managed === true`— y firear un ítem
