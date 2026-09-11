@@ -129,7 +129,7 @@ cobrar tardaba más de un minuto en aparecer. Ahora está partido:
 | `sync_type` | Intervalo | Query | Para qué |
 |---|---|---|---|
 | `fetch_open_orders` | **20 s** | `eq(open,true)` | Carril rápido. Una sola pasada, ~66 tickets, ciclo medido ~19 s. Es la MISMA query que `orderandpay-login` ya dispara en cada login de mesero. **No detecta cierres** (un ticket cerrado desaparece de `eq(open,true)`). |
-| `fetch_closed_orders` | **90 s** | `and(gte(opened_at,now-24h),lte(opened_at,now+60))` **+** `eq(open,true)`, dedup por id | Barrido completo — el cuerpo de `fetch_recent_orders` sin cambios. Es quien **detecta los cierres** sin el webhook: la ventana trae los tickets del período abiertos *y* cerrados. |
+| `fetch_closed_orders` | **90 s** | `and(eq(open,false),gte(closed_at,now-2h))` **+** `eq(open,true)`, dedup por id | Barrido. Es quien **detecta los cierres** sin el webhook. Desde el 2026-09-11 filtra por `closed_at` (antes: ventana de 24 h sobre `opened_at`) — ver abajo. |
 
 - `fetch-open-orders.ts` / `fetch-closed-orders.ts`: los dos handlers. Ambos escriben por el
   mismo `upsertOmnivoreOrders`, que ya es seguro ante ejecuciones concurrentes (UNIQUE
@@ -138,11 +138,48 @@ cobrar tardaba más de un minuto en aparecer. Ahora está partido:
 - `fetch-recent-orders.ts`: **retirado pero NO borrado**. Su fila de schedule quedó
   `disabled` y el handler sigue registrado, para los jobs en vuelo y para el rollback
   (reactivar esa fila y desactivar las dos nuevas).
-- La ventana rodante bajó de **36 h a 24 h** (`order-mapper.ts::getTodayWindowUnix`). 24 h
-  siguen cubriendo el cruce de medianoche. Hueco conocido: un ticket abierto hace más de 24 h
-  que se cierra ahora sale del pase `open` y queda fuera de la ventana ⇒ su cierre no
-  sincroniza. Si hace falta cerrarlo, la vía verificada contra la API es
-  `and(eq(open,false),gte(closed_at,now-24h))`.
+- **Historia de la ventana**: 36 h → 24 h (2026-07-27, sobre `opened_at`) → **2 h sobre
+  `closed_at`** (2026-09-11, ver la sección siguiente). `getTodayWindowUnix` y su `LOOKBACK_MS`
+  de 24 h **siguen vivos e intactos**: los usa `fetch_recent_orders`, el camino de rollback.
+
+### El eje pasa a `closed_at` (2026-09-11)
+
+`fetch_closed_orders` filtraba por `opened_at`, no por `closed_at`: detectaba el cierre porque el
+ticket **reaparecía** en la ventana con `open=false`. Eso ataba el tamaño de la ventana a **cuánto
+puede durar una mesa abierta** (de ahí las 24 h: el ticket más largo medido dura 21,7 h) y obligaba a
+traer todo lo abierto en un día para ver los cierres del último minuto. El coste, medido:
+
+| Site | Tickets por pasada | Páginas | Tiempo |
+|---|---|---|---|
+| 70080000 Coca-Cola Music Hall | 2.915 | 30 | **159 s** |
+| 51021421 Arena Medalla | 414 | 5 | **33,4 s** |
+
+Con un schedule de 90 s, el carril no alcanzaba: 51021421 promediaba **341 s por corrida** (p95 42 min)
+y 70080000 completaba **140 corridas de las ~960** esperadas en 24 h, con 20 jobs en dead-letter.
+
+Filtrando por **cuándo cerró**, la ventana deja de depender de la duración de la mesa —de las
+abiertas se encarga el pase `eq(open,true)`, que no tiene cota— y baja a 2 h
+(`order-mapper.ts::CLOSED_LOOKBACK_HOURS`). Verificado contra la API en los 4 sites vivos
+(2026-09-11, sólo lectura): `closed_at` poblado en **3.339/3.339** tickets cerrados, **cero fugas**
+frente a la query anterior en ventanas de 2 h y de 24 h, y el payload de 51021421 al **8,2 %**
+(33,4 s → 2,5 s). De paso **queda cerrado el hueco conocido**: el ticket abierto hace más de 24 h que
+se cierra ahora entra por su `closed_at`.
+
+**⚠️ Contrapartida asumida (decisión del dueño).** Esta ventana es también el único mecanismo de
+recuperación que existe: no hay backfill ni reconciliación inversa (WS-5/F16 se propuso en
+`audits/2026-06-09` y no se implementó). Con 2 h, un apagón del worker de más de 2 h pierde esos
+cierres **de forma permanente y silenciosa** — y los apagones existen: **16 huecos >2 h sin una sola
+corrida exitosa en 30 días**, 9 de ellos >5 h (el 31-ago uno de **16,8 h** simultáneo en tres sites;
+el 11-sep uno de 15,8 h en 70080000). Antes los absorbía la ventana de 24 h, por accidente de diseño.
+Lo que se pierde arrastra: `closed_at` NULL → mesa **ocupada para siempre**
+(`recompute_floor_table_status`), sin fila en `payments` del cobro del terminal, fuera del cierre de
+caja (`export-cash-close.ts`, que filtra por `closed_at`) y sin puntos de lealtad.
+
+Si vuelve a doler, la vía es hacer la ventana **auto-expansible** con el watermark de
+`sync_schedules.last_cursor` (hoy llega al handler en `stepInput.cursor` y se descarta, escribiendo
+`p_cursor: null`), como ya hace `clover/sync/fetch-payments.ts` con su solape de 2 min.
+
+Rollback: revertir el commit y redesplegar el worker `pos_sync`. No hay bandera por site.
 
 **Los 20 s / 90 s son un objetivo, no una garantía.** Una página de `/tickets` cuesta 4–9 s
 aunque se pidan campos mínimos (la latencia es del agente Aloha, no del payload), y el loop de

@@ -44,22 +44,57 @@ function getTodayWindowUnix(): { startUnix: number; endUnix: number } {
   };
 }
 
+// 2026-09-11: el carril de cierres pasa a filtrar por `closed_at` en vez de por `opened_at`.
+// La ventana de `opened_at` medía cuánto podía durar una mesa ABIERTA (por eso eran 24h: el
+// ticket más largo medido dura 21,7h) y hacía que el barrido trajera TODO lo abierto en 24h
+// —2.915 tickets / 30 páginas / 159s en 70080000— sólo para detectar los cierres del rato.
+// Filtrando por cuándo CERRÓ, la ventana ya no depende de la duración de la mesa (de las
+// abiertas se encarga el pase `eq(open,true)`, sin cota) y basta con un margen corto.
+//
+// Verificado contra la API en los 4 sites vivos (2026-09-11, sólo lectura): `closed_at` viene
+// poblado en 3.339/3.339 tickets cerrados, cero fugas respecto a la query anterior, y el
+// payload de 51021421 cae al 8,2% (414 tickets/33,4s → 34/2,5s).
+//
+// ⚠️ CONTRAPARTIDA ASUMIDA (decisión del dueño): esta ventana es también el único mecanismo de
+// recuperación que existe —no hay backfill ni reconciliación inversa (WS-5/F16 se propuso y no
+// se implementó)—, así que un apagón del worker de más de 2h pierde esos cierres de forma
+// permanente. Medido: 16 huecos >2h sin una sola corrida exitosa en 30 días. Antes los absorbía
+// la ventana de 24h. Si vuelve a doler, la vía es hacerla auto-expansible con el watermark de
+// `sync_schedules.last_cursor` (hoy llega al handler y se descarta), como en
+// `clover/sync/fetch-payments.ts`.
+export const CLOSED_LOOKBACK_HOURS = 2;
+
+/** Inicio de la ventana del carril de cierres, en epoch SEGUNDOS (la API no acepta ms). */
+export function getClosedSinceUnix(
+  nowMs: number = Date.now(),
+  hours: number = CLOSED_LOOKBACK_HOURS
+): number {
+  return Math.floor((nowMs - hours * 60 * 60 * 1000) / 1000);
+}
+
 /**
  * Fetches Omnivore tickets, following HAL `_links.next` pagination. Mirrors the
- * legacy `getOmnivoreOrders`. `mode='today'` returns the tickets opened inside the
- * rolling window (open AND closed — replaces the webhook's close detection);
- * `mode='open'` returns only open tickets, sin cota de tiempo.
+ * legacy `getOmnivoreOrders`.
  *
- * Consumidores: `fetch_closed_orders` usa AMBOS modos (barrido completo, 90s) y
- * `fetch_open_orders` usa solo `'open'` (carril rápido, 20s).
+ * - `mode='open'`   → `eq(open,true)`. Todos los tickets abiertos, sin cota de tiempo.
+ * - `mode='closed'` → los cerrados en las últimas `CLOSED_LOOKBACK_HOURS`, por `closed_at`.
+ * - `mode='today'`  → ventana rodante sobre `opened_at` (24h). RETIRADO del carril de cierres
+ *                     el 2026-09-11; lo conserva `fetch_recent_orders`, que es el camino de
+ *                     rollback documentado. No cambiar su comportamiento.
+ *
+ * Consumidores: `fetch_closed_orders` usa `'closed'` + `'open'` (barrido, 90s),
+ * `fetch_open_orders` usa solo `'open'` (carril rápido, 20s), y `fetch_recent_orders`
+ * (retirado, schedule `disabled`) usa `'today'` + `'open'`.
  */
 export async function fetchOmnivoreOrders(
   client: AxiosInstance,
-  mode: 'today' | 'open' = 'today'
+  mode: 'today' | 'open' | 'closed' = 'today'
 ): Promise<any[]> {
   let where: string;
   if (mode === 'open') {
     where = 'eq(open,true)';
+  } else if (mode === 'closed') {
+    where = `and(eq(open,false),gte(closed_at,${getClosedSinceUnix()}))`;
   } else {
     const { startUnix, endUnix } = getTodayWindowUnix();
     where = `and(gte(opened_at,${startUnix}),lte(opened_at,${endUnix}))`;

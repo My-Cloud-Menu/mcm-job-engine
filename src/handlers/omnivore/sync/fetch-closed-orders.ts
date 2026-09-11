@@ -14,18 +14,23 @@ const InputSchema = z.object({
 });
 
 /**
- * CARRIL LENTO (90s) del sync Omnivore → MCM. Es el BARRIDO COMPLETO: el cuerpo de
- * `fetch_recent_orders` sin cambios (ventana rodante sobre `opened_at` + TODOS los tickets
- * abiertos, deduplicados por id).
+ * CARRIL LENTO (90s) del sync Omnivore → MCM. Dos pases deduplicados por id de ticket:
+ * los CERRADOS recientemente (`'closed'`, por `closed_at`) + TODOS los abiertos (`'open'`,
+ * sin cota de tiempo).
  *
- * Su trabajo es detectar los CIERRES sin depender del webhook de Omnivore: la ventana
- * `'today'` trae los tickets del período tanto abiertos como cerrados, así que un ticket
- * que se cerró aparece aquí con `open=false` y el mapper lo pasa a check-closed/fulfilled.
- * El pase `'open'` sin cota se conserva como red de seguridad para las mesas abiertas más
- * viejas que la ventana.
+ * Su trabajo es detectar los CIERRES sin depender del webhook de Omnivore: un ticket que se
+ * cerró aparece en el pase `'closed'` con `open=false` y el mapper lo pasa a
+ * check-closed/fulfilled. El pase `'open'` mantiene frescas las mesas que siguen abiertas,
+ * por viejas que sean.
  *
- * El carril rápido (`fetch_open_orders`, 20s) es un subconjunto estricto de esto, así que
- * este barrido no puede perder nada que aquél viera.
+ * 2026-09-11: el primer pase era `'today'` —ventana de 24h sobre `opened_at`—, lo que obligaba
+ * a traer todo lo abierto en el último día para ver los cierres del último minuto (2.915
+ * tickets / 159s en 70080000). Al filtrar por `closed_at` la ventana deja de depender de
+ * cuánto dure la mesa abierta y baja a 2h. Ojo: con ello un ticket que se cierra mientras el
+ * worker lleva más de 2h caído ya no se recupera — ver la nota en `order-mapper.ts`.
+ *
+ * El carril rápido (`fetch_open_orders`, 20s) es un subconjunto estricto del pase `'open'`,
+ * así que este barrido no puede perder nada que aquél viera.
  *
  * Schedule: `sync_schedules (integration='omnivore', sync_type='fetch_closed_orders', 90s)`.
  * Reemplaza a `fetch_recent_orders`, cuyo handler se conserva registrado para los jobs en
@@ -44,11 +49,12 @@ registerHandler('omnivore', 'fetch_closed_orders', async ({ stepInput, job }) =>
 
   let orders: any[];
   try {
-    // WS-5/F17 (auditoría 2026-06-09): ventana rodante sobre `opened_at` (hoy 24h) + TODOS
-    // los tickets abiertos (sin importar fecha), deduplicados por id. Captura el cierre de
-    // mesas que cruzan medianoche y mesas abiertas más viejas que la ventana.
+    // Cerrados en las últimas CLOSED_LOOKBACK_HOURS (por `closed_at`) + TODOS los tickets
+    // abiertos (sin importar fecha), deduplicados por id. El cierre de una mesa que cruza
+    // medianoche o que llevaba días abierta entra por el primer pase, porque lo que se mira
+    // es cuándo cerró.
     const [recent, open] = await Promise.all([
-      fetchOmnivoreOrders(client, 'today'),
+      fetchOmnivoreOrders(client, 'closed'),
       fetchOmnivoreOrders(client, 'open'),
     ]);
     const byId = new Map<string, any>();

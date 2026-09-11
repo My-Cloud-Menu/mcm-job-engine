@@ -59,7 +59,7 @@ src/
       client.ts            — Axios instance with Omnivore auth
       inject/              — create-order, add-items, create-payment, payment
       sync/                — fetch-open-orders (20s, eq(open,true))
-                             fetch-closed-orders (90s, ventana 24h + open → detecta cierres)
+                             fetch-closed-orders (90s, closed_at 2h + open → detecta cierres)
                              fetch-recent-orders (retirado: schedule disabled, handler vivo
                              para jobs en vuelo y rollback)
     clover/                — same structure as omnivore
