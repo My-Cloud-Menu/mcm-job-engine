@@ -72,36 +72,16 @@ const nextCheckNumber = (siblings: number[]): number =>
   siblings.reduce((max, n) => Math.max(max, n), 0) + 1;
 
 /**
- * WS-8/F15 (auditoría 2026-06-09): atribución de dinero cuando la orden se cobra
- * DIRECTO en Omnivore (due==0) y NO existe un pago en MCM. Sin esto la orden queda
- * `check-closed`/`fulfilled` pero el dinero es invisible para el dashboard de pagos /
- * settlement. Crea una fila `payments` de "pago externo POS". Idempotente: si ya hay
- * un pago aplicado (MCM o externo) no duplica.
+ * NOTA (2026-09-18): aquí vivía `recordExternalOmnivorePaymentIfNeeded` (WS-8/F15, auditoría
+ * 2026-06-09), que insertaba una fila SINTÉTICA en `payments` (`source: 'Omnivore POS'`,
+ * `external_pos_payment: true`) cuando el ticket se cobraba en el terminal de Aloha. Se retiró por
+ * decisión del dueño: MCM no procesó ese cobro y la fila solo ensuciaba los reportes de pagos, se
+ * duplicaba con el sync del edge (check-then-insert sin llave única; ~700 duplicados el 11–15 sep) y
+ * era reembolsable por el ECR sin ninguna guarda. El estado de la orden (`paid`, `payment_status`,
+ * `status`) sale del mapper (`order-mapper.ts`) desde los totales del ticket y no depende de esa
+ * fila; el guard `orderHasAppliedPayment` sigue protegiendo los pagos hechos EN MCM.
+ * Espejo: edge `omnivore-helper.ts` (misma retirada).
  */
-async function recordExternalOmnivorePaymentIfNeeded(siteId: number, orderId: number, order: any): Promise<void> {
-  if (order.payment_status !== 'fulfilled') return;
-  const paid = Number(order.paid ?? 0);
-  if (!(paid > 0)) return;
-  if (await orderHasAppliedPayment(siteId, orderId)) return; // ya hay pago → no duplicar
-  const now = new Date().toISOString();
-  const { error } = await supabase.from('payments').insert({
-    site_id: siteId,
-    orders_ids: [orderId],
-    method: 'ecr-card',
-    status: 'completed',
-    total: paid.toFixed(2),
-    tip: '0.00',
-    source: 'Omnivore POS',
-    reference: `omnivore:${order.pos_id}`,
-    employee: {},
-    additional_properties: { external_pos_payment: true, origin: 'omnivore-sync' },
-    date_created: now,
-    date_updated: now,
-  });
-  if (error) {
-    logger.error({ error, site_id: siteId, order_id: orderId }, 'omnivore sync: external payment record failed');
-  }
-}
 
 /**
  * Ported verbatim from omnivore-helper.ts:verifyOrderHasRelevantChanges. Avoids
@@ -476,7 +456,6 @@ export async function upsertOmnivoreOrders(
             skipped++;
           } else {
             updated++;
-            await recordExternalOmnivorePaymentIfNeeded(siteId, existing.id, order);
           }
           continue;
         }
@@ -537,7 +516,6 @@ export async function upsertOmnivoreOrders(
               skipped++;
             } else {
               updated++;
-              await recordExternalOmnivorePaymentIfNeeded(siteId, existing.id, order);
             }
           } else {
             skipped++;
@@ -657,18 +635,6 @@ export async function upsertOmnivoreOrders(
           skipped++;
         } else {
           inserted++;
-          // WS-8: re-consultar el id real (ignoreDuplicates puede no devolver fila) y
-          // registrar el pago externo si la orden nació ya cobrada en Omnivore.
-          if (order.payment_status === 'fulfilled' && Number(order.paid ?? 0) > 0) {
-            const { data: row } = await supabase
-              .from('orders')
-              .select('id')
-              .eq('site_id', siteId)
-              .eq('omnivore_pos_id', omnivorePosId)
-              .limit(1)
-              .maybeSingle();
-            if (row?.id) await recordExternalOmnivorePaymentIfNeeded(siteId, row.id, order);
-          }
         }
       }
     } catch (err) {

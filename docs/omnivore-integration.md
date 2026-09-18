@@ -406,3 +406,19 @@ Verificado contra el caso real (handler directo, sin worker): tender `105906179`
 propina, ticket cerrado, marca + ajuste (diferencia 49) en el pago 10483, nota en la orden 10614; segunda
 ejecución → `already_applied` sin POST. Tests: `tests/unit/omnivore-payment-injection.test.ts` (23).
 
+## Los cobros hechos en el terminal de Aloha ya NO se registran en `payments` (2026-09-18, tarde)
+
+Hasta hoy `upsert-orders.ts::recordExternalOmnivorePaymentIfNeeded` (WS-8/F15, auditoría 2026-06-09) fabricaba una fila
+SINTÉTICA en `payments` (`source: 'Omnivore POS'`, `method: 'ecr-card'`, `tip: 0`, `pos_id: null`,
+`additional_properties.external_pos_payment: true`) cada vez que un ticket se cobraba en el terminal del POS. **Se
+retiró**, aquí y en su espejo del edge (`omnivore-helper.ts`), por decisión del dueño: MCM no procesó ese cobro y la fila
+solo ensuciaba los reportes (en Arena Medalla y Coca-Cola era el 88–95 % de `payments`, 27.165 filas en total), se
+duplicaba entre los dos carriles del motor y el sync del edge (check-then-insert sin llave única, ~700 duplicados el
+11–15 sep), y era reembolsable por el ECR desde el handheld y el dashboard sin ninguna guarda de origen.
+
+Lo que NO cambia: `paid`, `payment_status` y `status` de la orden salen del mapper (`order-mapper.ts:326-346,430`)
+desde los totales del ticket; el guard `orderHasAppliedPayment` sigue protegiendo los pagos hechos EN MCM. Lo que sí
+cambia: una orden pagada en Aloha ya no queda clavada en `check-closed` si el POS la reabre (el guard ya no se
+autoalimenta con la fila sintética). Test: `tests/unit/omnivore-payment-guard.test.ts` («ticket pagado en el terminal
+de Aloha»). Las filas históricas se respaldaron en `_backup_payments_omnivore_pos_20260918` y se borraron
+(`mcm-edge-functions/scripts/payments-omnivore-pos-cleanup-2026-09-18/`).

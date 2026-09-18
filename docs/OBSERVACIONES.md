@@ -35,9 +35,13 @@ accidente de diseño.
 guarda el mayor para cursores numéricos (`migrations/033_sync_health_last_success.sql:47-53`), lo que
 protege el watermark contra retrocesos si se guarda el epoch en segundos.
 
-### 2. `payments` puede duplicarse (no `orders`)
+### 2. `payments` puede duplicarse (no `orders`) — RESUELTO 2026-09-18
 
-`recordExternalOmnivorePaymentIfNeeded` (`upsert-orders.ts:80-103`) es un **check-then-insert** sin
+> **Resuelto:** el escritor se retiró en el motor y en el edge (decisión del dueño: en `payments` solo va lo que MCM cobró) y el
+> histórico se respaldó y borró. Ver `docs/omnivore-integration.md` («Los cobros hechos en el terminal de Aloha…»). Lo de abajo
+> queda como diagnóstico.
+
+`recordExternalOmnivorePaymentIfNeeded` (`upsert-orders.ts:80-103`) era un **check-then-insert** sin
 llave única que lo cubra: el único índice de pagos es `payments (site_id, pos_id)`
 (`migrations/016_payments_pos_id_unique.sql:31-33`) y **este insert no setea `pos_id`** — sólo
 `reference: omnivore:<pos_id>`.

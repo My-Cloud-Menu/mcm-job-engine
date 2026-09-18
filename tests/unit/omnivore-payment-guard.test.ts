@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
   hasCompletedPayment: null as any, // fila de payments devuelta por el guard (o null)
   updates: [] as any[],
   upserts: [] as any[],
+  inserts: [] as any[],
 }));
 
 vi.mock('../../src/lib/logger', () => ({
@@ -49,6 +50,10 @@ vi.mock('../../src/lib/supabase', () => {
         },
         upsert: (row: any) => {
           h.upserts.push({ table, row });
+          return Promise.resolve({ error: null });
+        },
+        insert: (row: any) => {
+          h.inserts.push({ table, row });
           return Promise.resolve({ error: null });
         },
       }),
@@ -92,6 +97,64 @@ beforeEach(() => {
   h.hasCompletedPayment = null;
   h.updates = [];
   h.upserts = [];
+  h.inserts = [];
+});
+
+// ── Ticket cobrado EN EL TERMINAL de Aloha (2026-09-18) ────────────────────────────────────────
+// Antes el sync fabricaba una fila SINTÉTICA en `payments` (`source: 'Omnivore POS'`) para estos
+// tickets. Se retiró por decisión del dueño: MCM no procesó ese cobro. La orden queda cerrada y
+// pagada igual, porque eso sale del mapper (totales del ticket), no de `payments`.
+describe('omnivore sync — ticket pagado en el terminal de Aloha', () => {
+  function paidAtTerminalTicket() {
+    return openOmnivoreTicket({
+      open: false,
+      closed_at: 1_700_000_900,
+      totals: { due: 0, paid: 2900, items: 2900, discounts: 0, service_charges: 0, tax: 0, total: 2900 },
+    });
+  }
+  function unpaidMcmOrder() {
+    return paidMcmOrder({ status: 'new-order', payment_status: 'not_fulfilled', paid: '0.00', total: '29.00' });
+  }
+
+  it('NO inserta ninguna fila en payments, y la orden queda check-closed / fulfilled / paid = total del ticket', async () => {
+    h.existingOrder = unpaidMcmOrder();
+    h.hasCompletedPayment = null;
+
+    const res = await upsertOmnivoreOrders(48372619, [paidAtTerminalTicket()], config);
+
+    expect(h.inserts.filter((i) => i.table === 'payments')).toHaveLength(0);
+    expect(h.updates).toHaveLength(1);
+    const patch = h.updates[0].patch;
+    expect(patch.status).toBe('check-closed');
+    expect(patch.payment_status).toBe('fulfilled');
+    expect(Number(patch.paid)).toBe(29);
+    expect(res.updated).toBe(1);
+  });
+
+  it('tampoco al INSERTAR una orden nueva que ya nace cobrada en el POS', async () => {
+    h.existingOrder = null; // no existe en MCM → camino de insert
+    h.hasCompletedPayment = null;
+
+    const res = await upsertOmnivoreOrders(48372619, [paidAtTerminalTicket()], config);
+
+    expect(h.inserts.filter((i) => i.table === 'payments')).toHaveLength(0);
+    expect(res.inserted).toBe(1);
+    const row = h.upserts.find((u) => u.table === 'orders')?.row;
+    expect(row?.status).toBe('check-closed');
+    expect(row?.payment_status).toBe('fulfilled');
+  });
+
+  it('un pago hecho EN MCM sigue protegido por el guard aunque Omnivore reporte el ticket abierto', async () => {
+    h.existingOrder = paidMcmOrder();
+    h.hasCompletedPayment = { id: 777 };
+
+    await upsertOmnivoreOrders(48372619, [openOmnivoreTicket()], config);
+
+    const patch = h.updates[0].patch;
+    expect(patch.status).toBe('check-closed');
+    expect(patch.paid).toBe('34.40');
+    expect(h.inserts).toHaveLength(0);
+  });
 });
 
 describe('omnivore sync guard — orden con pago aplicado', () => {
