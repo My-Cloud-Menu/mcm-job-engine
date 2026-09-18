@@ -6,6 +6,9 @@ const h = vi.hoisted(() => ({
   existingPosId: null as string | null,
   existingAdditionalProps: null as Record<string, unknown> | null,
   paymentUpdates: [] as any[],
+  inserts: [] as any[],
+  /** Simula el 23505 de `payments_site_pos_id_uniq` en el `update({ pos_id })`. */
+  posIdUpdateError: null as null | { code: string; message: string },
 }));
 
 vi.mock('../../src/handlers/omnivore/client', () => ({
@@ -47,7 +50,14 @@ vi.mock('../../src/lib/supabase', () => ({
         ),
       update: (patch: any) => {
         h.paymentUpdates.push({ table, patch });
+        if (table === 'payments' && patch.pos_id !== undefined && h.posIdUpdateError) {
+          return makeChain({ data: null, error: h.posIdUpdateError });
+        }
         return makeChain({ data: [{ id: 'x' }], error: null });
+      },
+      insert: (row: any) => {
+        h.inserts.push({ table, row });
+        return makeChain({ data: null, error: null });
       },
     }),
   },
@@ -60,6 +70,8 @@ const handler = getHandler('omnivore', 'payment_injection')!;
 const job = { id: 'job-1', site_id: 25, correlation_id: 'c' } as any;
 const step = { idempotency_key: 'pos_pay:omnivore:55:apply', attempt_count: 0, max_attempts: 5 } as any;
 const payment = { type: '3rd_party', tender_type: '102', tip: 0, amount: 2000, comment: 'Invoice #: 7' };
+/** Ticket con saldo = importe del pago (el caso normal). */
+const ticketTotals = (due: number, paid = 0, tenders = 0) => ({ data: { totals: { due, paid }, _embedded: { payments: new Array(tenders).fill({ id: 't' }) } } });
 
 function run() {
   return handler({
@@ -75,20 +87,148 @@ describe('omnivore payment_injection handler', () => {
   beforeEach(() => {
     h.post.mockReset();
     h.get.mockReset();
+    // El handler lee el saldo del ticket antes de postear: por defecto, saldo = importe.
+    h.get.mockResolvedValue(ticketTotals(2000));
     h.existingPosId = null;
     h.existingAdditionalProps = null;
     h.paymentUpdates.length = 0;
+    h.inserts.length = 0;
+    h.posIdUpdateError = null;
   });
 
-  it('applies the payment and persists payments.pos_id', async () => {
+  it('applies the payment: marca jsonb SIEMPRE y pos_id best-effort', async () => {
     h.post.mockResolvedValue({ data: { id: 'OMNI-PAY-1' } });
 
     const out = await run();
 
     expect(out).toMatchObject({ omnivore_payment_id: 'OMNI-PAY-1' });
+    expect(out).not.toHaveProperty('adjusted');
     expect(h.post).toHaveBeenCalledWith('/tickets/TICKET-9/payments', payment, expect.anything());
+    const marca = h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.additional_properties?.omnivore_payment_id === 'OMNI-PAY-1');
+    expect(marca).toBeTruthy();
     const upd = h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.pos_id === 'OMNI-PAY-1');
     expect(upd).toBeTruthy();
+    expect(h.inserts).toHaveLength(0); // sin ajuste no hay nota
+  });
+
+  // ── La marca sobrevive al 23505 de `payments_site_pos_id_uniq` (Aloha recicla ids) ────────────
+  it('pos_id choca con el índice único → la marca jsonb queda escrita igual y el job completa', async () => {
+    h.post.mockResolvedValue({ data: { id: '105906178' } });
+    h.posIdUpdateError = { code: '23505', message: 'duplicate key value violates unique constraint "payments_site_pos_id_uniq"' };
+
+    const out = await run();
+
+    expect(out).toMatchObject({ omnivore_payment_id: '105906178' });
+    const marca = h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.additional_properties?.omnivore_payment_id === '105906178');
+    expect(marca).toBeTruthy();
+  });
+
+  it('con la marca jsonb puesta, el reintento sale por already_applied aunque pos_id siga null', async () => {
+    h.existingPosId = null;
+    h.existingAdditionalProps = { omnivore_payment_id: '105906178' };
+
+    const out = await run();
+
+    expect(out).toMatchObject({ skipped: 'already_applied', omnivore_payment_id: '105906178' });
+    expect(h.post).not.toHaveBeenCalled();
+  });
+
+  it('si no se puede leer el estado del pago NO se postea (retryable)', async () => {
+    // El mock de `select` no modela error: se fuerza vía un `maybeSingle` que devuelve error.
+    const orig = h.existingAdditionalProps;
+    h.existingAdditionalProps = { __force_read_error: true } as any;
+    // Simular error de lectura reemplazando temporalmente el resultado del select de payments.
+    const { supabase } = await import('../../src/lib/supabase');
+    const spy = vi.spyOn(supabase as any, 'from').mockImplementation((table: string) => {
+      const chain: any = {
+        select: () => chain, eq: () => chain, neq: () => chain, not: () => chain, in: () => chain, limit: () => chain, order: () => chain,
+        maybeSingle: async () => (table === 'payments' ? { data: null, error: { message: 'boom' } } : { data: null, error: null }),
+        single: async () => ({ data: null, error: null }),
+        then: (ok: any) => Promise.resolve({ data: [], error: null }).then(ok),
+        update: () => chain, insert: () => chain,
+      };
+      return chain;
+    });
+    try {
+      const err: any = await run().then(() => null, (e) => e);
+      expect(err?.code).toBe('OMNIVORE_PAYMENT_STATE_READ_FAILED');
+      expect(err?.retryable).toBe(true);
+      expect(h.post).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+      h.existingAdditionalProps = orig;
+    }
+  });
+
+  // ── Saldo del ticket antes del tender (incidente 10614: 145.36 cobrados vs 144.87 de ticket) ───
+  it('amount > due → postea el DUE (propina intacta), anota en order_notes y deja el ajuste en el pago', async () => {
+    h.get.mockResolvedValue(ticketTotals(14487));
+    h.post.mockResolvedValue({ data: { id: 'OMNI-PAY-3' } });
+    const body = { ...payment, amount: 14536, tip: 2680 };
+
+    const out = await handler({ stepInput: {}, jobPayload: { payment_id: 10483, order_id: 10614, ticket_id: '20260918-20003', payment: body }, context: {}, job, step });
+
+    expect(out).toMatchObject({ omnivore_payment_id: 'OMNI-PAY-3', adjusted: true, requested: 14536, applied: 14487, due: 14487 });
+    expect(h.post).toHaveBeenCalledWith('/tickets/20260918-20003/payments', { ...body, amount: 14487 }, expect.anything());
+    // El payload del job NO se muta.
+    expect(body.amount).toBe(14536);
+    // Nota de sistema en la orden, con las tres cifras.
+    const nota = h.inserts.find((i) => i.table === 'order_notes');
+    expect(nota.row).toMatchObject({ site_id: 25, order_id: 10614, is_system: true });
+    expect(nota.row.content).toContain('$145.36');
+    expect(nota.row.content).toContain('$144.87');
+    expect(nota.row.content).toContain('$0.49');
+    // Registro en el pago junto a la marca.
+    const upd = h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.additional_properties?.omnivore_tender_adjustment);
+    expect(upd.patch.additional_properties.omnivore_payment_id).toBe('OMNI-PAY-3');
+    expect(upd.patch.additional_properties.omnivore_tender_adjustment).toMatchObject({ kind: 'amount_capped_to_due', requested: 14536, applied: 14487, difference: 49 });
+  });
+
+  it('amount == due → postea tal cual, sin nota ni ajuste', async () => {
+    h.get.mockResolvedValue(ticketTotals(2000));
+    h.post.mockResolvedValue({ data: { id: 'OMNI-PAY-4' } });
+
+    const out = await run();
+
+    expect(out).toEqual({ omnivore_payment_id: 'OMNI-PAY-4' });
+    expect(h.post).toHaveBeenCalledWith('/tickets/TICKET-9/payments', payment, expect.anything());
+    expect(h.inserts.find((i) => i.table === 'order_notes')).toBeUndefined();
+  });
+
+  it('amount < due (split / parcial) → postea tal cual', async () => {
+    h.get.mockResolvedValue(ticketTotals(9000));
+    h.post.mockResolvedValue({ data: { id: 'OMNI-PAY-5' } });
+
+    const out = await run();
+
+    expect(out).toEqual({ omnivore_payment_id: 'OMNI-PAY-5' });
+    expect(h.post).toHaveBeenCalledWith('/tickets/TICKET-9/payments', payment, expect.anything());
+  });
+
+  it('due == 0 (ticket ya pagado) → NO postea, completa con ticket_already_paid y deja nota', async () => {
+    h.get.mockResolvedValue(ticketTotals(0, 2000, 1));
+
+    const out = await run();
+
+    expect(out).toMatchObject({ skipped: 'ticket_already_paid', due: 0, requested: 2000, tenders_en_ticket: 1 });
+    expect(h.post).not.toHaveBeenCalled();
+    const nota = h.inserts.find((i) => i.table === 'order_notes');
+    expect(nota.row.content).toContain('ya estaba pagado');
+    const upd = h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.additional_properties?.omnivore_tender_adjustment);
+    expect(upd.patch.additional_properties.omnivore_tender_adjustment).toMatchObject({ kind: 'ticket_already_paid', requested: 2000, applied: 0 });
+    // Sin marca de aplicado: no hay tender nuestro.
+    expect(h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.additional_properties?.omnivore_payment_id)).toBeUndefined();
+  });
+
+  it('si el GET del saldo falla NO se postea (retryable)', async () => {
+    h.get.mockRejectedValue(Object.assign(new Error('Request failed with status code 503'), { isAxiosError: true, response: { status: 503, data: { errors: [{ error: 'agent_offline', description: 'x' }] } } }));
+    h.post.mockResolvedValue({ data: { id: 'NO-DEBERÍA' } });
+
+    const err: any = await run().then(() => null, (e) => e);
+
+    expect(err?.code).toBe('OMNIVORE_AGENT_OFFLINE');
+    expect(err?.retryable).toBe(true);
+    expect(h.post).not.toHaveBeenCalled();
   });
 
   it('skips when the MCM payment already has a pos_id (resume guard)', async () => {
@@ -264,9 +404,10 @@ describe('omnivore payment_injection handler', () => {
 
     await runWithStep(freshStep()).catch(() => {});
 
-    // 1. Marcador en el pago → cualquier intento posterior sale por `already_applied`.
-    const marca = h.paymentUpdates.find((u) => u.table === 'payments');
-    expect(marca.patch.pos_id).toBe('applied_close_failed');
+    // 1. Marcador en el pago (jsonb, y pos_id best-effort) → cualquier intento posterior sale por `already_applied`.
+    const marca = h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.additional_properties?.omnivore_payment_id);
+    expect(marca.patch.additional_properties.omnivore_payment_id).toBe('applied_close_failed');
+    expect(h.paymentUpdates.find((u) => u.table === 'payments' && u.patch.pos_id === 'applied_close_failed')).toBeTruthy();
 
     // 2. Mensaje accionable en la orden. Sin esto se vería «pago fallido», alguien lo reenviaría
     //    y el duplicado entraría por la otra puerta.
@@ -276,7 +417,7 @@ describe('omnivore payment_injection handler', () => {
   });
 
   it('el marcador cierra el círculo: con él puesto, un intento posterior NO postea', async () => {
-    h.existingPosId = 'applied_close_failed';
+    h.existingAdditionalProps = { omnivore_payment_id: 'applied_close_failed' };
 
     const out = await run();
 

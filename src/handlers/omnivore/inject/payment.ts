@@ -5,7 +5,7 @@ import { HandlerError, JobStep } from '../../../core/types';
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
 import { mapOmnivoreError, assertNoOmnivoreErrors } from '../error-map';
-import { idempotencyId, persistPaymentIssue, reconcileOrderIssues, willTerminate } from './shared';
+import { getTicketTotals, idempotencyId, persistPaymentIssue, reconcileOrderIssues, willTerminate } from './shared';
 import { isFireInFlight } from '../sync/fire-in-flight';
 
 /**
@@ -17,16 +17,28 @@ import { isFireInFlight } from '../sync/fire-in-flight';
  * override) and freezes it under `jobPayload.payment`, along with `ticket_id`
  * (= `orders.pos_id`) and the MCM `payment_id` / `order_id`.
  *
- * Idempotency (header-independent): if the MCM payment already carries a
- * `pos_id`, it was applied — skip. On success we persist the Omnivore payment
- * id back to `payments.pos_id` (parity with the legacy flow).
+ * Idempotency (header-independent): if the MCM payment already carries the
+ * applied marker (`additional_properties.omnivore_payment_id`, or a legacy
+ * `pos_id`), it was applied — skip. On success we persist the Omnivore payment
+ * id as that marker (and best-effort into `payments.pos_id`, see below).
  */
 /**
- * Where the "applied to Omnivore" marker lives on the `payments` row. Default
- * `pos_id` (POS-originated payments). The Clover-pull → Omnivore forward passes
- * `additional_properties.omnivore_payment_id` because for a Clover-terminal
- * payment `pos_id` already holds the CLOVER payment id (upsert-payments.ts:212),
- * so reusing it would make the resume guard skip immediately and never apply.
+ * Dónde vive la marca «aplicado a Omnivore» del `payments`.
+ *
+ * Desde el 2026-09-18 la marca es SIEMPRE `additional_properties.omnivore_payment_id`, para todos los
+ * pagos. Antes el default era `payments.pos_id`, y eso lleva roto desde el 15-sep en los tres sites
+ * vivos: Aloha RECICLA los ids de tender (Numen rota entre ~40 ids) y `payments_site_pos_id_uniq
+ * (site_id, pos_id)` rechaza el UPDATE con 23505 — que además se ignoraba. Sin marca, un reintento
+ * tras un ACK perdido vuelve a postear el tender (cobro doble). Medido: 27/27 (Numen), 52/52 (Arena
+ * Medalla) y 1/1 (Coca-Cola) de los jobs de pago completados chocaban con un pago anterior del site.
+ *
+ * El índice NO se toca (el pull de pagos de Clover hace upsert sobre él y exige que sea no-parcial).
+ * `pos_id` se sigue escribiendo best-effort —vale como dato informativo cuando no choca— pero su
+ * error va al log en vez de tragarse, y la lectura mira las dos casillas (los pagos viejos con
+ * `pos_id` siguen contando como aplicados).
+ *
+ * `pos_id_field` en el payload sigue existiendo por el camino Clover-pull → Omnivore forward
+ * (`upsert-payments.ts`): ahí `pos_id` guarda el id de CLOVER y no debe ni leerse ni escribirse.
  */
 const OMNIVORE_MARKER_FIELD = 'additional_properties.omnivore_payment_id';
 
@@ -76,10 +88,10 @@ const CLOSE_FAILED_CODE = 'OMNIVORE_PAYMENT_APPLIED_CLOSE_FAILED';
  * Marcador que se escribe donde iría el id del pago de Omnivore. No es un id: es la constancia de
  * que el tender entró aunque no sepamos su id (el POS falló antes de devolvérnoslo).
  *
- * Es seguro escribirlo ahí: `payments.pos_id` sólo lo leen las guardas de reanudación —esta misma y
- * la de Clover—, que preguntan «¿hay algo?», no «¿qué id es?». Verificado repo-wide: ningún camino
- * lo usa para direccionar al POS. Y al quedar poblado, cualquier intento posterior sale por
- * `already_applied` sin postear.
+ * Vive en `additional_properties.omnivore_payment_id` (una constante en `pos_id` sólo podía existir
+ * una vez por site: chocaba con `payments_site_pos_id_uniq` a la segunda). Las guardas de
+ * reanudación preguntan «¿hay algo?», no «¿qué id es?», así que cualquier intento posterior sale
+ * por `already_applied` sin postear.
  */
 const CLOSE_FAILED_MARKER = 'applied_close_failed';
 
@@ -188,60 +200,103 @@ export async function assertItemsInPos(siteId: number, orderId: unknown, payment
   throw he;
 }
 
+/**
+ * ¿Ya está aplicado? Mira la marca jsonb y, salvo en el camino Clover-forward (donde `pos_id` es el
+ * id de Clover), también `pos_id` (pagos anteriores al 2026-09-18). Si la lectura falla NO se
+ * asume «no aplicado»: se lanza retryable y no se postea a ciegas (mismo criterio que Clover).
+ */
 async function readOmnivoreApplied(
   siteId: number,
   paymentId: unknown,
   posIdField: string
 ): Promise<string | null> {
-  if (posIdField === OMNIVORE_MARKER_FIELD) {
-    const { data } = await supabase
-      .from('payments')
-      .select('additional_properties')
-      .eq('id', paymentId)
-      .eq('site_id', siteId)
-      .maybeSingle();
-    const ap = (data?.additional_properties ?? {}) as Record<string, unknown>;
-    return (ap.omnivore_payment_id as string) ?? null;
-  }
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('payments')
-    .select('pos_id')
+    .select('pos_id, additional_properties')
     .eq('id', paymentId)
     .eq('site_id', siteId)
     .maybeSingle();
-  return (data?.pos_id as string) ?? null;
+  if (error) {
+    throw new HandlerError(
+      `omnivore payment: no se pudo leer el estado del pago ${paymentId} (${error.message})`,
+      'OMNIVORE_PAYMENT_STATE_READ_FAILED', true,
+    );
+  }
+  const ap = (data?.additional_properties ?? {}) as Record<string, unknown>;
+  const marker = ap.omnivore_payment_id;
+  if (marker != null && String(marker) !== '') return String(marker);
+  if (posIdField === OMNIVORE_MARKER_FIELD) return null;
+  const posId = data?.pos_id;
+  return posId != null && String(posId) !== '' ? String(posId) : null;
+}
+
+/**
+ * Mezcla `patch` en `payments.additional_properties` (leer-modificar-escribir; un solo job por pago,
+ * `pos_pay:omnivore:<site>:<payment>`). El error se LOGUEA, nunca se lanza: el tender ya entró y
+ * relanzar haría que el reintento lo volviera a postear.
+ */
+async function mergePaymentAdditionalProperties(
+  siteId: number,
+  paymentId: unknown,
+  patch: Record<string, unknown>,
+  what: string,
+): Promise<void> {
+  const { data, error: readErr } = await supabase
+    .from('payments')
+    .select('additional_properties')
+    .eq('id', paymentId)
+    .eq('site_id', siteId)
+    .maybeSingle();
+  if (readErr) {
+    logger.error({ error: readErr, site_id: siteId, payment_id: paymentId, what }, 'omnivore payment: failed to read additional_properties');
+  }
+  const ap = { ...((data?.additional_properties ?? {}) as Record<string, unknown>), ...patch };
+  const { error } = await supabase
+    .from('payments')
+    .update({ additional_properties: ap })
+    .eq('id', paymentId)
+    .eq('site_id', siteId);
+  if (error) {
+    logger.error({ error, site_id: siteId, payment_id: paymentId, what, patch }, 'omnivore payment: failed to write additional_properties');
+  }
 }
 
 async function writeOmnivoreApplied(
   siteId: number,
   paymentId: unknown,
   posIdField: string,
-  value: string
+  value: string,
+  extra: Record<string, unknown> = {},
 ): Promise<void> {
-  if (posIdField === OMNIVORE_MARKER_FIELD) {
-    const { data } = await supabase
-      .from('payments')
-      .select('additional_properties')
-      .eq('id', paymentId)
-      .eq('site_id', siteId)
-      .maybeSingle();
-    const ap = {
-      ...((data?.additional_properties ?? {}) as Record<string, unknown>),
-      omnivore_payment_id: value,
-    };
-    await supabase
-      .from('payments')
-      .update({ additional_properties: ap })
-      .eq('id', paymentId)
-      .eq('site_id', siteId);
-    return;
-  }
-  await supabase
+  // 1. La marca de verdad: jsonb, sin índice único que la rechace.
+  await mergePaymentAdditionalProperties(siteId, paymentId, { omnivore_payment_id: value, ...extra }, 'applied marker');
+  // 2. `pos_id` best-effort (informativo). Nunca en el camino Clover-forward: ahí guarda el id de Clover.
+  if (posIdField === OMNIVORE_MARKER_FIELD) return;
+  const { error } = await supabase
     .from('payments')
     .update({ pos_id: value })
     .eq('id', paymentId)
     .eq('site_id', siteId);
+  if (error) {
+    logger.warn(
+      { error: error.message, code: (error as { code?: string }).code, site_id: siteId, payment_id: paymentId, omnivore_payment_id: value },
+      'omnivore payment: pos_id no escrito (id de tender reciclado por el POS choca con payments_site_pos_id_uniq); la marca vive en additional_properties.omnivore_payment_id',
+    );
+  }
 }
+
+/** Nota de sistema en la orden (la muestra el dashboard y no la limpia nadie, al contrario que `orders.issues`). */
+async function appendSystemOrderNote(siteId: number, orderId: unknown, content: string): Promise<void> {
+  if (orderId === undefined || orderId === null) return;
+  const { error } = await supabase
+    .from('order_notes')
+    .insert({ site_id: siteId, order_id: orderId, content, is_system: true });
+  if (error) {
+    logger.error({ error, site_id: siteId, order_id: orderId }, 'omnivore payment: failed to append order note');
+  }
+}
+
+const usd = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
 
 registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step }) => {
   const ticketId = jobPayload['ticket_id'] as string | undefined;
@@ -312,19 +367,72 @@ registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step 
     );
   }
 
+  // ── Saldo del ticket ANTES de postear (incidente 10614, 2026-09-18) ────────────────────────────
+  //
+  // El terminal cobró $145.36 (total de vista previa de MCM) contra un ticket de $144.87 (Aloha), y un
+  // tender mayor que el `due` NO devuelve `excessive_payment`: Aloha responde `pos_failure` (caso ya
+  // documentado en `omnivore-helper.ts` con Chili's), el job murió a los 5 intentos y la mesa quedó
+  // abierta. Decisión del dueño: lo importante es CERRAR la mesa; la diferencia se maneja a mano.
+  //   - amount > due  → se postea el `due` (propina intacta) y la diferencia queda anotada en tres
+  //                     sitios: `order_notes` (nota de sistema, visible y permanente), el pago
+  //                     (`additional_properties.omnivore_tender_adjustment`) y la salida del job.
+  //   - due == 0      → el ticket ya está pagado: no se postea nada (sería un tender de más), nota.
+  //   - amount <= due → igual que siempre (splits y pagos parciales).
+  // Si el GET falla no se postea a ciegas (retryable), mismo criterio que el reconcile de arriba.
+  let totals;
   try {
-    const res = await client.post<{ id: string }>(`/tickets/${ticketId}/payments`, paymentBody, {
+    totals = await getTicketTotals(client, ticketId);
+  } catch (totalsErr) {
+    throw mapOmnivoreError(totalsErr, 'OMNIVORE_PAYMENT_RECONCILE_FAILED');
+  }
+  const requestedAmount = Number(paymentBody['amount'] ?? 0);
+  const due = typeof totals.due === 'number' && Number.isFinite(totals.due) ? totals.due : null;
+  let bodyToPost: Record<string, unknown> = paymentBody;
+  let adjustment: Record<string, unknown> | null = null;
+  if (due != null && due <= 0 && requestedAmount > 0) {
+    const nota =
+      `El pago ${paymentId ?? '?'} (${usd(requestedAmount)} cobrados en el terminal) no se aplicó al POS: el ticket ` +
+      `${ticketId} ya estaba pagado (saldo ${usd(due)}, ${totals.paymentCount} tender(s)). Revisar a mano.`;
+    logger.warn({ site_id: job.site_id, order_id: orderId, payment_id: paymentId, ticket_id: ticketId, requested: requestedAmount, due, tenders: totals.paymentCount }, 'omnivore payment: ticket already paid, tender not posted');
+    await appendSystemOrderNote(job.site_id, orderId, nota);
+    if (paymentId != null) {
+      await mergePaymentAdditionalProperties(job.site_id, paymentId, {
+        omnivore_tender_adjustment: { kind: 'ticket_already_paid', requested: requestedAmount, applied: 0, due, difference: requestedAmount, ticket_id: ticketId, at: new Date().toISOString() },
+      }, 'ticket_already_paid');
+    }
+    await reconcileOrderIssues(job.site_id, orderId, job.id);
+    return { skipped: 'ticket_already_paid', due, requested: requestedAmount, tenders_en_ticket: totals.paymentCount };
+  }
+  if (due != null && requestedAmount > due) {
+    bodyToPost = { ...paymentBody, amount: due };
+    adjustment = { kind: 'amount_capped_to_due', requested: requestedAmount, applied: due, due, difference: requestedAmount - due, ticket_id: ticketId, at: new Date().toISOString() };
+    logger.warn({ site_id: job.site_id, order_id: orderId, payment_id: paymentId, ticket_id: ticketId, requested: requestedAmount, due }, 'omnivore payment: amount exceeds ticket due, posting the due');
+  }
+
+  try {
+    const res = await client.post<{ id: string }>(`/tickets/${ticketId}/payments`, bodyToPost, {
       headers: { 'Idempotency-Id': idempotencyId(step, job, 'payment_injection') },
     });
     assertNoOmnivoreErrors(res.data);
 
     const omnivorePaymentId = res.data?.id ?? null;
     if (paymentId != null && omnivorePaymentId) {
-      await writeOmnivoreApplied(job.site_id, paymentId, posIdField, omnivorePaymentId);
+      await writeOmnivoreApplied(job.site_id, paymentId, posIdField, omnivorePaymentId, adjustment ? { omnivore_tender_adjustment: adjustment } : {});
+    }
+    if (adjustment) {
+      await appendSystemOrderNote(
+        job.site_id,
+        orderId,
+        `Ajuste automático del pago al POS: el terminal cobró ${usd(requestedAmount)} y el ticket ${ticketId} debía ${usd(due as number)}; ` +
+          `se aplicó ${usd(due as number)} en el POS (tender ${omnivorePaymentId ?? '?'}). Diferencia de ${usd(requestedAmount - (due as number))} ` +
+          `pendiente de manejar a mano (pago ${paymentId ?? '?'}).`,
+      );
     }
     // Inyección OK: sana el flag de la orden si todos sus pagos están sincronizados.
     await reconcileOrderIssues(job.site_id, orderId, job.id);
-    return { omnivore_payment_id: omnivorePaymentId };
+    return adjustment
+      ? { omnivore_payment_id: omnivorePaymentId, adjusted: true, requested: requestedAmount, applied: due, due }
+      : { omnivore_payment_id: omnivorePaymentId };
   } catch (err) {
     const he = err instanceof HandlerError ? err : mapOmnivoreError(err, 'OMNIVORE_PAYMENT_FAILED');
 

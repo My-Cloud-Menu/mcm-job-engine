@@ -96,8 +96,10 @@ El pago standalone queda SOLO para órdenes con `pos_id` pero **sin** inyección
 el split en 3 pasos (donde `pos_id` se persiste en el paso 1, antes del pago).
 
 Payload: `{ payment_id, order_id, ticket_id, payment: {...} }`. El handler
-`payment_injection` salta si `payments.pos_id` ya está seteado (resume), aplica
-el pago, y persiste `payments.pos_id`. Fallo terminal → `orders.issues`.
+`payment_injection` salta si el pago ya lleva la marca de aplicado (resume:
+`additional_properties.omnivore_payment_id`, o `pos_id` en pagos anteriores al 2026-09-18),
+lee el `due` del ticket, aplica el pago y persiste la marca (ver «Saldo del ticket antes del
+tender» al final). Fallo terminal → `orders.issues`.
 
 ## 4. Sync (Omnivore → MCM)
 
@@ -251,8 +253,9 @@ Reintentar sobre un ticket bloqueado no duplica el tender porque el POS **rechaz
 (`ticket_locked` = no aplicó nada). OJO: el match por `comment` del reconcile-before-repost se
 **retiró el 2026-08-27** — el POS no devuelve el comentario y además no era único (ver el comentario
 en `payment.ts`); lo que sigue vivo es la guarda «si el GET del ticket falla, NO se postea». La
-protección real contra el doble tender es el marcador `payments.pos_id` (`readOmnivoreApplied`) y el
-caso `applied_close_failed`. Si el mesero **cierra** el ticket durante la espera, el siguiente intento
+protección real contra el doble tender es la marca `additional_properties.omnivore_payment_id`
+(`readOmnivoreApplied`; hasta el 2026-09-18 vivía en `payments.pos_id`, que Aloha hacía chocar con
+`payments_site_pos_id_uniq` al reciclar ids — ver al final) y el caso `applied_close_failed`. Si el mesero **cierra** el ticket durante la espera, el siguiente intento
 devuelve `ticket_closed` → terminal, como debe ser.
 
 ## 6. Máquina de estados (spec → job-engine)
@@ -361,3 +364,45 @@ piezas del edge: `mcm-edge-functions/_docs/omnivore-order-and-pay.md` (sección 
   en la cola: `_e2e-omnivore-fire-upsert.ts` (cwd = este repo, `TABLE_ID=<uuid> npx tsx _e2e-omnivore-fire-upsert.ts`).
 - **Despliegue**: el worker de la nube sigue con el código anterior hasta el rebuild; el fire ya se autocura desde el
   edge (re-aplica y deduplica), pero el salto del pull en vuelo solo llega con este código.
+
+## Saldo del ticket antes del tender + la marca de aplicado en jsonb (2026-09-18, tarde)
+
+Sale del incidente **10614** del banco: el terminal cobró **$145.36** (total de vista previa de MCM,
+con SU clase fiscal) contra un ticket de Aloha de **$144.87**; el motor posteó 14536 sobre un `due` de
+14487 y Aloha respondió **`pos_failure`** (no `excessive_payment`; caso ya documentado con Chili's en
+`omnivore-helper.ts`), cinco veces, hasta `dead_letter`. La mesa quedó abierta. Los dos cambios de
+`inject/payment.ts`:
+
+1. **`getTicketTotals` ANTES del POST** (decisión del dueño: lo importante es cerrar la mesa; la
+   diferencia se maneja a mano):
+   - `amount > due` → se postea una COPIA del body con `amount = due` (propina intacta; el
+     `jobPayload` no se muta). La diferencia queda en tres sitios: **`order_notes`** (nota `is_system`,
+     la muestra el dashboard y nadie la limpia — `orders.issues` lo borra `reconcileOrderIssues` al
+     aplicar), `payments.additional_properties.omnivore_tender_adjustment` (`{kind:'amount_capped_to_due',
+     requested, applied, due, difference, ticket_id, at}`, para listarlos por SQL) y la salida del job
+     (`adjusted: true, requested, applied, due`).
+   - `due == 0` → NO se postea (sería un tender de más): `skipped: 'ticket_already_paid'`, nota y
+     `omnivore_tender_adjustment.kind = 'ticket_already_paid'`. Sin marca de aplicado (no hay tender nuestro).
+   - `amount ≤ due` → igual que siempre (splits y parciales).
+   - Si el GET del saldo falla → retryable, **no se postea a ciegas** (mismo criterio que el reconcile).
+2. **La marca de «aplicado» vive en `additional_properties.omnivore_payment_id` para TODOS los pagos.**
+   `payments.pos_id` tiene el índice único `payments_site_pos_id_uniq (site_id, pos_id)` (lo exige el
+   upsert del pull de Clover) y **Aloha recicla los ids de tender** (Numen rota entre ~40): el UPDATE
+   fallaba con 23505 y se ignoraba, así que desde el 15-sep ningún pago de los 3 sites vivos tenía marca
+   y un reintento tras un ACK perdido habría re-posteado. Ahora `writeOmnivoreApplied` escribe la marca
+   jsonb siempre (y `applied_close_failed` también ahí), intenta `pos_id` best-effort con el error en el
+   log, y `readOmnivoreApplied` mira las dos casillas (los pagos viejos con `pos_id` siguen contando).
+   El error de lectura ya no se traga: `OMNIVORE_PAYMENT_STATE_READ_FAILED` (retryable). En el camino
+   Clover-pull → Omnivore forward (`pos_id_field` en el payload) `pos_id` ni se lee ni se escribe: es
+   el id de Clover. El índice NO se toca. `resolve-order-error` (edge) ya leía la marca jsonb para
+   Omnivore y por fin acierta.
+
+**Reintentos, sin cambios (decisión del dueño):** `ticket_locked` es el único error con reintento
+largo (60 s × hasta 31); cualquier otro —`pos_failure` incluido— muere como mucho al 5.º intento aunque
+antes hubiera un `ticket_locked`, porque el perfil `payment_injection: [30,30,30,30]` se agota
+(`calculateBackoff` → `null`). El guard `items_not_in_pos` lleva espera y techo propios, como `ticket_locked`.
+
+Verificado contra el caso real (handler directo, sin worker): tender `105906179` por 14487 con la
+propina, ticket cerrado, marca + ajuste (diferencia 49) en el pago 10483, nota en la orden 10614; segunda
+ejecución → `already_applied` sin POST. Tests: `tests/unit/omnivore-payment-injection.test.ts` (23).
+
