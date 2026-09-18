@@ -247,10 +247,13 @@ dinero ya se cobró en MCM y tiene que llegar al POS sí o sí. Ahí el handler
   pago pendiente sea visible durante la espera. Es un slot JSONB único que se sobrescribe, y
   `reconcileOrderIssues` lo pone en `null` cuando el pago finalmente entra.
 
-Reintentar no duplica el tender: el guard de reconcile-before-repost (`payment.ts`, activo con
-`attempt_count > 0`) corre en cada reintento y, si un intento previo llegó a aplicar el pago,
-lo detecta por `comment` + `amount` y sale sin re-postear. Si el mesero **cierra** el ticket
-durante la espera, el siguiente intento devuelve `ticket_closed` → terminal, como debe ser.
+Reintentar sobre un ticket bloqueado no duplica el tender porque el POS **rechazó** el pago
+(`ticket_locked` = no aplicó nada). OJO: el match por `comment` del reconcile-before-repost se
+**retiró el 2026-08-27** — el POS no devuelve el comentario y además no era único (ver el comentario
+en `payment.ts`); lo que sigue vivo es la guarda «si el GET del ticket falla, NO se postea». La
+protección real contra el doble tender es el marcador `payments.pos_id` (`readOmnivoreApplied`) y el
+caso `applied_close_failed`. Si el mesero **cierra** el ticket durante la espera, el siguiente intento
+devuelve `ticket_closed` → terminal, como debe ser.
 
 ## 6. Máquina de estados (spec → job-engine)
 
@@ -335,3 +338,26 @@ entra y el pull es idéntico al de antes. Mantener en sync con el mapeador gemel
 (`omnivore-helper.ts::convertOmnivoreOrderToMCMOrder`), que lleva el mismo cambio.
 
 Tests: `tests/unit/omnivore-open-product-pull.test.ts` (8).
+
+## Fire en vuelo y pago sin ítems en el POS (2026-09-18)
+
+Origen y evidencia: `mcm-edge-functions/audits/2026-09-18-omnivore-fire-before-pay/README.md`. Contrato de datos y
+piezas del edge: `mcm-edge-functions/_docs/omnivore-order-and-pay.md` (sección del 2026-09-18).
+
+- **`sync/fire-in-flight.ts::isFireInFlight(ap)`** — espejo del helper del edge. `upsert-orders.ts` (rama managed) lo
+  consulta tras el freshness guard: si `additional_properties.omnivore_fire.in_flight_until` está vigente, la orden
+  se **salta** (`skipped++`). Motivo: `send-to-kitchen` POSTea al POS antes de estampar; merge-ar en esa ventana
+  conservaba la línea "sin enviar" y añadía la del POS (Coca-Cola, 138 órdenes dobladas el 11-sep). Ambos carriles
+  (`fetch_open_orders` y `fetch_closed_orders`, que también baja los abiertos) pasan por aquí.
+- **`sync/merge-managed-order.ts`** (espejo byte a byte del edge salvo `randomUUID`) — adopta también líneas con
+  `omnivore.fire_pending_at` reciente (< 10 min): por firma y, si no casa, por producto acumulando cantidad. Al
+  adoptar: `sent`, `sent_at`, `item_id/item_ids`, `origin:'mcm'`, y borra los marcadores. Nunca `unmapped`.
+- **`inject/payment.ts::assertItemsInPos`** — antes de postear el tender, si la orden gestionada tiene líneas vivas
+  sin `item_id` o un fire en vuelo, lanza `HandlerError` retryable (`OMNIVORE_ITEMS_NOT_IN_POS`, `retryAfterSeconds`
+  15, techo 20 intentos como `ticket_locked`); al agotarse, `orders.issues` con motivo claro. Es defensa en
+  profundidad: el guard real vive en `payments-service.createPayment` del edge (422 `unfired_items`).
+- Tests: `tests/unit/merge-managed-order.test.ts` (10 casos A4 nuevos), `tests/unit/omnivore-fire-in-flight.test.ts`
+  (pura + nivel upsert), `tests/unit/omnivore-payment-items-in-pos.test.ts`. E2E del motor sobre el banco sin worker
+  en la cola: `_e2e-omnivore-fire-upsert.ts` (cwd = este repo, `TABLE_ID=<uuid> npx tsx _e2e-omnivore-fire-upsert.ts`).
+- **Despliegue**: el worker de la nube sigue con el código anterior hasta el rebuild; el fire ya se autocura desde el
+  edge (re-aplica y deduplica), pero el salto del pull en vuelo solo llega con este código.

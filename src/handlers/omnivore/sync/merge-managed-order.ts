@@ -9,9 +9,15 @@ import { randomUUID } from 'crypto';
  * 4 buckets:
  *  - MATCHED      (id en MCM y en el ticket)        → conserva la línea MCM (uuid/seat/notas).
  *  - TERMINAL-VOID(id en MCM activo, ausente)       → marca voided ("anulado en el terminal").
- *  - MCM-UNFIRED  (status 'new', sin id)            → intacto (nunca se anula por ausencia).
- *  - POS-ADD      (id solo en el ticket)            → adopción por firma contra 'sent' sin id,
- *                                                     si no, append como línea nueva.
+ *  - MCM-UNFIRED  (sin id, no 'sent')               → intacto (nunca se anula por ausencia).
+ *  - POS-ADD      (id solo en el ticket)            → adopción contra líneas 'sent' sin id (por firma)
+ *                                                     o con `fire_pending_at` reciente (por firma o por
+ *                                                     producto+cantidad); si no, append como línea nueva.
+ *
+ * `fire_pending_at` (2026-09-18): lo escribe `send-to-kitchen` en la fase 0, ANTES de POSTear al POS.
+ * Si el fire muere entre el POST y la estampa, la línea queda marcada y el ítem YA está en el ticket:
+ * adoptarlo aquí evita el duplicado. Se exige el marcador explícito (y reciente) para no adoptar por
+ * error un ítem tecleado en el terminal sobre una línea que el POS rechazó.
  */
 
 interface AnyItem {
@@ -19,10 +25,14 @@ interface AnyItem {
   product_id?: unknown;
   quantity?: unknown;
   notes?: unknown;
-  status?: string;
+  status?: string | null;
+  sent_at?: unknown;
   additional_properties?: any;
   [k: string]: unknown;
 }
+
+/** Un `fire_pending_at` más viejo que esto ya no justifica adoptar (el fire falló y nadie limpió). */
+const FIRE_PENDING_ADOPT_MAX_MS = 10 * 60_000;
 
 // item_id (singular) de un ítem mapeado de Omnivore (siempre 1 por fila del ticket).
 const omniId = (it: AnyItem | undefined): string | undefined =>
@@ -43,12 +53,36 @@ const omniIdsOf = (it: AnyItem | undefined): string[] => {
 const signature = (it: AnyItem): string =>
   `${String(it.product_id ?? '')}|${String(it.quantity ?? '')}|${String(it.notes ?? '')}`;
 
+/** ¿Línea marcada por un fire reciente (fase 0) que no llegó a estampar? */
+const isPendingFire = (it: AnyItem, nowMs: number): boolean => {
+  const t = it?.additional_properties?.omnivore?.fire_pending_at;
+  if (typeof t !== 'string') return false;
+  const ms = Date.parse(t);
+  if (Number.isNaN(ms)) return false;
+  return nowMs - ms <= FIRE_PENDING_ADOPT_MAX_MS; // un futuro (reloj adelantado) cuenta como reciente
+};
+
+/** Adopta en la línea MCM los ids del POS: pasa a 'sent', estampa origin 'mcm' y borra los marcadores. */
+const adoptInto = (line: AnyItem, ids: string[], mapped: AnyItem): AnyItem => {
+  const { fire_pending_at: _p, fire_id: _f, ...omni } = line.additional_properties?.omnivore ?? {};
+  return {
+    ...line,
+    status: 'sent',
+    ...(line.sent_at == null && mapped.sent_at != null ? { sent_at: mapped.sent_at } : {}),
+    additional_properties: {
+      ...(line.additional_properties ?? {}),
+      omnivore: { ...omni, item_id: ids[0], item_ids: ids, origin: 'mcm', sent_to_pos: true },
+    },
+  };
+};
+
 export function mergeManagedOrderLineItems(
   existingInput: AnyItem[] | undefined,
   mappedInput: AnyItem[] | undefined,
 ): AnyItem[] {
   const existing = Array.isArray(existingInput) ? existingInput : [];
   const mapped = Array.isArray(mappedInput) ? mappedInput : [];
+  const nowMs = Date.now();
 
   const mappedByOmniId = new Map<string, AnyItem>();
   for (const m of mapped) {
@@ -56,9 +90,12 @@ export function mergeManagedOrderLineItems(
     if (id) mappedByOmniId.set(id, m);
   }
 
-  // Candidatos a adopción por firma: existentes 'sent' SIN ningún omnivore.item_id
-  // (ventana de crash: Omnivore agregó el ítem pero MCM no guardó el id).
-  const adoptable = existing.filter((e) => e.status === 'sent' && omniIdsOf(e).length === 0);
+  // Candidatos a adopción: existentes SIN ningún omnivore.item_id y no anulados, que estén
+  // 'sent' (ventana de crash: Omnivore agregó el ítem pero MCM no guardó el id) o marcados por
+  // un fire reciente (fase 0 de send-to-kitchen que murió antes de estampar).
+  const adoptable = existing.filter(
+    (e) => omniIdsOf(e).length === 0 && e.status !== 'voided' && (e.status === 'sent' || isPendingFire(e, nowMs)),
+  );
   const adoptedExistingIds = new Set<string>();
 
   // Unión de TODOS los ids ya representados por líneas MCM existentes → para no re-appendear
@@ -101,7 +138,9 @@ export function mergeManagedOrderLineItems(
     }
   }
 
-  // 2) MAPPED no correlacionados → adopción por firma o POS-add.
+  // 2) MAPPED no correlacionados → adopción por firma, luego por producto+cantidad (solo líneas
+  //    con fire pendiente), y lo que quede como POS-add.
+  const leftovers: AnyItem[] = [];
   for (const m of mapped) {
     const id = omniId(m);
     // Sin omnivore.item_id no hay ancla idempotente → NO appendear (evita re-append en
@@ -116,27 +155,45 @@ export function mergeManagedOrderLineItems(
     const candidate = adoptable.find(
       (e) => !adoptedExistingIds.has(e.id) && signature(e) === sig,
     );
-    if (candidate && id) {
+    if (candidate) {
       adoptedExistingIds.add(candidate.id);
       const idx = result.findIndex((r) => r.id === candidate.id);
-      if (idx >= 0) {
-        result[idx] = {
-          ...result[idx],
-          additional_properties: {
-            ...(result[idx].additional_properties ?? {}),
-            omnivore: {
-              ...(result[idx].additional_properties?.omnivore ?? {}),
-              item_id: id,
-              origin: 'mcm',
-              sent_to_pos: true,
-            },
-          },
-        };
-      }
+      if (idx >= 0) result[idx] = adoptInto(result[idx], [id], m);
       continue;
     }
+    leftovers.push(m);
+  }
 
-    // POS-add: línea nueva (uuid fresco), preservando el stamp omnivore.origin='pos'.
+  // 2b) Líneas con fire pendiente: correlación por producto acumulando cantidad. Cubre lo que la
+  //     firma no casa: Aloha parte qty=N en N filas qty=1, y el `comment` del POS no es igual a
+  //     `notes` cuando MCM manda alergias/comentarios. Nunca sobre ítems `unmapped` (su product_id
+  //     es el id de Omnivore) ni sobre líneas ya adoptadas.
+  const remaining: AnyItem[] = [];
+  const pendingLines = adoptable.filter((e) => !adoptedExistingIds.has(e.id) && isPendingFire(e, nowMs));
+  let pool = leftovers.filter((m) => m?.additional_properties?.omnivore?.unmapped !== true);
+  const unmappedLeftovers = leftovers.filter((m) => m?.additional_properties?.omnivore?.unmapped === true);
+  for (const p of pendingLines) {
+    const need = Number(p.quantity ?? 1) || 1;
+    const pid = String(p.product_id ?? '');
+    const take: AnyItem[] = [];
+    let got = 0;
+    for (const m of pool) {
+      if (got >= need) break;
+      if (String(m.product_id ?? '') !== pid) continue;
+      take.push(m);
+      got += Number(m.quantity ?? 1) || 1;
+    }
+    if (take.length === 0) continue;
+    const ids = take.map((m) => String(omniId(m)));
+    adoptedExistingIds.add(p.id);
+    const idx = result.findIndex((r) => r.id === p.id);
+    if (idx >= 0) result[idx] = adoptInto(result[idx], ids, take[0]);
+    pool = pool.filter((m) => !take.includes(m));
+  }
+  remaining.push(...pool, ...unmappedLeftovers);
+
+  // POS-add: línea nueva (uuid fresco), preservando el stamp omnivore.origin='pos'.
+  for (const m of remaining) {
     result.push({ ...m, id: randomUUID() });
   }
 

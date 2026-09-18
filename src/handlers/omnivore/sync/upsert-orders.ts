@@ -3,6 +3,7 @@ import { logger } from '../../../lib/logger';
 import { convertOmnivoreOrderToMCMOrder } from './order-mapper';
 import { isOpenProductEnabled, normalizeOpenProductName } from '../open-product';
 import { mergeManagedOrderLineItems } from './merge-managed-order';
+import { isFireInFlight } from './fire-in-flight';
 
 interface UpsertResult {
   inserted: number;
@@ -310,6 +311,13 @@ export async function upsertOmnivoreOrders(
           // recién fireado). El próximo ciclo (60s) toma el ticket fresco.
           const syncedAt = (existing as any).additional_properties?.omnivore_synced_at as string | undefined;
           if (fetchStartIso && syncedAt && syncedAt > fetchStartIso) {
+            skipped++;
+            continue;
+          }
+          // Fire EN VUELO (fase 0 de send-to-kitchen): el POST al POS puede haber aterrizado y la
+          // estampa aún no. Merge-ar ahora conservaría la línea "sin enviar" y añadiría la del POS
+          // → orden doblada. Saltar; el siguiente ciclo la ve estampada y casa por item_id.
+          if (isFireInFlight((existing as any).additional_properties)) {
             skipped++;
             continue;
           }

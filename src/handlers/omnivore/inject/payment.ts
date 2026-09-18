@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
 import { mapOmnivoreError, assertNoOmnivoreErrors } from '../error-map';
 import { idempotencyId, persistPaymentIssue, reconcileOrderIssues, willTerminate } from './shared';
+import { isFireInFlight } from '../sync/fire-in-flight';
 
 /**
  * Standalone payment injection (replaces the legacy `sendPaymentToOmnivore`).
@@ -131,6 +132,62 @@ async function escalateTicketLockedRetry(he: HandlerError, step: JobStep): Promi
   return new HandlerError(he.message, he.code, true, he.statusCode, he.responseBody, retryAfterSeconds);
 }
 
+/**
+ * Ítems fuera del POS (2026-09-18, defensa en profundidad del guard de cobro del edge).
+ *
+ * Si la orden gestionada tiene líneas vivas sin `omnivore.item_id` (nunca llegaron al ticket) o un
+ * fire en vuelo (`omnivore_fire.in_flight_until`), postear el tender ahora falla o cobra de menos:
+ * el `amount` viene del total de MCM y el `due` del ticket no lo cubre. Se espera con reintentos
+ * planos de 15 s (misma mecánica que `ticket_locked`) hasta ~5 min; si sigue así, dead-letter con
+ * motivo claro (`items_not_in_pos`) en vez del «Omnivore bug» opaco de hoy. Con el guard del edge
+ * activo esto casi nunca se ejercita; cubre la bandera apagada y los fires que fallaron.
+ */
+const ITEMS_NOT_IN_POS_CODE = 'OMNIVORE_ITEMS_NOT_IN_POS';
+const ITEMS_NOT_IN_POS_RETRY_SECONDS = 15;
+const ITEMS_NOT_IN_POS_MAX_ATTEMPTS = 20;
+
+function omniIdsOf(li: any): string[] {
+  const o = li?.additional_properties?.omnivore;
+  if (!o) return [];
+  const ids: string[] = [];
+  if (Array.isArray(o.item_ids)) for (const x of o.item_ids) if (x != null) ids.push(String(x));
+  if (o.item_id != null) { const s = String(o.item_id); if (!ids.includes(s)) ids.push(s); }
+  return ids;
+}
+
+export async function assertItemsInPos(siteId: number, orderId: unknown, paymentId: unknown, step: JobStep): Promise<void> {
+  if (orderId == null) return;
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('id, line_items, additional_properties')
+    .eq('site_id', siteId)
+    .eq('id', orderId)
+    .maybeSingle();
+  if (error || !order) return; // sin lectura no se bloquea (el resto de guards sigue vivo)
+  if ((order as any).additional_properties?.omnivore_managed !== true) return;
+  const lines: any[] = Array.isArray((order as any).line_items) ? (order as any).line_items : [];
+  const unfired = lines.filter((li) => li?.status !== 'sent' && li?.status !== 'voided' && omniIdsOf(li).length === 0);
+  const inFlight = isFireInFlight((order as any).additional_properties);
+  if (unfired.length === 0 && !inFlight) return;
+
+  if (step.max_attempts < ITEMS_NOT_IN_POS_MAX_ATTEMPTS) {
+    const { error: updErr } = await supabase
+      .from('job_steps')
+      .update({ max_attempts: ITEMS_NOT_IN_POS_MAX_ATTEMPTS })
+      .eq('id', step.id)
+      .lt('max_attempts', ITEMS_NOT_IN_POS_MAX_ATTEMPTS);
+    if (updErr) logger.error({ error: updErr, step_id: step.id }, 'omnivore payment: failed to raise max_attempts for items_not_in_pos');
+    else step.max_attempts = ITEMS_NOT_IN_POS_MAX_ATTEMPTS;
+  }
+  const reason = inFlight ? 'fire en vuelo' : `${unfired.length} línea(s) sin enviar al POS`;
+  const msg = `Omnivore items_not_in_pos: la orden ${orderId} tiene ${reason}; el pago se reintenta cuando el fire termine.`;
+  const he = new HandlerError(msg, ITEMS_NOT_IN_POS_CODE, true, undefined, { reason, unfired: unfired.map((li) => li.id) }, ITEMS_NOT_IN_POS_RETRY_SECONDS);
+  if (willTerminate(true, step)) {
+    await persistPaymentIssue(siteId, orderId, paymentId ?? null, he);
+  }
+  throw he;
+}
+
 async function readOmnivoreApplied(
   siteId: number,
   paymentId: unknown,
@@ -213,6 +270,9 @@ registerHandler('omnivore', 'payment_injection', async ({ jobPayload, job, step 
       return { skipped: 'already_applied', omnivore_payment_id: applied };
     }
   }
+
+  // Ítems fuera del POS / fire en vuelo → esperar (retryable) antes de postear el tender.
+  await assertItemsInPos(job.site_id, orderId, paymentId, step);
 
   // Reconcile-before-repost. Solo en RETRY (attempt_count > 0). Lo que SIGUE vivo aquí es la
   // guarda que de verdad protege: si el GET falla, NO POSTeamos (throw retryable) — nunca se

@@ -126,3 +126,52 @@ describe('mergeManagedOrderLineItems', () => {
     expect(second.map((i: any) => i.id).sort()).toEqual(['mcm-1', 'mcm-2']);
   });
 });
+
+// ── A4 (2026-09-18): fire en vuelo que murió antes de estampar. Espejo de
+//    mcm-edge-functions/_shared/helpers/omnivore-managed-merge.test.ts — mantener iguales.
+// Forma REAL (Coca-Cola 13191): fantasma con status null y sin `omnivore`; pending = fantasma + marcador de fase 0.
+const ghost = (id: string, extra: any = {}) => ({ id, product_id: 10171, quantity: 1, notes: '', status: null, total: '11', additional_properties: {}, ...extra });
+const pending = (id: string, extra: any = {}, ageMs = 1000) => ({ ...ghost(id, extra), additional_properties: { omnivore: { fire_pending_at: new Date(Date.now() - ageMs).toISOString(), fire_id: 'F' } } });
+const posLine = (omniId: string, extra: any = {}) => ({ ...posItem(omniId, { product_id: 10171, ...extra }), sent_at: '2026-09-18T00:00:00.000Z', ...(extra.unmapped ? { additional_properties: { omnivore: { item_id: omniId, origin: 'pos', sent: true, unmapped: true } } } : {}) });
+
+describe('mergeManagedOrderLineItems · A4 fire pendiente', () => {
+  it('A4-1 PENDING-ADOPT: pending + POS mismo producto/qty → 1 línea MCM, sent, item_id, origin mcm, sin marcador', () => {
+    const out = mergeManagedOrderLineItems([pending('g1')], [posLine('93333096')]);
+    expect(out).toHaveLength(1); expect(out[0].id).toBe('g1'); expect(out[0].status).toBe('sent');
+    expect(out[0].additional_properties.omnivore).toEqual({ item_id: '93333096', item_ids: ['93333096'], origin: 'mcm', sent_to_pos: true });
+    expect(out[0].sent_at).toBe('2026-09-18T00:00:00.000Z');
+  });
+  it('A4-2 sin marcador (status null) + POS igual → sigue POS-ADD (comportamiento actual, documentado)', () => {
+    expect(mergeManagedOrderLineItems([ghost('g1')], [posLine('93333096')])).toHaveLength(2);
+  });
+  it('A4-3 pending con notes distintas (ALLERGIES) → adopta por producto+cantidad', () => {
+    const out = mergeManagedOrderLineItems([pending('g1', { notes: 'sin cebolla' })], [posLine('X1', { notes: 'sin cebolla\nALLERGIES: maní' })]);
+    expect(out).toHaveLength(1); expect(out[0].additional_properties.omnivore.item_id).toBe('X1');
+  });
+  it('A4-4 QTY-SPLIT: pending qty 2 + 2 filas POS qty 1 → item_ids [A,B]', () => {
+    const out = mergeManagedOrderLineItems([pending('g1', { quantity: 2 })], [posLine('A'), posLine('B')]);
+    expect(out).toHaveLength(1); expect(out[0].additional_properties.omnivore.item_ids).toEqual(['A', 'B']); expect(out[0].additional_properties.omnivore.item_id).toBe('A');
+  });
+  it('A4-5 pending voided → no adopta; el POS-ADD se appendea', () => {
+    const out = mergeManagedOrderLineItems([pending('g1', { status: 'voided' })], [posLine('A')]);
+    expect(out).toHaveLength(2); expect(out[0].status).toBe('voided'); expect(out[1].additional_properties.omnivore.origin).toBe('pos');
+  });
+  it('A4-6 ítem POS ya reclamado por otra línea no se adopta dos veces', () => {
+    const out = mergeManagedOrderLineItems([mcmItem('m', 'A', 'sent', { product_id: 10171 }), pending('g1')], [posLine('A')]);
+    expect(out).toHaveLength(2); expect(out[1].status).toBeNull(); expect(out[1].additional_properties.omnivore.item_id).toBeUndefined();
+  });
+  it('A4-7 idempotente en 2ª pasada tras adoptar', () => {
+    const once = mergeManagedOrderLineItems([pending('g1')], [posLine('A')]);
+    expect(mergeManagedOrderLineItems(once, [posLine('A')])).toEqual(once);
+  });
+  it('A4-8 pending + mapeado unmapped:true → no adopta', () => {
+    expect(mergeManagedOrderLineItems([pending('g1')], [posLine('A', { product_id: 999, unmapped: true })])).toHaveLength(2);
+  });
+  it('A4-9 marcador viejo (> 10 min) → no adopta', () => {
+    expect(mergeManagedOrderLineItems([pending('g1', {}, 11 * 60_000)], [posLine('A')])).toHaveLength(2);
+  });
+  it('A4-10 dos pending del mismo producto y dos filas POS → cada una adopta una (sin cruzar)', () => {
+    const out = mergeManagedOrderLineItems([pending('g1'), pending('g2')], [posLine('A'), posLine('B')]);
+    expect(out).toHaveLength(2); expect(out.map((l: any) => l.additional_properties.omnivore.item_id)).toEqual(['A', 'B']);
+  });
+});
