@@ -4,14 +4,18 @@ import { Job, JobStep } from './types';
 
 /** Atomically claims the next available job for this worker. Returns null when the queue is empty. */
 export async function claimNextJob(): Promise<Job | null> {
-  const { data, error } = await supabase.rpc('claim_next_job', {
+  // WORKER_SITE_IDS (opcional) → función hermana que solo toma jobs de esos sites. Sin ella, lo de siempre.
+  const siteIds = config.worker.siteIds;
+  const rpcName = siteIds ? 'claim_next_job_for_sites' : 'claim_next_job';
+  const { data, error } = await supabase.rpc(rpcName, {
     p_worker_id: config.worker.id,
     p_queue_name: config.worker.queueName,
     p_lock_seconds: config.worker.lockSeconds,
     p_integrations: config.worker.integrations,
+    ...(siteIds ? { p_site_ids: siteIds } : {}),
   });
 
-  if (error) throw new Error(`claim_next_job RPC failed: ${error.message}`);
+  if (error) throw new Error(`${rpcName} RPC failed: ${error.message}`);
 
   // RPC returns a table row; supabase-js wraps it in an array
   const row = Array.isArray(data) ? data[0] : data;

@@ -12,6 +12,12 @@ const BACKOFF_PROFILES: Record<string, number[]> = {
   pos_sync:       [10, 30, 60, 180],
   notifications:  [15, 60, 300, 900, 3600],
   webhooks:       [60, 300, 900, 3600, 21600, 86400],
+  // Billing (suscripciones): SÓLO para fallos de TRANSPORTE (5xx de Stripe, red, timeout).
+  // Una DECLINACIÓN no llega aquí: el job que recibe "no" completó su trabajo, y el siguiente
+  // intento es un job NUEVO con los offsets de dunning del negocio
+  // (subs_settings.retry_offsets_hours). Mezclarlo con este backoff mandaría una tarjeta sin
+  // fondos al dead-letter y despertaría a un humano por nada.
+  billing:        [30, 120, 600],
   default:        [60, 300, 900, 3600, 21600],
 };
 

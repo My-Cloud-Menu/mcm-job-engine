@@ -1,4 +1,5 @@
 import { config as dotenvConfig } from 'dotenv';
+import { parseSiteIds } from './lib/parse-site-ids';
 dotenvConfig();
 
 function required(name: string): string {
@@ -26,6 +27,9 @@ export const config = {
     integrations: process.env['WORKER_INTEGRATIONS']
       ? process.env['WORKER_INTEGRATIONS'].split(',').map(s => s.trim())
       : null,
+    // Opcional: limita el worker a estos sites (p. ej. un worker de prueba o de un negocio concreto).
+    // Sin la variable el worker se comporta igual que siempre (claim_next_job).
+    siteIds: parseSiteIds(process.env['WORKER_SITE_IDS']),
     pollIntervalMs: Number(optional('WORKER_POLL_INTERVAL_MS', '2000')),
     maxConcurrent: Number(optional('WORKER_MAX_CONCURRENT_JOBS', '10')),
     lockSeconds: Number(optional('WORKER_LOCK_DURATION_SECONDS', '180')),

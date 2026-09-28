@@ -42,3 +42,17 @@ import './delivery/dispatch';
 // (lo sirve mcm-print-service) + reaper pg_cron; no tiene handler de engine.
 import './printing/dispatch-qz';
 import './printing/dispatch-star';
+
+// Suscripciones (cola billing): cobro recurrente, dunning y avisos del módulo `subs_*`.
+import './subs/noop';              // humo: verifica cola + worker + registro sin tocar dinero
+import './subs/apply-payment';     // un pago completado -> suscripciones + su primer periodo
+import './subs/harvest-instrument';// recoge la tarjeta guardada (delega en la edge, que tiene las llaves)
+import './subs/invoice-period';    // abre el ciclo siguiente (no cobra)
+import './subs/charge-invoice';    // LA VIA NORMAL: un cargo por cliente, no uno por equipo
+import './subs/external-sync';     // conector del servicio externo (D-055): activar/suspender/reactivar el equipo
+import './subs/charge-period';     // cobra el ciclo vencido; una declinacion NO se reintenta aqui
+import './subs/dispatch-notifications'; // vacia la bandeja de avisos del negocio
+
+// Tienda (cola billing): la confirmación retrasada de Test Card (proveedor de pago simulado).
+import './store/test-card-complete';
+import './store/reconcile-payments';   // conciliación de cobros de la tienda (pg_cron encola cada 10 min)
