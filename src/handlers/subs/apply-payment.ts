@@ -5,9 +5,9 @@ import { logger } from '../../lib/logger';
 import {
   loadPayment, loadOrders, loadSettings, loadPublishedTerms,
   existingUnitsForOrder, customerIdByAccountEmail, demoteOtherDefaults, upsertInstrument, attachInstrumentToOrder,
-  insertSubscription, insertFirstPeriod, logEvents, enqueueSubsJob, descuentoRecurrenteDeLaOrden, equipoActivable, activarEquipo, avisarEquipoActivado,
-  cerrarOrdenSoloPlanes } from './repo';
-import { existingUnitKeys, isCardMethod, testCardInstrument, unitKey } from './apply-payment-rules';
+  insertSubscription, insertFirstPeriod, logEvents, enqueueSubsJob, descuentoRecurrenteDeLaOrden, equipoActivable, activarEquipo, avisarEquipoActivado, encolarAltaServicio,
+  cerrarOrdenSoloPlanes, modelosDePlanes } from './repo';
+import { existingUnitKeys, isCardMethod, modeloSirve, testCardInstrument, unitKey } from './apply-payment-rules';
 
 // subs.apply_payment — convierte un pago completado en suscripciones.
 //
@@ -104,6 +104,9 @@ registerHandler('subs', 'apply_payment', async ({ jobPayload }) => {
       eventos.push({ site_id, kind: 'flow_c_not_attached', actor: 'job:subs.apply_payment', customer_id: dueño,
         payload: { order_id: order.id, payment_id: payment.id, asset_id: assetPedido } });
     }
+    // Los modelos de cada plan, sólo si hay equipo que atar: un plan de OTRO modelo no se le pega (D-083).
+    const modelos = equipo ? await modelosDePlanes(site_id, [...new Set(terms.map((t) => String(t.plan_id)))]) : new Map<string, number[]>();
+    let rechazoPorModelo: Record<string, unknown> | null = null;
 
     for (const [lineIdx, li] of (order.line_items ?? []).entries()) {
       const term = terms.find(
@@ -130,6 +133,11 @@ registerHandler('subs', 'apply_payment', async ({ jobPayload }) => {
       const lineaId = li?.id ?? `idx-${lineIdx}`;
       for (let i = 0; i < unidades; i++) {
         if (existentes.keys.has(unitKey(lineaId, i))) { conSuscripcion++; continue; }
+        // El equipo se ata sólo a un plan que sirva para su modelo; si no, el plan nace `pending_activation` como siempre.
+        const equipoAqui = equipo && modeloSirve(modelos.get(String(term.plan_id)), equipo.product_id) ? equipo : null;
+        if (equipo && !equipoAqui && !rechazoPorModelo) {
+          rechazoPorModelo = { term_code: term.code, asset_product_id: equipo.product_id, plan_models: modelos.get(String(term.plan_id)) ?? [] };
+        }
         const subId = await insertSubscription({
           site_id,
           plan_term_id: term.id,
@@ -139,9 +147,9 @@ registerHandler('subs', 'apply_payment', async ({ jobPayload }) => {
           // Con equipo declarado, el plan nace ACTIVO y el reloj arranca AL PAGAR: el aparato ya
           // está en su cuenta y funcionando, no hay nada que esperar. Sin él, `pending_activation`
           // y el reloj espera a la activación, que es el caso de la compra normal.
-          ...(equipo ? {
+          ...(equipoAqui ? {
             status: 'active' as const,
-            asset_id: equipo.id,
+            asset_id: equipoAqui.id,
             activated_at: new Date().toISOString(),
             current_period_start: new Date().toISOString(),
             current_period_end: finDelCiclo(term.interval_unit, term.interval_count),
@@ -170,7 +178,7 @@ registerHandler('subs', 'apply_payment', async ({ jobPayload }) => {
           period_start: new Date().toISOString(),
           // Con equipo, el ciclo 1 ya tiene su fin de verdad. Sin él queda abierto hasta la
           // activación y aquí sólo hay que respetar el CHECK `period_end > period_start`.
-          period_end: equipo
+          period_end: equipoAqui
             ? finDelCiclo(term.interval_unit, term.interval_count)
             : new Date(Date.now() + 86_400_000).toISOString(),
           amount: precio,
@@ -180,12 +188,14 @@ registerHandler('subs', 'apply_payment', async ({ jobPayload }) => {
           paid_at: new Date().toISOString(),
         });
 
-        const nacioActiva = !!equipo;
-        if (equipo) {
-          await activarEquipo(site_id, equipo.id);
+        const nacioActiva = !!equipoAqui;
+        if (equipoAqui) {
+          await activarEquipo(site_id, equipoAqui.id);
+          // D-089: plan vivo en un equipo ya registrado → alta en el servicio con el correo (sin pedir contraseña al cliente).
+          if (dueño) await encolarAltaServicio(site_id, equipoAqui.id, dueño);
           if (dueño) {
             const idioma = (order.additional_properties as { store?: { locale?: string } } | null | undefined)?.store?.locale === 'en' ? 'en' : 'es';
-            await avisarEquipoActivado(site_id, subId, dueño, equipo.id, finDelCiclo(term.interval_unit, term.interval_count), idioma);
+            await avisarEquipoActivado(site_id, subId, dueño, equipoAqui.id, finDelCiclo(term.interval_unit, term.interval_count), idioma);
           }
           equipo = null;   // un equipo, un plan: la siguiente unidad vuelve a `pending_activation`
         }
@@ -196,6 +206,12 @@ registerHandler('subs', 'apply_payment', async ({ jobPayload }) => {
           payload: { order_id: order.id, payment_id: payment.id, term_code: term.code, price: precio },
         });
       }
+    }
+    // Pidió un equipo y ningún plan de la compra servía para su modelo: queda RASTRO (nunca en silencio) y el plan espera la
+    // activación, donde el cliente activará el equipo correcto.
+    if (assetPedido && equipo && rechazoPorModelo) {
+      eventos.push({ site_id, kind: 'flow_c_not_attached', actor: 'job:subs.apply_payment', customer_id: dueño,
+        payload: { order_id: order.id, payment_id: payment.id, asset_id: assetPedido, reason: 'wrong_model', ...rechazoPorModelo } });
     }
   }
 

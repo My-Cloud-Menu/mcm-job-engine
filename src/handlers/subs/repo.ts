@@ -27,7 +27,7 @@ export interface OrderRow {
 }
 
 export interface PlanTermRow {
-  id: string; site_id: number; code: string;
+  id: string; site_id: number; code: string; plan_id: string;
   interval_unit: string; interval_count: number;
   product_id: number; variation_id: string | null;
 }
@@ -63,7 +63,7 @@ export async function loadSettings(siteId: number): Promise<SubsSettingsRow | nu
 /** Los términos publicados del negocio, para casar las líneas de la orden contra el catálogo. */
 export async function loadPublishedTerms(siteId: number): Promise<PlanTermRow[]> {
   const { data } = await supabase.from('subs_plan_terms')
-    .select('id, site_id, code, interval_unit, interval_count, product_id, variation_id')
+    .select('id, site_id, code, plan_id, interval_unit, interval_count, product_id, variation_id')
     .eq('site_id', siteId).eq('status', 'published');
   return (data as PlanTermRow[]) ?? [];
 }
@@ -267,11 +267,11 @@ export async function descuentoRecurrenteDeLaOrden(
  */
 export async function equipoActivable(
   siteId: number, assetId: string, customerId: string | null,
-): Promise<{ id: string } | null> {
+): Promise<{ id: string; product_id: number | null } | null> {
   if (!assetId || !customerId) return null;
   const { data, error } = await supabase
     .from('subs_assets')
-    .select('id, customer_id, status')
+    .select('id, customer_id, status, product_id')
     .eq('site_id', siteId)
     .eq('id', assetId)
     .maybeSingle();
@@ -289,7 +289,21 @@ export async function equipoActivable(
     .in('status', ['active', 'past_due', 'grace', 'suspended']);
   if ((count ?? 0) > 0) return null;   // un equipo, un plan vigente
 
-  return { id: String(data.id) };
+  return { id: String(data.id), product_id: data.product_id == null ? null : Number(data.product_id) };
+}
+
+/** Modelos de cada plan (`subs_plans.asset_product_ids`), para no pegar un plan a un equipo de otro modelo (D-083). */
+export async function modelosDePlanes(siteId: number, planIds: string[]): Promise<Map<string, number[]>> {
+  const out = new Map<string, number[]>();
+  if (planIds.length === 0) return out;
+  const { data } = await supabase.from('subs_plans')
+    .select('id, asset_product_ids')
+    .eq('site_id', siteId)
+    .in('id', planIds);
+  for (const p of (data as { id: string; asset_product_ids: number[] | null }[] | null) ?? []) {
+    out.set(String(p.id), (p.asset_product_ids ?? []).map(Number));
+  }
+  return out;
 }
 
 /**
@@ -345,4 +359,35 @@ export async function activarEquipo(siteId: number, assetId: string): Promise<vo
     .eq('site_id', siteId)
     .eq('id', assetId);
   if (error) console.error('[subs] no se pudo activar el equipo:', error.message);
+}
+
+/**
+ * Flujo c (plan comprado para un equipo YA registrado): con el plan vivo, el alta del equipo en el servicio externo se encola SOLA con el
+ * correo del cliente (D-089, ronda 2 iOTEK, 2026-10-07: ya no hay contraseña; el servicio le manda las instrucciones). Misma regla que la
+ * edge `subs-asset-register` (`_shared/subs/connector/alta.ts`), que es quien decide de verdad al ejecutar el job: aquí sólo se encola si
+ * el negocio tiene conector que usa el correo como usuario y el cliente tiene correo. Nunca tumba el cobro (non-fatal).
+ */
+export async function encolarAltaServicio(siteId: number, assetId: string, customerId: string): Promise<boolean> {
+  try {
+    const { data: con } = await supabase.from('site_integrations').select('config')
+      .eq('site_id', siteId).eq('type', 'service_connector').eq('active', true).limit(1).maybeSingle();
+    if (!con || (con.config as Record<string, unknown> | null)?.user_is_email !== true) return false;
+    const { data: cli } = await supabase.from('customers').select('email').eq('site_id', siteId).eq('id', customerId).maybeSingle();
+    let email = String((cli as { email?: string | null } | null)?.email ?? '').trim().toLowerCase();
+    if (!email) {
+      const { data: cred } = await supabase.from('subs_customer_credentials').select('email').eq('site_id', siteId).eq('customer_id', customerId).maybeSingle();
+      email = String((cred as { email?: string | null } | null)?.email ?? '').trim().toLowerCase();
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return false;
+    const minuto = new Date().toISOString().slice(0, 16);
+    const id = await enqueueSubsJob({
+      siteId, jobType: 'subs.external_sync', idempotencyKey: `subs:ext:activate:${siteId}:${assetId}:${minuto}`,
+      payload: { site_id: siteId, asset_id: assetId, action: 'activate', user_name: email },
+      steps: [{ step_name: 'external_sync', max_attempts: 6 }], priority: 5, referenceType: 'subs_asset', referenceId: assetId,
+    });
+    return !!id;
+  } catch (e) {
+    console.error('[subs] alta en el servicio no encolada (non-fatal):', (e as Error)?.message);
+    return false;
+  }
 }

@@ -49,3 +49,14 @@ export function testCardInstrument(raw: unknown): {
     exp_year: Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : null,
   };
 }
+
+/**
+ * ¿El plan sirve para el modelo de este equipo? (misión iOTEK 2026-10-07, D-083). Un plan sin modelos sirve para cualquiera, y
+ * un equipo sin modelo cargado se acepta como antes (lo completa la activación). Sólo se niega cuando los dos dicen algo y no
+ * coinciden: pegar un plan de dashcam a un GPS dejaría al cliente pagando un servicio que su equipo no usa.
+ */
+export function modeloSirve(modelosDelPlan: readonly number[] | null | undefined, modeloDelEquipo: number | null | undefined): boolean {
+  if (!modelosDelPlan || modelosDelPlan.length === 0) return true;
+  if (modeloDelEquipo == null) return true;
+  return modelosDelPlan.map(Number).includes(Number(modeloDelEquipo));
+}

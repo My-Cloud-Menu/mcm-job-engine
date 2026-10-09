@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { existingUnitKeys, isCardMethod, testCardInstrument, unitKey } from '../../src/handlers/subs/apply-payment-rules';
+import { existingUnitKeys, isCardMethod, modeloSirve, testCardInstrument, unitKey } from '../../src/handlers/subs/apply-payment-rules';
 
 // ── Reglas puras ────────────────────────────────────────────────────────────────────────────────
 describe('apply-payment · reglas', () => {
@@ -22,6 +22,13 @@ describe('apply-payment · reglas', () => {
     expect(testCardInstrument({ provider_pm_id: 'pm_1Nreal' })).toBeNull();
     expect(testCardInstrument(undefined)).toBeNull();
   });
+  it('D-083: un plan sólo sirve para sus modelos; sin modelos (plan o equipo) se acepta como antes', () => {
+    expect(modeloSirve([10002], 10002)).toBe(true);
+    expect(modeloSirve([10002], 10003)).toBe(false);
+    expect(modeloSirve([], 10003)).toBe(true);
+    expect(modeloSirve(null, 10003)).toBe(true);
+    expect(modeloSirve([10002], null)).toBe(true);
+  });
 });
 
 // ── Handler con el repositorio simulado ─────────────────────────────────────────────────────────
@@ -30,6 +37,7 @@ const repo = vi.hoisted(() => ({
   existingUnitsForOrder: vi.fn(), customerIdByAccountEmail: vi.fn(), demoteOtherDefaults: vi.fn(),
   upsertInstrument: vi.fn(), attachInstrumentToOrder: vi.fn(), insertSubscription: vi.fn(), insertFirstPeriod: vi.fn(),
   logEvents: vi.fn(), enqueueSubsJob: vi.fn(), descuentoRecurrenteDeLaOrden: vi.fn(), equipoActivable: vi.fn(), activarEquipo: vi.fn(),
+  modelosDePlanes: vi.fn(), avisarEquipoActivado: vi.fn(), cerrarOrdenSoloPlanes: vi.fn(), encolarAltaServicio: vi.fn(),
 }));
 vi.mock('../../src/handlers/subs/repo', () => repo);
 vi.mock('../../src/lib/logger', () => ({ logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }));
@@ -39,7 +47,7 @@ import '../../src/handlers/subs/apply-payment';
 
 const SITE = 70100000;
 const run = () => getHandler('subs', 'apply_payment')!({ jobPayload: { payment_id: 500, site_id: SITE } } as never) as Promise<any>;
-const term = { id: 't-m', code: 'monthly', product_id: 10014, variation_id: 'monthly', interval_unit: 'month', interval_count: 1 };
+const term = { id: 't-m', code: 'monthly', plan_id: 'plan-ddl', product_id: 10014, variation_id: 'monthly', interval_unit: 'month', interval_count: 1 };
 const order = (qty: number, email = 'qa+a@mcmtest.app') => ({
   id: 900, site_id: SITE, crm_customer_id: 'cus-phone', customer: { email, phone_e164: '+17875550143' }, additional_properties: {},
   line_items: [{ id: 'lineitem-0', product_id: 10001, quantity: qty, price: 74.95 }, { id: 'lineitem-1', product_id: 10014, variation_id: 'monthly', quantity: qty, price: 20.95 }],
@@ -57,6 +65,7 @@ describe('subs.apply_payment', () => {
     repo.insertSubscription.mockImplementation(async () => `sub-${++seq}`);
     repo.customerIdByAccountEmail.mockResolvedValue(null);
     repo.upsertInstrument.mockResolvedValue('inst-1');
+    repo.modelosDePlanes.mockResolvedValue(new Map([['plan-ddl', [10001]]]));
   });
 
   it('R2: flota de 20 con 10 ya creadas → crea SÓLO las 10 que faltan (unidades 10..19)', async () => {
@@ -124,5 +133,38 @@ describe('subs.apply_payment', () => {
     repo.existingUnitsForOrder.mockResolvedValue([]);
     expect(await run()).toEqual({ skipped: 'no_subscription_lines' });
     expect(repo.upsertInstrument).not.toHaveBeenCalled();
+  });
+
+  // ── Flujo c (comprar el plan para un equipo que ya tiene) ──
+  const ordenFlujoC = () => ({ ...order(1), additional_properties: { subs: { asset_id: 'asset-1' } } });
+
+  it('D-083: equipo del MISMO modelo → el plan nace activo y atado al equipo', async () => {
+    repo.loadPayment.mockResolvedValue({ id: 500, status: 'completed', method: 'test_card', orders_ids: [900], additional_properties: {} });
+    repo.loadOrders.mockResolvedValue([ordenFlujoC()]);
+    repo.existingUnitsForOrder.mockResolvedValue([]);
+    repo.equipoActivable.mockResolvedValue({ id: 'asset-1', product_id: 10001 });
+    await run();
+    const fila = repo.insertSubscription.mock.calls[0][0] as any;
+    expect(fila.status).toBe('active');
+    expect(fila.asset_id).toBe('asset-1');
+    expect(repo.modelosDePlanes).toHaveBeenCalledWith(SITE, ['plan-ddl']);
+    expect(repo.activarEquipo).toHaveBeenCalledWith(SITE, 'asset-1');
+    // D-089: el alta en el servicio se encola SOLA (con el correo), sin pedirle contraseña al cliente.
+    expect(repo.encolarAltaServicio).toHaveBeenCalledWith(SITE, 'asset-1', expect.any(String));
+  });
+
+  it('D-083: equipo de OTRO modelo → el plan NO se le pega (nace pendiente) y queda rastro wrong_model', async () => {
+    repo.loadPayment.mockResolvedValue({ id: 500, status: 'completed', method: 'test_card', orders_ids: [900], additional_properties: {} });
+    repo.loadOrders.mockResolvedValue([ordenFlujoC()]);
+    repo.existingUnitsForOrder.mockResolvedValue([]);
+    repo.equipoActivable.mockResolvedValue({ id: 'asset-1', product_id: 10003 });
+    await run();
+    const fila = repo.insertSubscription.mock.calls[0][0] as any;
+    expect(fila.status).toBe('pending_activation');
+    expect(fila.asset_id).toBeUndefined();
+    expect(repo.activarEquipo).not.toHaveBeenCalled();
+    expect(repo.encolarAltaServicio).not.toHaveBeenCalled();
+    const eventos = repo.logEvents.mock.calls.flatMap(([rows]) => rows as any[]);
+    expect(eventos).toContainEqual(expect.objectContaining({ kind: 'flow_c_not_attached', payload: expect.objectContaining({ reason: 'wrong_model', asset_id: 'asset-1', asset_product_id: 10003, plan_models: [10001] }) }));
   });
 });
