@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { registerHandler } from '../../registry';
 import {
   catalogSourceConnection,
-  connectionInjects,
+  wantsStockSync,
   ensureStockSchedule,
   getDefaultLocationId,
   loadOmnivoreConnections,
@@ -124,7 +124,7 @@ registerHandler('omnivore', 'fetch_products', async ({ stepInput, jobPayload, jo
   }
 
   if (set.multi) {
-    await ensureStockSchedule(job.site_id, set.connections.some((c) => connectionInjects(c.config)));
+    await ensureStockSchedule(job.site_id, wantsStockSync(set.connections));
   }
 
   logger.info(

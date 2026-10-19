@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
 import { sanitizeOmnivoreHealth } from './health-mapper';
 import {
-  connectionInjects,
+  wantsStockSync,
   connectionsForRequest,
   ensureStockSchedule,
   forEachConnection,
@@ -164,7 +164,7 @@ registerHandler('omnivore', 'fetch_health', async ({ stepInput, jobPayload, job 
       { onConflict: 'site_id' });
     if (error) throw new Error(`pos_health upsert failed: ${error.message}`);
 
-    await ensureStockSchedule(job.site_id, set.connections.some((c) => connectionInjects(c.config)));
+    await ensureStockSchedule(job.site_id, wantsStockSync(set.connections));
   }
 
   logger.info(

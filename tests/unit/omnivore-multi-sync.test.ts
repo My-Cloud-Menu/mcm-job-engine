@@ -151,6 +151,13 @@ describe('fetch_health (K2 + K4)', () => {
     expect(hasSiteFilter(off, MULTI)).toBe(true);
   });
 
+  it('varias sucursales que NO inyectan pero piden agotados (syncStockAutomatically): el sync de agotados se programa', async () => {
+    h.state = newMemState(seed(false));
+    h.state.tables.site_integrations!.find((r) => r.id === 'biz')!.config.syncStockAutomatically = true;
+    await run('fetch_health', MULTI);
+    expect(h.state.tables.sync_schedules).toEqual([expect.objectContaining({ site_id: MULTI, integration: 'omnivore', sync_type: 'fetch_stock', interval_seconds: 300, status: 'active' })]);
+  });
+
   it('U2: una sola conexión → solo esa fila; no toca el resumen', async () => {
     await run('fetch_health', MULTI, { stepInput: { integration_id: '6f1c2b9e-0000-4000-8000-000000000000' } }).catch((e) => e);
     // id que no es del negocio → error sin reintento, nada escrito

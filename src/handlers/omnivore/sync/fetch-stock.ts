@@ -20,7 +20,8 @@ const STOCK_TIMEOUT_MS = 120_000;
 
 /**
  * C3 + C6 (Misión Omnivore Multisucursal) · Agotados de Aloha por sucursal, cada 5 minutos.
- * Solo en negocios con conexiones por sucursal (lo programa `fetch_health`/`fetch_products` cuando alguna inyecta). Un
+ * Solo en negocios con conexiones por sucursal (lo programa `fetch_health`/`fetch_products` cuando alguna inyecta o el
+ * negocio lo pide con `syncStockAutomatically`, ver `wantsStockSync`). Un
  * negocio de una sola conexión sigue con `products.stock_status` desde el sync de catálogo, como siempre: aquí no hace
  * nada. Cada sucursal en paralelo (8, 2 min cada una); una caída no frena a las demás. Si fallan todas, el job falla y
  * se reintenta.

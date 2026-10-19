@@ -99,6 +99,15 @@ export function connectionInjects(config: Record<string, unknown>): boolean {
   return !!config['sendOrderToOmnivoreInStatusChange'] && !isEmpty(config['statusChangeToTriggerOmnivoreOrder']);
 }
 
+/**
+ * C6 · El sync de agotados por sucursal se programa si alguna conexión inyecta, o si el negocio lo pide aunque no inyecte
+ * (`syncStockAutomatically: true`, p. ej. un negocio que todavía no enciende el envío al POS). Con la config efectiva de
+ * cada conexión (la del negocio + sus ajustes propios). PURA.
+ */
+export function wantsStockSync(connections: IntegrationConfig[]): boolean {
+  return connections.some((c) => connectionInjects(c.config) || c.config['syncStockAutomatically'] === true);
+}
+
 export type PerConnectionResult<T> =
   | { connection: IntegrationConfig; ok: true; value: T }
   | { connection: IntegrationConfig; ok: false; error: unknown };
@@ -149,8 +158,8 @@ export async function forEachConnection<T>(
 
 /**
  * C6 · El sync de agotados por sucursal (`fetch_stock`, cada 5 min) existe solo en negocios con conexiones por sucursal
- * que inyectan. Es una fila de datos en `sync_schedules` (sin cambios de esquema). Si el negocio deja de cumplirlo, se
- * desactiva. Siempre con `site_id`.
+ * que inyectan o lo piden (`wantsStockSync`). Es una fila de datos en `sync_schedules` (sin cambios de esquema). Si el
+ * negocio deja de cumplirlo, se desactiva. Siempre con `site_id`.
  */
 export const STOCK_SYNC_INTERVAL_SECONDS = 300;
 

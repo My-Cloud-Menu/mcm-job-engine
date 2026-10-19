@@ -13,6 +13,7 @@ import {
   connectionsForRequest,
   forEachConnection,
   requestedIntegrationId,
+  wantsStockSync,
 } from '../../src/handlers/omnivore/connections';
 
 const fixture = JSON.parse(
@@ -108,6 +109,19 @@ describe('connectionInjects (mismo && que la edge)', () => {
     expect(connectionInjects({ sendOrderToOmnivoreInStatusChange: false, statusChangeToTriggerOmnivoreOrder: 'in-kitchen' })).toBe(false);
     expect(connectionInjects({ sendOrderToOmnivoreInStatusChange: true, statusChangeToTriggerOmnivoreOrder: '' })).toBe(false);
     for (const r of fixture.rows.filter((x) => x.active)) expect(connectionInjects(r.config ?? {})).toBe(false); // ningún vivo inyecta
+  });
+});
+
+describe('wantsStockSync (C6: agotados por sucursal)', () => {
+  const conn = (config: Record<string, unknown>) => ({ integrationId: 'x', locationId: '1', config });
+  it('se programa si alguna conexión inyecta o si el negocio lo pide sin inyectar', () => {
+    expect(wantsStockSync([conn({}), conn({ sendOrderToOmnivoreInStatusChange: true, statusChangeToTriggerOmnivoreOrder: 'in-kitchen' })])).toBe(true);
+    expect(wantsStockSync([conn({ sendOrderToOmnivoreInStatusChange: false, syncStockAutomatically: true })])).toBe(true);
+    expect(wantsStockSync([conn({ sendOrderToOmnivoreInStatusChange: false })])).toBe(false);
+    expect(wantsStockSync([conn({ syncStockAutomatically: 'true' })])).toBe(false); // solo el booleano
+    expect(wantsStockSync([])).toBe(false);
+    // ningún vivo lo pide (y no inyecta): nada cambia para ellos
+    expect(wantsStockSync(fixture.rows.filter((x) => x.active).map((r) => conn(r.config ?? {})))).toBe(false);
   });
 });
 
