@@ -10,6 +10,11 @@ export interface SyncInventoryParams {
   only_include_prices_and_stock_changes?: boolean;
   archive_removed?: boolean; // F7: soft-archive de productos ausentes del POS (config-gated)
   skip_category_types?: string[]; // N8: tipos de menu_category_type a saltar (default [] = importar todo)
+  /**
+   * Misión Omnivore Multisucursal (C3): false en negocios con conexiones por sucursal. El catálogo deja `stock_status`
+   * como está (los agotados van por sucursal a `stock_availability`, sync `fetch_stock`). Default true = lo de siempre.
+   */
+  manage_stock?: boolean;
 }
 
 export interface SyncInventoryResult {
@@ -35,6 +40,7 @@ export async function syncOmnivoreInventory(params: SyncInventoryParams): Promis
     only_include_prices_and_stock_changes: params.only_include_prices_and_stock_changes,
     archive_removed: params.archive_removed,
     skip_category_types: params.skip_category_types,
+    manage_stock: params.manage_stock,
   });
 
   const ingr = await syncOmnivoreIngredientsAndGroupsV2({
@@ -42,6 +48,7 @@ export async function syncOmnivoreInventory(params: SyncInventoryParams): Promis
     client: params.client,
     omnivoreProducts: prod.productsToImport,
     only_include_prices_and_stock_changes: params.only_include_prices_and_stock_changes,
+    manage_stock: params.manage_stock,
   });
 
   return {

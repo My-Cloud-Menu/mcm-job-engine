@@ -83,19 +83,19 @@ export async function batchProducts(siteId: number, batch: Changes): Promise<voi
  * Price levels. Order matters to satisfy UNIQUE (site_id, product_id) WHERE is_default:
  * delete → update(clear default) → create → update(set default).
  */
-export async function batchPriceLevels(batch: Changes): Promise<void> {
+export async function batchPriceLevels(siteId: number, batch: Changes): Promise<void> {
   const updatesClearDefault = batch.update.filter((pl) => pl.is_default !== true);
   const updatesSetDefault = batch.update.filter((pl) => pl.is_default === true);
 
   const deleteIds = batch.delete.map((pl) => pl.id);
   for (const part of chunk(deleteIds)) {
-    if (part.length) await supabase.from('product_price_levels').delete().in('id', part).throwOnError();
+    if (part.length) await supabase.from('product_price_levels').delete().in('id', part).eq('site_id', siteId).throwOnError();
   }
 
   for (const pl of updatesClearDefault) {
     await supabase.from('product_price_levels')
       .update({ code: pl.code, price: pl.price, is_default: pl.is_default })
-      .eq('id', pl.id).throwOnError();
+      .eq('id', pl.id).eq('site_id', siteId).throwOnError();
   }
 
   const createRows = batch.create.map((pl) => ({
@@ -109,6 +109,6 @@ export async function batchPriceLevels(batch: Changes): Promise<void> {
   for (const pl of updatesSetDefault) {
     await supabase.from('product_price_levels')
       .update({ code: pl.code, price: pl.price, is_default: pl.is_default })
-      .eq('id', pl.id).throwOnError();
+      .eq('id', pl.id).eq('site_id', siteId).throwOnError();
   }
 }

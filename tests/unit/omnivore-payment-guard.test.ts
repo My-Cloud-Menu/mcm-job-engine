@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   updates: [] as any[],
   upserts: [] as any[],
   inserts: [] as any[],
+  ordersLookups: [] as any[][],
 }));
 
 vi.mock('../../src/lib/logger', () => ({
@@ -24,7 +25,9 @@ vi.mock('../../src/lib/logger', () => ({
 
 vi.mock('../../src/lib/supabase', () => {
   const ordersSelectChain = (val: any) => {
-    const c: any = { eq: () => c, limit: () => c, maybeSingle: async () => val, single: async () => val };
+    const eqs: any[] = [];
+    h.ordersLookups.push(eqs);
+    const c: any = { eq: (k: string, v: unknown) => (eqs.push([k, v]), c), limit: () => c, maybeSingle: async () => val, single: async () => val };
     return c;
   };
   // El guard usa .select('id').eq().contains().eq().limit().maybeSingle()
@@ -48,8 +51,8 @@ vi.mock('../../src/lib/supabase', () => {
           h.updates.push({ table, patch });
           return writeChain();
         },
-        upsert: (row: any) => {
-          h.upserts.push({ table, row });
+        upsert: (row: any, opts?: any) => {
+          h.upserts.push({ table, row, opts });
           return Promise.resolve({ error: null });
         },
         insert: (row: any) => {
@@ -98,6 +101,7 @@ beforeEach(() => {
   h.updates = [];
   h.upserts = [];
   h.inserts = [];
+  h.ordersLookups = [];
 });
 
 // ── Ticket cobrado EN EL TERMINAL de Aloha (2026-09-18) ────────────────────────────────────────
@@ -206,5 +210,28 @@ describe('omnivore sync guard — orden con pago aplicado', () => {
     expect(patch.status).toBe('check-closed'); // preservado por fail-safe
     expect(patch.payment_status).toBe('fulfilled');
     expect(res.updated).toBe(1);
+  });
+});
+
+describe('K1 · llave de tickets por conexión (Misión Omnivore Multisucursal)', () => {
+  it('conexión del negocio (vivos): busca e inserta con pos_location_id 0 y la llave nueva', async () => {
+    h.existingOrder = null;
+    h.hasCompletedPayment = null;
+    await upsertOmnivoreOrders(48372619, [openOmnivoreTicket()], config);
+    const up = h.upserts.find((u) => u.table === 'orders')!;
+    expect(up.row.pos_location_id).toBe(0);
+    expect(up.opts).toEqual({ onConflict: 'site_id,pos_location_id,omnivore_pos_id', ignoreDuplicates: true });
+    const lookup = h.ordersLookups.find((eqs) => eqs.some(([k]) => k === 'omnivore_pos_id'))!;
+    expect(lookup).toEqual(expect.arrayContaining([['site_id', 48372619], ['pos_location_id', 0]]));
+  });
+
+  it('conexión de sucursal: el ticket queda con su sucursal', async () => {
+    h.existingOrder = null;
+    h.hasCompletedPayment = null;
+    await upsertOmnivoreOrders(48372619, [openOmnivoreTicket()], config, null, 71000001);
+    const up = h.upserts.find((u) => u.table === 'orders')!;
+    expect(up.row.pos_location_id).toBe(71000001);
+    const lookup = h.ordersLookups.find((eqs) => eqs.some(([k]) => k === 'omnivore_pos_id'))!;
+    expect(lookup).toEqual(expect.arrayContaining([['pos_location_id', 71000001]]));
   });
 });

@@ -94,6 +94,7 @@ export async function getProductsChangesToSyncOmnivore(
   omnivoreProductsToImport: OmnivoreProduct[],
   defaultStatus: Status,
   allowArchive = false, // F7: soft-archive de productos ausentes del POS (config-gated + empty-guard en el caller)
+  manageStock = true, // C3: false = no se toca stock_status (negocio con agotados por sucursal)
 ): Promise<Changes> {
   const changes: Changes = { create: [], update: [], delete: [] };
   const [currentProducts, currentCategories] = await Promise.all([
@@ -114,6 +115,8 @@ export async function getProductsChangesToSyncOmnivore(
     const priceLevelUsed = '';
 
     const stockStatus: StockStatus = product.in_stock === false ? 'outofstock' : 'instock';
+    // C3: con agotados por sucursal, un producto nuevo nace disponible y los existentes conservan su stock_status.
+    const createStockStatus: StockStatus = manageStock ? stockStatus : 'instock';
 
     const omniCatIds = product._embedded.menu_categories.map((c: any) => c.id);
     const categoriesFounded = currentCategories
@@ -125,7 +128,7 @@ export async function getProductsChangesToSyncOmnivore(
         name: product.name,
         categories_id: categoriesFounded,
         price: productPrice,
-        stock_status: stockStatus,
+        stock_status: createStockStatus,
         status: defaultStatus,
         additional_properties: {
           omnivorePriceLevelUsed: priceLevelUsed,
@@ -147,7 +150,7 @@ export async function getProductsChangesToSyncOmnivore(
       ];
       const mcmPriceIsValidLevel = validLevelCents.includes(roundCents(mcmProduct.price));
       const priceShouldUpdate = !mcmPriceIsValidLevel && roundCents(mcmProduct.price) !== roundCents(productPrice);
-      const stockDifferent = mcmProduct.stock_status != stockStatus;
+      const stockDifferent = manageStock && mcmProduct.stock_status != stockStatus;
       // F8: adoptar el rename del POS SOLO si MCM no overrideó el nombre (additional_properties.nameOverridden).
       const nameOverridden = !!mcmProduct.additional_properties?.nameOverridden;
       // M2 seed-only: si el producto managed NO tiene snapshot omnivoreName todavía (1er sync tras F8), NO
@@ -164,7 +167,7 @@ export async function getProductsChangesToSyncOmnivore(
         changes.update.push({
           id: mcmProduct.id,
           name: adoptName ? product.name : mcmProduct.name,
-          stock_status: stockStatus,
+          ...(manageStock ? { stock_status: stockStatus } : {}),
           ...(priceShouldUpdate ? { price: productPrice } : {}),
           // Merge (don't replace) additional_properties so posId/omnivoreIsOpen/etc. survive.
           additional_properties: {

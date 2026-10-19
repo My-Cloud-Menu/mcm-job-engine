@@ -13,6 +13,7 @@ import './omnivore/sync/fetch-products';
 import './omnivore/sync/fetch-employees';
 import './omnivore/sync/fetch-health';
 import './omnivore/sync/fetch-clock-entries';
+import './omnivore/sync/fetch-stock';
 
 import './clover/inject/create-order';
 import './clover/inject/create-supplemental-order';

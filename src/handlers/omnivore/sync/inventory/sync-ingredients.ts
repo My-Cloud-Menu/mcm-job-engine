@@ -26,6 +26,7 @@ export async function syncOmnivoreIngredientsAndGroupsV2(params: {
   client: AxiosInstance;
   omnivoreProducts: OmnivoreProduct[];
   only_include_prices_and_stock_changes?: boolean;
+  manage_stock?: boolean; // C3: false = no se toca stock_status (agotados por sucursal)
 }): Promise<SyncIngredientsResult> {
   // 1. Groups to import (parsed from modifier_groups + products/ingredients option_sets)
   const { groups: groupsToImport, conflicts } = await getOmnivoreIngredientGroupToImport(
@@ -43,7 +44,9 @@ export async function syncOmnivoreIngredientsAndGroupsV2(params: {
   const ingredientsToImport = await getOmnivoreIngredientsToImport(params.client, [...ids]);
 
   // 3-4. Ingredient changes → write
-  const ingredientsChanges = await getIngredientsChangesToSyncOmnivore(params.site_id, ingredientsToImport);
+  const ingredientsChanges = await getIngredientsChangesToSyncOmnivore(
+    params.site_id, ingredientsToImport, params.manage_stock ?? true
+  );
   if (params.only_include_prices_and_stock_changes) {
     ingredientsChanges.create = [];
     ingredientsChanges.delete = [];

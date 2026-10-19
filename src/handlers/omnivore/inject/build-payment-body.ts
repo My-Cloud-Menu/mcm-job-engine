@@ -45,6 +45,11 @@ export function buildOmnivorePaymentBody(
     ATH_MOVIL: credentials.tenderIdAthMovil, // SPC OTHER
     MC: credentials.tenderIdMC, // SPC M/C
     AMEX: credentials.tenderIdAmex, // SPC AMEX
+    // R9 (Misión Omnivore Multisucursal): claves OPCIONALES. Sin la clave en la config, la marca cae al tender por
+    // defecto exactamente como antes.
+    DISCOVER: credentials.tenderIdDiscover,
+    VISA_CREDIT: credentials.tenderIdVisaCredit,
+    MASTERCARD_CREDIT: credentials.tenderIdMcCredit,
   };
 
   const totalAmountToSend = toCents(payment.total) - toCents(payment.tip);

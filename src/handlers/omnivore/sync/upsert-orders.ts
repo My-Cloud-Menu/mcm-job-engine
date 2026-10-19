@@ -154,7 +154,9 @@ function verifyOrderHasRelevantChanges(order1: any, order2: any): boolean {
 
 /**
  * Upserts Omnivore tickets into MCM `orders`, deduped on
- * (site_id, omnivore_pos_id). Mirrors the legacy `syncOmnivoreOrdersIntoMCM`:
+ * (site_id, pos_location_id, omnivore_pos_id) — K1, Misión Omnivore Multisucursal: el número de ticket de Aloha se
+ * repite entre sucursales. `posLocationId` = sucursal de la conexión; 0 = conexión del negocio (todos los vivos: misma
+ * llave de siempre). Mirrors the legacy `syncOmnivoreOrdersIntoMCM`:
  * existing POS orders are updated only when materially changed; new orders are
  * inserted with `omnivore_pos_id` + `global_pos_id`. Non-POS orders are never
  * overwritten by the sync.
@@ -164,6 +166,7 @@ export async function upsertOmnivoreOrders(
   omnivoreOrders: unknown[],
   config: any,
   fetchStartIso?: string | null,
+  posLocationId: number = 0,
 ): Promise<UpsertResult> {
   let inserted = 0;
   let updated = 0;
@@ -247,6 +250,7 @@ export async function upsertOmnivoreOrders(
         .from('orders')
         .select('*')
         .eq('site_id', siteId)
+        .eq('pos_location_id', posLocationId)
         .eq('omnivore_pos_id', omnivorePosId)
         .limit(1)
         .maybeSingle();
@@ -572,6 +576,7 @@ export async function upsertOmnivoreOrders(
             .from('orders')
             .update({
               omnivore_pos_id: omnivorePosId,
+              pos_location_id: posLocationId,
               global_pos_id: `${siteId}-${omnivorePosId}`,
               additional_properties: mergedAp,
             })
@@ -621,12 +626,13 @@ export async function upsertOmnivoreOrders(
             {
               ...order,
               omnivore_pos_id: omnivorePosId,
+              pos_location_id: posLocationId,
               global_pos_id: `${siteId}-${omnivorePosId}`,
             },
-            { onConflict: 'site_id,omnivore_pos_id', ignoreDuplicates: true }
+            { onConflict: 'site_id,pos_location_id,omnivore_pos_id', ignoreDuplicates: true }
           );
           upsertError = error ?? null;
-          // Con ignoreDuplicates en (site_id,omnivore_pos_id), un 23505 aquí viene de OTRA
+          // Con ignoreDuplicates en (site_id,pos_location_id,omnivore_pos_id), un 23505 aquí viene de OTRA
           // constraint (check_number tomado por una carrera, o el PK random) → recalcular ambos.
           if (!upsertError || (upsertError as any).code !== '23505') break;
         }

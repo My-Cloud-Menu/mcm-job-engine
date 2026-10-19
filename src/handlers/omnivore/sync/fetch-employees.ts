@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { registerHandler } from '../../registry';
+import { isMultiLocationOmnivore } from '../connections';
 import { getSiteIntegrationConfig } from '../../../lib/credentials';
 import { createOmnivoreClient, OmnivoreConfigSchema } from '../client';
 import { supabase } from '../../../lib/supabase';
@@ -21,6 +22,15 @@ const InputSchema = z.object({
  */
 registerHandler('omnivore', 'fetch_employees', async ({ stepInput, jobPayload, job }) => {
   const input = InputSchema.parse(stepInput);
+
+  // Misión Omnivore Multisucursal: en un negocio con conexiones por sucursal este sync es de la fase 2 (no se lee de
+  // ningún Aloha ni se escribe nada). Con una sola conexión, todo igual que antes.
+  if (await isMultiLocationOmnivore(job.site_id)) {
+    if (input.schedule_id) {
+      await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });
+    }
+    return { skipped: 'multi_location_phase2' };
+  }
   const isManual = input.manual === true || (jobPayload as Record<string, unknown>)?.manual === true;
 
   const { config } = await getSiteIntegrationConfig(job.site_id, 'omnivore', 'pos');

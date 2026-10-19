@@ -16,6 +16,7 @@ export interface SyncProductsParams {
   only_include_prices_and_stock_changes?: boolean;
   archive_removed?: boolean; // F7: soft-archive de productos ausentes del POS (config-gated)
   skip_category_types?: string[]; // N8: tipos de menu_category_type a saltar (default [] = importar todo)
+  manage_stock?: boolean; // C3: false = el catálogo no toca stock_status (agotados por sucursal)
 }
 
 export interface SyncProductsResult {
@@ -49,7 +50,7 @@ export async function syncOmnivoreProductsV2(params: SyncProductsParams): Promis
   // F7: allowArchive lleva el empty-guard (productsToImport.length>0) y NUNCA archiva en modo only_include.
   const allowArchive = !!params.archive_removed && productsToImport.length > 0 && !params.only_include_prices_and_stock_changes;
   const productsChanges = await getProductsChangesToSyncOmnivore(
-    params.site_id, productsToImport, defaultStatus, allowArchive
+    params.site_id, productsToImport, defaultStatus, allowArchive, params.manage_stock ?? true
   );
   if (params.only_include_prices_and_stock_changes) {
     productsChanges.create = [];
@@ -59,7 +60,7 @@ export async function syncOmnivoreProductsV2(params: SyncProductsParams): Promis
 
   // 7-8. Price levels (now products exist for ref-mapping) → changes → write
   const priceLevelsChanges = await getPriceLevelsChangesToSyncOmnivore(params.site_id, productsToImport);
-  await batchPriceLevels(priceLevelsChanges);
+  await batchPriceLevels(params.site_id, priceLevelsChanges);
 
   return {
     productsToImport,

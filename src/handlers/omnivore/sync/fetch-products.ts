@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { registerHandler } from '../../registry';
-import { getSiteIntegrationConfig } from '../../../lib/credentials';
+import {
+  catalogSourceConnection,
+  connectionInjects,
+  ensureStockSchedule,
+  getDefaultLocationId,
+  loadOmnivoreConnections,
+} from '../connections';
 import { createOmnivoreClient, OmnivoreConfigSchema } from '../client';
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
@@ -18,12 +24,20 @@ const InputSchema = z.object({
  * `syncOmnivoreProductsV2` + `syncOmnivoreIngredientsAndGroupsV2` (Supabase path).
  * Scheduled via sync_schedules (sync_type='fetch_products', 24h) or on-demand via
  * trigger_sync_now. Idempotent; additive (no deletes of products/ingredients/groups).
+ *
+ * Misión Omnivore Multisucursal: con una conexión, lo de siempre. Con conexiones por sucursal el catálogo es el mismo en
+ * todas (C1) y se lee de la sucursal fuente (C2); no toca `stock_status` (los agotados van por sucursal, C3) y mantiene el
+ * sync de agotados (`fetch_stock`, C6). Un `integration_id` (U2) no aplica al catálogo.
  */
 registerHandler('omnivore', 'fetch_products', async ({ stepInput, jobPayload, job }) => {
   const input = InputSchema.parse(stepInput);
   const isManual = input.manual === true || (jobPayload as Record<string, unknown>)?.manual === true;
 
-  const { config } = await getSiteIntegrationConfig(job.site_id, 'omnivore', 'pos');
+  const set = await loadOmnivoreConnections(job.site_id);
+  const source = set.multi
+    ? catalogSourceConnection(set, await getDefaultLocationId(job.site_id))
+    : set.connections[0]!;
+  const { config } = source;
   const omnivoreConfig = OmnivoreConfigSchema.parse(config);
   const client = createOmnivoreClient(omnivoreConfig, job.correlation_id);
 
@@ -41,6 +55,7 @@ registerHandler('omnivore', 'fetch_products', async ({ stepInput, jobPayload, jo
       only_include_prices_and_stock_changes: false,
       archive_removed: (config as Record<string, unknown>).archiveRemoved === true, // F7: soft-archive de productos ausentes del POS
       skip_category_types: skipCategoryTypes,
+      manage_stock: !set.multi,
     });
   } catch (err) {
     throw mapOmnivoreError(err, 'OMNIVORE_FETCH_PRODUCTS_FAILED');
@@ -98,13 +113,24 @@ registerHandler('omnivore', 'fetch_products', async ({ stepInput, jobPayload, jo
       .filter((r: any) => !detectedKeys.has(`${r.conflict_type}|${String(r.entity_omnivore_id)}`))
       .map((r: any) => r.id);
     if (toResolve.length > 0) {
-      await supabase.from('omnivore_inventory_sync_conflicts').update({ resolved_at: nowIso }).in('id', toResolve);
+      await supabase
+        .from('omnivore_inventory_sync_conflicts')
+        .update({ resolved_at: nowIso })
+        .in('id', toResolve)
+        .eq('site_id', job.site_id);
     }
   } catch (e) {
     logger.warn({ site_id: job.site_id, err: String(e) }, 'omnivore conflicts persist/auto-close failed (non-fatal)');
   }
 
-  logger.info({ site_id: job.site_id, duration_ms: duration, ...result }, 'omnivore fetch_products completed');
+  if (set.multi) {
+    await ensureStockSchedule(job.site_id, set.connections.some((c) => connectionInjects(c.config)));
+  }
+
+  logger.info(
+    { site_id: job.site_id, duration_ms: duration, catalog_source: set.multi ? source.locationId : undefined, ...result },
+    'omnivore fetch_products completed'
+  );
 
   if (input.schedule_id) {
     await supabase.rpc('complete_sync_schedule', { p_schedule_id: input.schedule_id, p_cursor: null });

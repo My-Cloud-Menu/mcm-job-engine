@@ -128,9 +128,21 @@ export async function getOmnivoreIngredientGroupToImport(
   return { groups: parsed, conflicts };
 }
 
+/**
+ * Niveles de precio de un modificador tal como se guardan en `additional_properties.omnivorePriceLevels`: solo cuando
+ * Aloha tiene más de uno; si no, []. PURA. C9 (Misión Omnivore Multisucursal): la misma regla al crear y al refrescar.
+ */
+export function omnivorePriceLevelsOf(ing: OmnivoreIngredient): Array<{ id: string; name: string; price: number }> {
+  const levels = (ing._embedded?.price_levels ?? []) as any[];
+  return levels.length > 1
+    ? levels.map((pl: any) => ({ id: pl.id, name: pl.name, price: centsToDollars(pl.price_per_unit) }))
+    : [];
+}
+
 export async function getIngredientsChangesToSyncOmnivore(
   siteId: number,
-  ingredientsToImport: OmnivoreIngredient[]
+  ingredientsToImport: OmnivoreIngredient[],
+  manageStock = true, // C3: false = no se toca stock_status (negocio con agotados por sucursal)
 ): Promise<Changes> {
   const changes: Changes = { create: [], update: [], delete: [] };
   const current = await readAllBySite('ingredients', siteId);
@@ -142,17 +154,12 @@ export async function getIngredientsChangesToSyncOmnivore(
     const stockStatus: StockStatus = ing.in_stock === false ? 'outofstock' : 'instock';
 
     if (!found) {
-      const omnivorePriceLevels: any[] = [];
-      if ((ing._embedded?.price_levels?.length || 0) > 1) {
-        ing._embedded.price_levels.forEach((pl: any) =>
-          omnivorePriceLevels.push({ id: pl.id, name: pl.name, price: centsToDollars(pl.price_per_unit) })
-        );
-      }
+      const omnivorePriceLevels = omnivorePriceLevelsOf(ing);
       changes.create.push({
         name: ing.name,
         price,
         variations: [],
-        stock_status: stockStatus,
+        stock_status: manageStock ? stockStatus : 'instock',
         additional_properties: {
           omnivoreId: ing.id,
           posId: ing.pos_id,
@@ -162,14 +169,24 @@ export async function getIngredientsChangesToSyncOmnivore(
       });
     } else {
       const priceDifferent = price != found.price;
-      const stockDifferent = stockStatus != found.stock_status;
-      if (priceDifferent || stockDifferent) {
+      const stockDifferent = manageStock && stockStatus != found.stock_status;
+      // C9: los niveles de precio se refrescan si cambiaron en Aloha (antes quedaban congelados desde la creación).
+      const storedLevels = Array.isArray(found.additional_properties?.omnivorePriceLevels)
+        ? found.additional_properties.omnivorePriceLevels
+        : [];
+      const levels = omnivorePriceLevelsOf(ing);
+      const levelsDifferent = JSON.stringify(storedLevels) !== JSON.stringify(levels);
+      if (priceDifferent || stockDifferent || levelsDifferent) {
         changes.update.push({
           id: found.id,
           name: found.name,
           price,
-          stock_status: stockStatus,
-          additional_properties: { ...(found.additional_properties || {}), omnivoreId: ing.id },
+          ...(manageStock ? { stock_status: stockStatus } : {}),
+          additional_properties: {
+            ...(found.additional_properties || {}),
+            omnivoreId: ing.id,
+            ...(levelsDifferent ? { omnivorePriceLevels: levels } : {}),
+          },
         });
       }
     }

@@ -1,5 +1,5 @@
 import { AxiosInstance } from 'axios';
-import { Job, JobStep } from '../../../core/types';
+import { HandlerError, Job, JobStep } from '../../../core/types';
 import { supabase } from '../../../lib/supabase';
 import { logger } from '../../../lib/logger';
 
@@ -37,23 +37,65 @@ export async function findOpenTicketIdByName(
   return res.data?._embedded?.tickets?.[0]?.id ?? null;
 }
 
+/** Tope de páginas al recorrer tickets abiertos (100 por página): defensa ante un `_links.next` cíclico. */
+export const TICKET_SCAN_MAX_PAGES = 50;
+
 /**
- * Fallback Aloha-safe del adopt-by-name: algunos POS (Aloha, probado en vivo) RECHAZAN
- * `where=eq(name,...)` con `bad_query` → `findOpenTicketIdByName` siempre devuelve null ahí.
- * Este scan trae los tickets ABIERTOS y matchea el nombre EXACTO en memoria. Más caro (lista),
- * por eso el caller lo usa solo en REINTENTOS (cuando un intento previo pudo crear el ticket).
+ * Busca un ticket ABIERTO por su nombre exacto recorriendo TODAS las páginas (Q2). Lanza si una página falla: quien
+ * llama NO debe crear a ciegas si no pudo comprobar (un ticket creado por un intento anterior se duplicaría).
  */
-export async function findOpenTicketIdByNameScan(
-  client: AxiosInstance,
-  name: string,
-  limit = 100
-): Promise<string | null> {
-  const res = await client.get<{ _embedded?: { tickets?: Array<{ id: string; name?: string }> } }>('/tickets', {
-    params: { where: 'eq(open,true)', fields: 'id,name', limit },
-  });
-  const tickets = res.data?._embedded?.tickets ?? [];
-  const match = tickets.find((t) => String(t?.name ?? '') === name);
-  return match?.id != null ? String(match.id) : null;
+export async function findOpenTicketIdByNameScanAll(client: AxiosInstance, name: string): Promise<string | null> {
+  let nextUrl: string | null = null;
+  let pages = 0;
+  do {
+    const res: { data?: { _embedded?: { tickets?: Array<{ id: string; name?: string }> }; _links?: { next?: { href?: string } } } } =
+      nextUrl
+        ? await client.get(nextUrl)
+        : await client.get('/tickets', { params: { where: 'eq(open,true)', fields: 'id,name', limit: 100 } });
+    const match = (res.data?._embedded?.tickets ?? []).find((t) => String(t?.name ?? '') === name);
+    if (match?.id != null) return String(match.id);
+    nextUrl = res.data?._links?.next?.href ?? null;
+  } while (nextUrl && ++pages < TICKET_SCAN_MAX_PAGES);
+  return null;
+}
+
+/** ¿El nombre del ticket identifica a la orden? (`MCM {id}` o su forma base36 para ids largos). PURA. */
+export function isOrderUniqueTicketName(name: string | undefined, orderId: unknown): boolean {
+  if (!name || orderId === undefined || orderId === null) return false;
+  const id = String(orderId);
+  if (name === `MCM ${id}`) return true;
+  const n = Number(id);
+  return Number.isFinite(n) && name === `MCM ${n.toString(36)}`.slice(0, 15);
+}
+
+/**
+ * Marca en el contexto del job que este paso ya intentó un POST (Q2). Va ANTES del POST: si el worker se cae a mitad o
+ * el job se reintenta desde el dead-letter (`retry_dead_letter_job` pone `attempt_count` en 0), la marca sigue ahí y
+ * el siguiente intento busca el ticket antes de crear otro. El job está bloqueado por este worker: no hay carrera.
+ */
+export async function markStepPostAttempted(
+  jobId: string,
+  context: Record<string, unknown>,
+  markerKey: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('integration_jobs')
+    .update({ context: { ...context, [markerKey]: new Date().toISOString() } })
+    .eq('id', jobId);
+  if (error) {
+    throw new HandlerError(`Could not save attempt marker: ${error.message}`, 'ATTEMPT_MARKER_FAILED', true);
+  }
+}
+
+/** Nota de sistema en la orden (visible en el dashboard). Nunca lanza. */
+export async function appendOrderSystemNote(siteId: number, orderId: unknown, content: string): Promise<void> {
+  if (orderId === undefined || orderId === null) return;
+  const { error } = await supabase
+    .from('order_notes')
+    .insert({ site_id: siteId, order_id: orderId, content, is_system: true });
+  if (error) {
+    logger.error({ error, site_id: siteId, order_id: orderId }, 'omnivore: failed to append order note');
+  }
 }
 
 /** Number of items currently on a ticket — used to make `add_items` idempotent. */
@@ -87,13 +129,19 @@ export async function getTicketTotals(client: AxiosInstance, ticketId: string): 
  * Persist the Omnivore ticket id onto the MCM order and clear any prior
  * injection error. Mirrors the legacy `handleSendOrderAllInOneToOmnivore`
  * post-success write (omnivore-helper.ts:1305-1310).
+ *
+ * Misión Omnivore Multisucursal: `posLocationId` (sucursal de la conexión sellada) entra en la llave del ticket (K1);
+ * en la conexión del negocio no se escribe (queda en 0, como hoy). Si no se puede guardar, el paso falla y se reintenta
+ * (`TICKET_LINK_FAILED`): el reintento encuentra el ticket por nombre y lo vuelve a enlazar, sin crear otro.
  */
 export async function persistOmnivoreTicketId(
   siteId: number,
   orderId: unknown,
-  ticketId: string
+  ticketId: string,
+  posLocationId?: string | number | null
 ): Promise<void> {
   if (orderId === undefined || orderId === null) return;
+  const location = posLocationId != null && Number(posLocationId) !== 0 ? Number(posLocationId) : null;
   const { error } = await supabase
     .from('orders')
     .update({
@@ -101,6 +149,7 @@ export async function persistOmnivoreTicketId(
       omnivore_pos_id: ticketId,
       global_pos_id: `${siteId}-${ticketId}`,
       pos_injection_error: null,
+      ...(location != null ? { pos_location_id: location } : {}),
     })
     .eq('id', orderId)
     .eq('site_id', siteId);
@@ -109,31 +158,10 @@ export async function persistOmnivoreTicketId(
       { error, site_id: siteId, order_id: orderId, ticket_id: ticketId },
       'omnivore: failed to persist omnivore_pos_id'
     );
-  }
-}
-
-/**
- * Persist an injection error onto the MCM order, for surfacing on /live-orders.
- * Stores the Omnivore `errors` array when present (legacy shape), else a
- * compact `{ code, message }`. Called only when a step is about to dead-letter.
- */
-export async function persistInjectionError(
-  siteId: number,
-  orderId: unknown,
-  err: { code: string; message: string; responseBody?: unknown }
-): Promise<void> {
-  if (orderId === undefined || orderId === null) return;
-  const body = err.responseBody as { errors?: unknown } | undefined;
-  const payload = body?.errors ?? { code: err.code, message: err.message };
-  const { error } = await supabase
-    .from('orders')
-    .update({ pos_injection_error: payload })
-    .eq('id', orderId)
-    .eq('site_id', siteId);
-  if (error) {
-    logger.error(
-      { error, site_id: siteId, order_id: orderId },
-      'omnivore: failed to persist pos_injection_error'
+    throw new HandlerError(
+      `Ticket ${ticketId} created but could not be linked to order ${String(orderId)}: ${error.message}`,
+      'TICKET_LINK_FAILED',
+      true
     );
   }
 }
