@@ -54,7 +54,7 @@ export async function fetchOmnivoreEmployees(client: AxiosInstance): Promise<any
 
 /** Normalize a raw Omnivore employee; returns null for employees with no login/PIN
  * (login is NOT NULL + the unique match key — a blank login would collide). */
-function normalizeEmployee(e: any): OmnivoreEmployeeNormalized | null {
+export function normalizeEmployee(e: any): OmnivoreEmployeeNormalized | null {
   const login = e?.login != null ? String(e.login) : '';
   if (!login) return null;
   const jobIds: string[] = (e?._embedded?.pay_rates ?? [])
@@ -73,7 +73,7 @@ function normalizeEmployee(e: any): OmnivoreEmployeeNormalized | null {
 }
 
 /** config.managerRoleJobId can be a single id or an array; normalize to a string Set. */
-function normalizeManagerJobIds(v: unknown): Set<string> {
+export function normalizeManagerJobIds(v: unknown): Set<string> {
   if (v == null) return new Set();
   const arr = Array.isArray(v) ? v : [v];
   return new Set(arr.map((x) => String(x)));

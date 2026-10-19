@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   oos: {} as Record<string, { items: any[]; modifiers: any[] } | Error>,
   gets: [] as string[],
   inventoryCalls: [] as any[],
+  emps: {} as Record<string, any[] | Error>,    // omnivoreId → planilla de GET /employees (o Error)
 }));
 
 vi.mock('../../src/lib/supabase', () => ({
@@ -29,6 +30,11 @@ vi.mock('../../src/handlers/omnivore/client', () => ({
         const r = h.health[cfg.omnivoreId];
         if (r instanceof Error) throw r;
         return { data: r };
+      }
+      if (p === '/employees') {
+        const e = h.emps[cfg.omnivoreId];
+        if (e instanceof Error) throw e;
+        return { data: { _embedded: { employees: e ?? [] } } };
       }
       const o = h.oos[cfg.omnivoreId];
       if (o instanceof Error) throw o;
@@ -90,6 +96,7 @@ beforeEach(() => {
   h.oos = {};
   h.gets = [];
   h.inventoryCalls = [];
+  h.emps = {};
 });
 
 describe('fetch_health (K2 + K4)', () => {
@@ -219,7 +226,7 @@ describe('fetch_products (C2) y guarda de fase 2', () => {
     expect(hasSiteFilter(upd, SINGLE)).toBe(true);
   });
 
-  for (const type of ['fetch_open_orders', 'fetch_closed_orders', 'fetch_recent_orders', 'fetch_tables', 'fetch_employees', 'fetch_clock_entries']) {
+  for (const type of ['fetch_open_orders', 'fetch_closed_orders', 'fetch_recent_orders', 'fetch_tables', 'fetch_clock_entries']) {
     it(`${type}: en un negocio multi-sucursal no lee ningún Aloha ni escribe (fase 2)`, async () => {
       await expect(run(type, MULTI)).resolves.toEqual({ skipped: 'multi_location_phase2' });
       expect(h.gets).toEqual([]);
@@ -235,3 +242,67 @@ describe('fetch_products (C2) y guarda de fase 2', () => {
     });
   }
 });
+
+describe('fetch_employees con varias sucursales (unión por PIN)', () => {
+  const emp = (id: string, login: string, first: string, last: string, jobs: string[] = ['1']) => ({
+    id, login, pos_id: id, first_name: first, last_name: last, check_name: first,
+    _embedded: { pay_rates: jobs.map((j) => ({ _embedded: { job: { id: j } } })) },
+  });
+  const withManagerJob = () => {
+    h.state.tables.site_integrations!.find((r) => r.id === 'biz')!.config.managerRoleJobId = '10';
+    invalidateCredentialsCache();
+  };
+
+  it('lee los 3 Alohas, une por PIN y aplica la regla de gerente', async () => {
+    withManagerJob();
+    h.emps = {
+      L1: [emp('a1', '1111', 'Neyda', 'Rodríguez', ['10']), emp('a2', '2251', 'Frances', 'Del Valle', ['10'])],
+      L2: [emp('b1', '1111', 'Neyda', 'Rodriguez'), emp('b2', '2251', 'Miguel', 'Carrillo'), emp('b3', '3333', 'Ana', 'Pérez')],
+      L3: [emp('c1', '0000', 'GERENTE', 'MGR', ['10'])],
+    };
+    const out: any = await run('fetch_employees', MULTI);
+    expect(out).toMatchObject({ total: 4, created: 4, updated: 0, connections: 3, failed: 0, pin_conflicts: 1, managers: 2 });
+    const rows = h.state.tables.employees!;
+    const by = (l: string) => rows.find((r) => r.login === l)!;
+    // Neyda: misma persona en L1 y L2, gerente en L1; datos de la sucursal principal (71000002 = L2)
+    expect(by('1111')).toMatchObject({ site_id: MULTI, role: 'manager', location_ids: [71000001, 71000002], omnivore_employee_id: 'b1' });
+    // 2251: personas distintas y solo una es gerente → NO gerente, marcado
+    expect(by('2251')).toMatchObject({ role: 'waiter', location_ids: [71000001, 71000002] });
+    expect(by('2251').additional_properties).toMatchObject({ omnivore_pin_conflict: true });
+    expect(by('3333')).toMatchObject({ role: 'waiter', location_ids: [71000002] });
+    expect(by('0000')).toMatchObject({ role: 'manager', location_ids: [71000003] });
+    for (const w of writesTo(h.state, 'employees')) {
+      expect(w).toMatchObject({ op: 'upsert', onConflict: 'site_id,login' });
+      expect((w.payload as any[]).every((r) => r.site_id === MULTI)).toBe(true);
+    }
+    expect(h.state.tables.omnivore_employee_sync_log).toEqual([expect.objectContaining({ site_id: MULTI, employees_total: 4, status: 'ok' })]);
+    // 2.ª corrida igual: nada que escribir
+    const again: any = await run('fetch_employees', MULTI);
+    expect(again).toMatchObject({ created: 0, updated: 0 });
+  });
+
+  it('una sucursal caída: conserva lo que ya se sabía de ella (no le quita la sucursal a nadie)', async () => {
+    withManagerJob();
+    h.emps = { L1: [emp('a1', '1111', 'Neyda', 'Rodríguez', ['10'])], L2: [emp('b1', '1111', 'Neyda', 'Rodriguez')], L3: [] };
+    await run('fetch_employees', MULTI);
+    h.emps.L1 = new Error('agent offline');
+    const out: any = await run('fetch_employees', MULTI);
+    expect(out).toMatchObject({ failed: 1, updated: 0 });
+    expect(h.state.tables.employees!.find((r) => r.login === '1111')).toMatchObject({ role: 'manager', location_ids: [71000001, 71000002] });
+  });
+
+  it('todas caídas: falla (se reintenta) y no escribe', async () => {
+    h.emps = { L1: new Error('agent offline'), L2: new Error('agent offline'), L3: new Error('agent offline') };
+    await expect(run('fetch_employees', MULTI)).rejects.toThrow();
+    expect(writesTo(h.state, 'employees')).toHaveLength(0);
+  });
+
+  it('nunca baja a un admin de MCM', async () => {
+    withManagerJob();
+    h.state.tables.employees = [{ id: 'x', site_id: MULTI, login: '3333', role: 'admin', location_ids: [], additional_properties: {} }];
+    h.emps = { L1: [], L2: [emp('b3', '3333', 'Ana', 'Pérez')], L3: [] };
+    await run('fetch_employees', MULTI);
+    expect(h.state.tables.employees!.find((r) => r.login === '3333')).toMatchObject({ role: 'admin', location_ids: [71000002] });
+  });
+});
+
