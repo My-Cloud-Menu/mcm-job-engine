@@ -106,7 +106,7 @@ describe('omnivore create_order handler', () => {
     h.get.mockResolvedValue({ data: { _embedded: { tickets: [] } } });
     h.post.mockResolvedValue({ data: { id: 'T' }, status: 201 });
     await run();
-    expect(h.getConfig).toHaveBeenCalledWith(25, 'omnivore', 'pos', undefined);
+    expect(h.getConfig).toHaveBeenCalledWith(25, 'omnivore', 'pos', undefined, { fresh: true });
     expect(h.clientConfigs[0]).toEqual({ apiKey: 'k', omnivoreId: 'LOC' });
   });
 
@@ -117,7 +117,7 @@ describe('omnivore create_order handler', () => {
 
     await run({ extra: { integration_id: 'int-7', location_id: '71000002', omnivore_id: 'SEALED' } });
 
-    expect(h.getConfig).toHaveBeenCalledWith(25, 'omnivore', 'pos', { integrationId: 'int-7' });
+    expect(h.getConfig).toHaveBeenCalledWith(25, 'omnivore', 'pos', { integrationId: 'int-7' }, { fresh: true });
     expect(h.clientConfigs[0]).toMatchObject({ omnivoreId: 'SEALED' });
   });
 
@@ -187,6 +187,22 @@ describe('omnivore create_order handler', () => {
     expect(h.post).not.toHaveBeenCalled();
     const st = statusWrites(h.state as never).at(-1)!;
     expect(st).toMatchObject({ state: 'retrying', step: 'create_order', code: 'TICKET_SEARCH_FAILED', attempt: 2, max_attempts: 3, can_retry: false });
+  });
+
+  it('a search failure that will not fix itself (invalid api key) is reported as such, not as «search failed»', async () => {
+    h.get
+      .mockResolvedValueOnce({ data: { _embedded: { tickets: [] } } })
+      .mockRejectedValueOnce({ isAxiosError: true, response: { status: 401, data: { errors: [{ error: 'invalid_api_key', description: 'Invalid or expired api key' }] } } });
+
+    const err = await run({ attempt: 1 }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(HandlerError);
+    expect(err.code).toBe('OMNIVORE_INVALID_API_KEY');
+    expect(err.retryable).toBe(false);
+    expect(h.post).not.toHaveBeenCalled();
+    const st = statusWrites(h.state as never).at(-1)!;
+    expect(st).toMatchObject({ state: 'failed', step: 'create_order', code: 'OMNIVORE_INVALID_API_KEY', can_retry: true });
+    expect(st.message).toBe('El POS rechazó la llave de acceso. Revisa la integración de Omnivore.');
   });
 
   it('does not inject a cancelled order (Q5)', async () => {

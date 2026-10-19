@@ -123,8 +123,23 @@ describe('fetch_health (K2 + K4)', () => {
       ['l1', 71000001, true], ['l2', 71000002, true], ['l3', 71000003, false],
     ]);
     expect(rows.find((r) => r.integration_id === 'l3')).toMatchObject({ pos_location_ref: 'L3', error: 'agent offline' });
-    expect(h.state.tables.pos_health![0]).toMatchObject({ site_id: MULTI, overall_healthy: false, error: '1 de 3 sucursales con problemas', location_id: null });
+    // Una de tres caída: en línea pero degradado (la tarjeta del inicio lo pinta así), con el texto.
+    expect(h.state.tables.pos_health![0]).toMatchObject({ site_id: MULTI, overall_healthy: false, error: '1 de 3 sucursales con problemas', location_id: null, pos_status: 'online', ordering_healthy: false });
     expect(h.state.tables.sync_schedules).toEqual([expect.objectContaining({ site_id: MULTI, integration: 'omnivore', sync_type: 'fetch_stock', interval_seconds: 300, status: 'active' })]);
+  });
+
+  it('varias sucursales en línea: sanas aunque Aloha diga que su AGENTE no lo está (misma regla que el dashboard, N13)', async () => {
+    for (const k of ['L1', 'L2', 'L3']) h.health[k] = { ...healthy(k), health: { ...healthy(k).health, healthy: false, agent: { healthy: false } } };
+    const out = await run('fetch_health', MULTI);
+    expect(out).toEqual({ overall_healthy: true, connections: 3, unhealthy: 0 });
+    expect(h.state.tables.pos_health![0]).toMatchObject({ site_id: MULTI, overall_healthy: true, error: null, pos_status: 'online', tickets_status: 'functional', ordering_healthy: true });
+  });
+
+  it('varias sucursales todas caídas: el negocio fuera de línea', async () => {
+    for (const k of ['L1', 'L2', 'L3']) h.health[k] = new Error('agent offline');
+    const out = await run('fetch_health', MULTI);
+    expect(out).toEqual({ overall_healthy: false, connections: 3, unhealthy: 3 });
+    expect(h.state.tables.pos_health![0]).toMatchObject({ pos_status: 'offline', overall_healthy: false, error: '3 de 3 sucursales con problemas' });
   });
 
   it('varias sucursales que NO inyectan: el sync de agotados se apaga', async () => {
@@ -203,6 +218,13 @@ describe('fetch_products (C2) y guarda de fase 2', () => {
       expect(h.gets).toEqual([]);
       expect(h.state.ops.filter((o) => o.op !== 'select')).toHaveLength(0);
       expect(h.state.rpcs.map((r) => r.name)).toEqual(['complete_sync_schedule']);
+    });
+  }
+
+  for (const type of ['fetch_open_orders', 'fetch_closed_orders']) {
+    it(`${type}: «sincronizar ahora» en un negocio sin schedules (schedule_id nulo) no muere (OBS #24)`, async () => {
+      await expect(run(type, MULTI, { stepInput: { schedule_id: null } })).resolves.toEqual({ skipped: 'multi_location_phase2' });
+      expect(h.state.rpcs).toHaveLength(0);
     });
   }
 });

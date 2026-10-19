@@ -11,6 +11,7 @@ import {
   persistInjectionStatus,
   readOrderGuard,
   statusForFailure,
+  ticketAmounts,
 } from './injection-status';
 
 const usd = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
@@ -113,6 +114,7 @@ registerHandler('omnivore', 'create_payment', async ({ jobPayload, context, job,
           code: 'TICKET_DUE_REMAINING',
           detail: `Saldo ${usd(totals.due ?? 0)} con ${totals.paymentCount} pago(s) ya aplicados.`,
           ticketId,
+          amounts: ticketAmounts(totals),
         })
       );
       return { applied: 0, skipped: 'payments_already_present', due: totals.due, payments: totals.paymentCount };
@@ -139,8 +141,11 @@ registerHandler('omnivore', 'create_payment', async ({ jobPayload, context, job,
 
     // ¿Quedó saldo? (MCM cobró menos que el total de Aloha.) El job termina; el staff cierra el ticket en Aloha.
     let dueAfter: number | null = null;
+    let paidAfter: number | null = null;
     try {
-      dueAfter = (await getTicketTotals(client, ticketId)).due;
+      const after = await getTicketTotals(client, ticketId);
+      dueAfter = after.due;
+      paidAfter = after.paid;
     } catch {
       dueAfter = null; // sin lectura no se marca nada; los pagos ya entraron
     }
@@ -154,6 +159,7 @@ registerHandler('omnivore', 'create_payment', async ({ jobPayload, context, job,
           code: 'TICKET_DUE_REMAINING',
           detail: `Saldo ${usd(dueAfter)} después de aplicar ${paymentIds.length} pago(s).`,
           ticketId,
+          amounts: ticketAmounts({ due: dueAfter, paid: paidAfter }),
         })
       );
     } else {

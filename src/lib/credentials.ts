@@ -134,17 +134,21 @@ export function pickConnection(
  *
  * `scope` (optional) resolves one connection of a multi-location site. Without it, a site with one active row gets
  * that row exactly as before.
+ *
+ * `opts.fresh` skips the cached read (the result is still cached for the others). La inyección lo usa: si el gerente
+ * corrige la llave o una forma de pago y toca «Reintentar», el reintento no puede usar la config de hace un minuto.
  */
 export async function getSiteIntegrationConfig(
   siteId: number,
   provider: string,
   type?: string,
-  scope?: ConnectionScope
+  scope?: ConnectionScope,
+  opts?: { fresh?: boolean }
 ): Promise<IntegrationConfig> {
   const key = `${siteId}:${provider}:${type ?? ''}:${scope?.integrationId ?? ''}:${scope?.locationId ?? ''}`;
   const cached = cache.get(key);
 
-  if (cached && cached.expiresAt > Date.now()) {
+  if (!opts?.fresh && cached && cached.expiresAt > Date.now()) {
     return { config: cached.config, integrationId: cached.integrationId, locationId: cached.locationId };
   }
 

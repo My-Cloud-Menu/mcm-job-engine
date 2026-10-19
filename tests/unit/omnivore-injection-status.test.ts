@@ -9,6 +9,7 @@ import {
   friendlyInjectionMessage,
   buildInjectionStatus,
   canRetryInjection,
+  ticketAmounts,
   evaluateOrderGuard,
   statusForFailure,
 } from '../../src/handlers/omnivore/inject/injection-status';
@@ -121,3 +122,12 @@ describe('estado de la inyección', () => {
     expect(evaluateOrderGuard(null).stop).toBeNull();
   });
 });
+
+describe('ticketAmounts (saldo que quedó en el POS)', () => {
+  it('total = pagado + saldo, en centavos; sin pagado no se inventa el total; sin saldo, nada', () => {
+    expect(ticketAmounts({ due: 45, paid: 1505 })).toEqual({ due: 45, paid: 1505, total: 1550 });
+    expect(ticketAmounts({ due: 45, paid: null })).toEqual({ due: 45, paid: null, total: null });
+    expect(ticketAmounts({ due: null, paid: 1505 })).toBeNull();
+  });
+});
+

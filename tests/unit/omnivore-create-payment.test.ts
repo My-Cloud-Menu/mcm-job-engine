@@ -123,6 +123,8 @@ describe('omnivore create_payment handler', () => {
 
     expect(out).toMatchObject({ applied: 1, due_after: 500 });
     expect(statusWrites(h.state as never).at(-1)).toMatchObject({ state: 'needs_action', code: 'TICKET_DUE_REMAINING', can_retry: false, ticket_id: 'TICKET-1' });
+    // El staff ve cuánto falta y por qué: total en el POS = pagado + saldo (centavos).
+    expect(statusWrites(h.state as never).at(-1)).toMatchObject({ amounts: { due: 500, paid: 2300, total: 2800 } });
   });
 
   it('payments already on the ticket but a balance remains: does not post again, asks the staff to close it', async () => {
@@ -130,7 +132,7 @@ describe('omnivore create_payment handler', () => {
     const out = await run({ attempt: 1 });
     expect(out).toMatchObject({ skipped: 'payments_already_present' });
     expect(h.post).not.toHaveBeenCalled();
-    expect(statusWrites(h.state as never).at(-1)).toMatchObject({ state: 'needs_action', code: 'TICKET_DUE_REMAINING' });
+    expect(statusWrites(h.state as never).at(-1)).toMatchObject({ state: 'needs_action', code: 'TICKET_DUE_REMAINING', amounts: { due: 400, paid: 1600, total: 2000 } });
   });
 
   it('terminal failure with the ticket already in the kitchen: needs_action TICKET_WITHOUT_PAYMENT, retry offered, original code kept (I4)', async () => {

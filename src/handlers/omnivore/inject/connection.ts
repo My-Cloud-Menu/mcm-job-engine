@@ -13,10 +13,11 @@ export function sealedScope(jobPayload: Record<string, unknown>): ConnectionScop
 /**
  * Config de Omnivore para un paso de inyección. Con sello: la fila sellada (aunque se haya desactivado después, para
  * terminar el ticket ya abierto) y SIEMPRE el `omnivore_id` sellado, para que todos los pasos y reintentos vayan al
- * mismo Aloha. Sin sello: la consulta de siempre.
+ * mismo Aloha. Sin sello: la consulta de siempre. Siempre fresca (sin la caché de 60 s): un reintento usa la config que
+ * el gerente acaba de corregir.
  */
 export async function resolveInjectionConfig(job: Job, jobPayload: Record<string, unknown>): Promise<IntegrationConfig> {
-  const conn = await getSiteIntegrationConfig(job.site_id, 'omnivore', 'pos', sealedScope(jobPayload));
+  const conn = await getSiteIntegrationConfig(job.site_id, 'omnivore', 'pos', sealedScope(jobPayload), { fresh: true });
   const sealedOmnivoreId = jobPayload['omnivore_id'];
   if (typeof sealedOmnivoreId === 'string' && sealedOmnivoreId) {
     return { ...conn, config: { ...conn.config, omnivoreId: sealedOmnivoreId } };

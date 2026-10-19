@@ -32,6 +32,8 @@ export interface InjectionStatus {
   at: string;
   /** Código original del POS cuando `code` es un resumen (p. ej. TICKET_WITHOUT_PAYMENT por un `pos_failure`). */
   cause_code?: string;
+  /** Cuentas del ticket en el POS, en centavos (`TICKET_DUE_REMAINING`): lo que falta, lo pagado y el total. */
+  amounts?: TicketAmounts;
   /** Errores crudos de Omnivore (`errors[]`), para quien los lea como antes. */
   errors?: unknown;
 }
@@ -57,6 +59,19 @@ export function friendlyInjectionMessage(code: string | null | undefined, step: 
 }
 
 /** Arma el estado que se guarda en la orden. PURA. */
+export interface TicketAmounts {
+  due: number;
+  paid: number | null;
+  total: number | null;
+}
+
+/** Saldo, pagado y total (pagado + saldo) del ticket, en centavos. `null` si el POS no dio el saldo. PURA. */
+export function ticketAmounts(totals: { due: number | null; paid: number | null }): TicketAmounts | null {
+  if (totals.due == null || !Number.isFinite(totals.due)) return null;
+  const paid = totals.paid != null && Number.isFinite(totals.paid) ? totals.paid : null;
+  return { due: totals.due, paid, total: paid != null ? totals.due + paid : null };
+}
+
 export function buildInjectionStatus(input: {
   state: InjectionState;
   step: InjectionStep;
@@ -67,6 +82,7 @@ export function buildInjectionStatus(input: {
   ticketId?: string | null;
   responseBody?: unknown;
   causeCode?: string | null;
+  amounts?: TicketAmounts | null;
   now?: Date;
 }): InjectionStatus {
   const errors = (input.responseBody as { errors?: unknown } | undefined)?.errors;
@@ -83,6 +99,7 @@ export function buildInjectionStatus(input: {
     at: (input.now ?? new Date()).toISOString(),
   };
   if (input.causeCode && input.causeCode !== input.code) status.cause_code = input.causeCode;
+  if (input.amounts) status.amounts = input.amounts;
   if (Array.isArray(errors)) status.errors = errors;
   return status;
 }

@@ -23,6 +23,35 @@ const InputSchema = z.object({
 
 const HEALTH_TIMEOUT_MS = 30_000;
 
+/**
+ * ¿La conexión puede recibir órdenes? Misma regla OPERATIVA que el dashboard (N13, `derivePosState`): POS en línea, tickets
+ * no caídos y órdenes no rechazadas. `overall_healthy` (salud del AGENTE de Aloha: CPU/memoria) NO cuenta: Aloha lo reporta
+ * `false` estando en línea e inyectando. PURA.
+ */
+export function isOperational(s: Record<string, unknown>): boolean {
+  return s['pos_status'] === 'online' && s['tickets_status'] !== 'down' && s['ordering_healthy'] !== false && !s['error'];
+}
+
+/**
+ * Resumen del negocio en `pos_health` con varias sucursales (A14), leído por la tarjeta del inicio con `derivePosState`:
+ * todas bien → en línea; algunas → en línea pero degradado (`ordering_healthy: false`); ninguna → fuera de línea. PURA.
+ */
+export function multiHealthSummary(snapshots: Record<string, unknown>[]): { unhealthy: number; fields: Record<string, unknown> } {
+  const unhealthy = snapshots.filter((s) => !isOperational(s)).length;
+  const total = snapshots.length;
+  const allDown = total > 0 && unhealthy === total;
+  return {
+    unhealthy,
+    fields: {
+      pos_status: allDown ? 'offline' : 'online',
+      tickets_status: unhealthy === 0 ? 'functional' : null,
+      ordering_healthy: unhealthy === 0 ? true : allDown ? null : false,
+      overall_healthy: unhealthy === 0,
+      error: unhealthy === 0 ? null : `${unhealthy} de ${total} sucursales con problemas`,
+    },
+  };
+}
+
 const errorRow = (omnivoreId: unknown, err: any): Record<string, unknown> => ({
   location_id: omnivoreId ?? null, pos_status: null, pos_type: null, agent_version: null,
   overall_healthy: false, agent_healthy: null, agent_cpu: null, agent_memory: null, agent_processes: null,
@@ -122,7 +151,7 @@ registerHandler('omnivore', 'fetch_health', async ({ stepInput, jobPayload, job 
   const { error: connErr } = await supabase.from('pos_connection_health').upsert(rows, { onConflict: 'integration_id' });
   if (connErr) throw new Error(`pos_connection_health upsert failed: ${connErr.message}`);
 
-  const unhealthy = snapshots.filter((s) => s['overall_healthy'] !== true).length;
+  const { unhealthy, fields: summary } = multiHealthSummary(snapshots);
 
   if (!onlyId) {
     // Resumen del negocio en `pos_health` (una fila por negocio): sano solo si todas las conexiones lo están.
@@ -130,8 +159,7 @@ registerHandler('omnivore', 'fetch_health', async ({ stepInput, jobPayload, job 
       {
         site_id: job.site_id, provider: 'omnivore', source, checked_at: nowIso, updated_at: nowIso,
         ...errorRow(null, ''),
-        overall_healthy: unhealthy === 0,
-        error: unhealthy === 0 ? null : `${unhealthy} de ${rows.length} sucursales con problemas`,
+        ...summary,
       },
       { onConflict: 'site_id' });
     if (error) throw new Error(`pos_health upsert failed: ${error.message}`);

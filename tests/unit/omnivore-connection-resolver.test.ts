@@ -146,6 +146,14 @@ describe('getSiteIntegrationConfig', () => {
     await expect(getSiteIntegrationConfig(1, 'omnivore', 'pos')).rejects.toMatchObject({ code: 'INTEGRATION_LOOKUP_FAILED', retryable: true });
   });
 
+  it('`fresh` (inyección) no usa el caché: un reintento ve la config recién corregida', async () => {
+    h.rows = [{ id: 'biz', active: true, location_id: null, config: { apiKey: 'mala' } }];
+    expect((await getSiteIntegrationConfig(8, 'omnivore', 'pos')).config['apiKey']).toBe('mala');
+    h.rows = [{ id: 'biz', active: true, location_id: null, config: { apiKey: 'buena' } }];
+    expect((await getSiteIntegrationConfig(8, 'omnivore', 'pos')).config['apiKey']).toBe('mala'); // caché de 60 s
+    expect((await getSiteIntegrationConfig(8, 'omnivore', 'pos', undefined, { fresh: true })).config['apiKey']).toBe('buena');
+  });
+
   it('el caché distingue el alcance (sucursal A ≠ sucursal B)', async () => {
     h.rows = [
       { id: 'biz', active: true, location_id: null, config: { apiKey: 'k' } },

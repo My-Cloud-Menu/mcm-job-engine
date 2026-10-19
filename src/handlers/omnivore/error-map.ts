@@ -41,6 +41,8 @@ export const OMNIVORE_BUSINESS_SLUGS = new Set<string>([
   'tips_not_allowed',
   'param_not_supported',
   'required_modifiers_missing',
+  // Misión Omnivore Multisucursal (F6): la llave no se arregla sola; reintentar solo demora el aviso.
+  'invalid_api_key',
 ]);
 
 /**

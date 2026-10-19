@@ -64,6 +64,8 @@ registerHandler('omnivore', 'create_order', async ({ jobPayload, context, job, s
           existingId = await findOpenTicketIdByNameScanAll(client, ticketName);
         } catch (scanErr) {
           const se = mapOmnivoreError(scanErr, 'TICKET_SEARCH_FAILED');
+          // Lo que no se arregla solo (p. ej. llave inválida) se reporta tal cual: buscar otra vez no sirve.
+          if (!se.retryable) throw se;
           throw new HandlerError(
             `Could not verify an existing ticket before creating: ${se.message}`,
             'TICKET_SEARCH_FAILED',

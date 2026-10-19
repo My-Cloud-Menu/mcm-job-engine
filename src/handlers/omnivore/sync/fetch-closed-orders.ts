@@ -10,7 +10,7 @@ import { fetchOmnivoreOrders } from './order-mapper';
 import { upsertOmnivoreOrders } from './upsert-orders';
 
 const InputSchema = z.object({
-  schedule_id: z.string().uuid(),
+  schedule_id: z.string().uuid().nullable().optional(),
   cursor: z.string().nullable().optional(),
 });
 
@@ -83,10 +83,12 @@ registerHandler('omnivore', 'fetch_closed_orders', async ({ stepInput, job }) =>
     'omnivore fetch_closed_orders completed'
   );
 
-  await supabase.rpc('complete_sync_schedule', {
-    p_schedule_id: input.schedule_id,
-    p_cursor: null,
-  });
+  if (input.schedule_id) {
+    await supabase.rpc('complete_sync_schedule', {
+      p_schedule_id: input.schedule_id,
+      p_cursor: null,
+    });
+  }
 
   return { orders_fetched: orders.length, inserted, updated, skipped };
 });
